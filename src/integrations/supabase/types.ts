@@ -14,16 +14,210 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      community_posts: {
+        Row: {
+          category: string
+          comments_count: number | null
+          content: string
+          created_at: string
+          id: string
+          likes_count: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          comments_count?: number | null
+          content: string
+          created_at?: string
+          id?: string
+          likes_count?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          comments_count?: number | null
+          content?: string
+          created_at?: string
+          id?: string
+          likes_count?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_readings: {
+        Row: {
+          advice: string | null
+          card_image: string | null
+          card_name: string
+          created_at: string
+          id: string
+          interpretation: string
+          is_reversed: boolean | null
+          question: string
+          user_id: string
+        }
+        Insert: {
+          advice?: string | null
+          card_image?: string | null
+          card_name: string
+          created_at?: string
+          id?: string
+          interpretation: string
+          is_reversed?: boolean | null
+          question: string
+          user_id: string
+        }
+        Update: {
+          advice?: string | null
+          card_image?: string | null
+          card_name?: string
+          created_at?: string
+          id?: string
+          interpretation?: string
+          is_reversed?: boolean | null
+          question?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      post_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          interests: Database["public"]["Enums"]["interest_category"][] | null
+          nickname: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interests?: Database["public"]["Enums"]["interest_category"][] | null
+          nickname: string
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interests?: Database["public"]["Enums"]["interest_category"][] | null
+          nickname?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_today_readings_count: { Args: { p_user_id: string }; Returns: number }
     }
     Enums: {
-      [_ in never]: never
+      interest_category:
+        | "love"
+        | "compatibility"
+        | "reunion"
+        | "yearly"
+        | "zodiac"
+        | "career"
+        | "health"
+        | "money"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +344,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      interest_category: [
+        "love",
+        "compatibility",
+        "reunion",
+        "yearly",
+        "zodiac",
+        "career",
+        "health",
+        "money",
+      ],
+    },
   },
 } as const
