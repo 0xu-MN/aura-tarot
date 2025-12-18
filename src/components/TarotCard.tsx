@@ -9,6 +9,7 @@ interface TarotCardProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   interactive?: boolean;
+  isFlipped?: boolean; // New prop for controlled usage
 }
 
 const sizeClasses = {
@@ -24,20 +25,27 @@ export const TarotCard = ({
   className,
   size = "md",
   interactive = true,
+  isFlipped: controlledIsFlipped, // Rename to avoid conflict
 }: TarotCardProps) => {
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [internalIsFlipped, setInternalIsFlipped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // Use controlled state if provided, otherwise internal state
+  const isFlipped = controlledIsFlipped !== undefined ? controlledIsFlipped : internalIsFlipped;
 
   const handleClick = () => {
     if (!interactive || isAnimating || isFlipped) return;
-    
-    setIsAnimating(true);
-    setIsFlipped(true);
-    
-    setTimeout(() => {
-      setIsAnimating(false);
-      onFlipComplete?.();
-    }, 800);
+
+    // Only update internal state if not controlled
+    if (controlledIsFlipped === undefined) {
+      setIsAnimating(true);
+      setInternalIsFlipped(true);
+
+      setTimeout(() => {
+        setIsAnimating(false);
+        onFlipComplete?.();
+      }, 800);
+    }
   };
 
   return (
