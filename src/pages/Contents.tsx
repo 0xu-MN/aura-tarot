@@ -34,19 +34,88 @@ const Contents = () => {
 
                 {/* Content Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[1, 2, 3, 4, 5, 6].map((item) => (
+                    {/* Define content data directly here for now to ensure consistency */}
+                    {[
+                        {
+                            title: "오늘의 운세",
+                            description: "하루를 시작하는 특별한 메시지를 받아보세요",
+                            category: "운세",
+                            icon: "✨",
+                            link: "/",
+                        },
+                        {
+                            title: "연애운 타로",
+                            description: "연애, 썸, 짝사랑에 대한 깊은 통찰을 제공합니다",
+                            category: "연애운",
+                            icon: "💕"
+                        },
+                        {
+                            title: "재회 확률",
+                            description: "그 사람의 속마음과 재회 가능성을 알아보세요",
+                            category: "연애운",
+                            icon: "🌙"
+                        },
+                        {
+                            title: "커플 궁합",
+                            description: "두 사람의 궁합을 타로로 점쳐보세요",
+                            category: "궁합",
+                            icon: "👩‍❤️‍👨"
+                        },
+                        {
+                            title: "2025 신년운세",
+                            description: "새해 12개월의 운세를 상세히 풀이해드립니다",
+                            category: "신년",
+                            icon: "📅"
+                        },
+                        {
+                            title: "1:1 전문가 타로 상담",
+                            description: "검증된 타로 마스터와 1:1로 깊이 있는 상담을 나눠보세요",
+                            category: "전문가 상담",
+                            icon: "💬"
+                        },
+                        {
+                            title: "금전운",
+                            description: "재물을 끌어당기는 흐름과 조언을 확인하세요",
+                            category: "재물운",
+                            icon: "💰"
+                        },
+                        {
+                            title: "손금 분석",
+                            description: "손바닥 사진으로 알아보는 나의 운명선",
+                            category: "관상/손금",
+                            icon: "✋"
+                        },
+                        {
+                            title: "꿈 해몽",
+                            description: "어젯밤 꿈의 의미를 AI가 해석해드려요",
+                            category: "해몽",
+                            icon: "⭐"
+                        }
+                    ].map((item, index) => (
                         <div
-                            key={item}
-                            className="bg-card rounded-2xl border border-gold/20 overflow-hidden hover:border-gold/50 transition-all duration-300 hover:scale-105 cursor-pointer"
+                            key={index}
+                            className="bg-card rounded-2xl border border-gold/20 overflow-hidden hover:border-gold/50 transition-all duration-300 hover:scale-105 cursor-pointer group"
+                            onClick={() => {
+                                if (item.link) {
+                                    window.location.href = item.link;
+                                    // Using window.location to properly reset state if needed, or navigate if imported
+                                } else if (item.title === "1:1 전문가 타로 상담") {
+                                    alert("현재 전문가 영입 중입니다! 곧 오픈될 예정이니 조금만 기다려주세요.");
+                                } else {
+                                    alert(`${item.title} 컨텐츠는 준비 중입니다!`);
+                                }
+                            }}
                         >
-                            <div className="aspect-video bg-gradient-to-br from-gold/20 to-mystic-purple/20" />
+                            <div className="aspect-video bg-gradient-to-br from-gold/20 to-mystic-purple/20 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-500">
+                                {item.icon}
+                            </div>
                             <div className="p-4">
-                                <span className="text-xs text-gold font-medium">연애운</span>
-                                <h3 className="font-display text-lg mt-1 mb-2">
-                                    오늘의 연애운세
+                                <span className="text-xs text-gold font-medium">{item.category}</span>
+                                <h3 className="font-display text-lg mt-1 mb-2 group-hover:text-gold transition-colors">
+                                    {item.title}
                                 </h3>
                                 <p className="text-sm text-muted-foreground line-clamp-2">
-                                    당신의 사랑은 어떤 운명을 맞이할까요? 타로 카드가 알려주는 오늘의 연애 운세를 확인해보세요.
+                                    {item.description}
                                 </p>
                             </div>
                         </div>

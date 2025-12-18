@@ -18,8 +18,19 @@ export const RecommendedContent = () => {
     const navigate = useNavigate();
     const { userProfile } = useAuth();
 
-    const handleFeatureClick = (featureId: string) => {
-        navigate(`/contents?category=${featureId}`);
+    const handleFeatureClick = (title: string) => {
+        if (title === "오늘의 운세") {
+            navigate('/'); // Navigate to home
+            return;
+        }
+
+        if (title === "1:1 전문가 타로 상담") {
+            alert("현재 전문가 영입 중입니다! 곧 오픈될 예정이니 조금만 기다려주세요.");
+            return;
+        }
+
+        // Feature not ready yet
+        alert(`${title} 컨텐츠는 준비 중입니다!`);
     };
 
     const handleMoreClick = () => {
@@ -68,8 +79,8 @@ export const RecommendedContent = () => {
         {
             id: "chat",
             icon: MessageCircle,
-            title: "AI 타로 상담",
-            description: "타로 마스터와 1:1 깊이 있는 상담",
+            title: "1:1 전문가 타로 상담",
+            description: "검증된 타로 마스터와 1:1 상담",
             category: "counseling",
         },
         {
@@ -137,7 +148,7 @@ export const RecommendedContent = () => {
                                 title={feature.title}
                                 description={feature.description}
                                 badge={feature.badge}
-                                onClick={() => handleFeatureClick(feature.id)}
+                                onClick={() => handleFeatureClick(feature.title)}
                                 className="h-full"
                             />
                         </div>
