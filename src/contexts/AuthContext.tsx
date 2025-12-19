@@ -43,32 +43,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const fetchUserProfile = async (userId: string) => {
         try {
             const { data, error } = await supabase
-                .from('users')
+                .from('profiles')
                 .select('*')
-                .eq('id', userId)
+                .eq('user_id', userId)
                 .single();
 
             if (error) throw error;
 
-            // Get today's draw count
+            // Get today's draw count from daily_readings
             const today = new Date().toISOString().split('T')[0];
             const { count } = await supabase
-                .from('card_draws')
+                .from('daily_readings')
                 .select('*', { count: 'exact', head: true })
                 .eq('user_id', userId)
-                .gte('drawn_at', `${today}T00:00:00`)
-                .lte('drawn_at', `${today}T23:59:59`);
+                .gte('created_at', `${today}T00:00:00`)
+                .lte('created_at', `${today}T23:59:59`);
 
             const drawsToday = count || 0;
             const dailyLimit = 3;
 
-            const profile: UserProfile = {
-                ...data,
-                daily_draws_remaining: Math.max(0, dailyLimit - drawsToday),
-                total_draws: 0, // Will be updated later if needed
+            const userData: User = {
+                id: data.id,
+                username: data.username,
+                name: data.nickname, // Using nickname as name
+                nickname: data.nickname,
+                interests: data.interests || [],
+                created_at: data.created_at,
+                updated_at: data.updated_at,
             };
 
-            setUser(data);
+            const profile: UserProfile = {
+                ...userData,
+                daily_draws_remaining: Math.max(0, dailyLimit - drawsToday),
+                total_draws: 0,
+            };
+
+            setUser(userData);
             setUserProfile(profile);
         } catch (error) {
             console.error('Error fetching user profile:', error);
@@ -112,19 +122,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const signIn = async (username: string, password: string) => {
         try {
-            // First get the email from username
-            const { data: userData, error: userError } = await supabase
-                .from('users')
-                .select('email')
+            // First get the user_id from username in profiles
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('user_id, username')
                 .eq('username', username)
                 .single();
 
-            if (userError || !userData?.email) {
+            if (profileError || !profileData) {
                 return { error: '사용자를 찾을 수 없습니다.' };
             }
 
+            // Create email from username for Supabase auth
+            const email = `${username}@aura-tarot.app`;
+
             const { error } = await supabase.auth.signInWithPassword({
-                email: userData.email,
+                email,
                 password,
             });
 
@@ -152,10 +165,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
             // Check if username already exists
             const { data: existingUser } = await supabase
-                .from('users')
+                .from('profiles')
                 .select('username')
                 .eq('username', data.username)
-                .single();
+                .maybeSingle();
 
             if (existingUser) {
                 return { error: '이미 사용 중인 아이디입니다.' };
@@ -175,19 +188,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 return { error: '사용자 생성에 실패했습니다.' };
             }
 
-            // Create user profile
-            const { error: profileError } = await supabase.from('users').insert({
-                id: authData.user.id,
+            // Create user profile in profiles table
+            const { error: profileError } = await supabase.from('profiles').insert({
+                user_id: authData.user.id,
                 username: data.username,
-                email,
-                name: data.name,
                 nickname: data.nickname,
-                interests: data.interests,
+                interests: data.interests as any,
             });
 
             if (profileError) {
-                // Rollback auth user if profile creation fails
-                await supabase.auth.admin.deleteUser(authData.user.id);
+                console.error('Profile creation error:', profileError);
                 return { error: '프로필 생성에 실패했습니다.' };
             }
 

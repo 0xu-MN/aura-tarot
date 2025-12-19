@@ -1,13 +1,26 @@
-import { Button } from "./ui/button";
+import { useState } from "react";
 import { TarotCard } from "./TarotCard";
-import { Sparkles, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import heroBg from "@/assets/hero-bg.png";
+import { cn } from "@/lib/utils";
 
 interface HeroSectionProps {
   onStartReading?: () => void;
 }
 
 export const HeroSection = ({ onStartReading }: HeroSectionProps) => {
+  const [isEntering, setIsEntering] = useState(false);
+
+  const handleCardClick = () => {
+    if (isEntering) return;
+    setIsEntering(true);
+    
+    // Trigger the callback after the animation
+    setTimeout(() => {
+      onStartReading?.();
+    }, 800);
+  };
+
   return (
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       {/* Background */}
@@ -21,7 +34,12 @@ export const HeroSection = ({ onStartReading }: HeroSectionProps) => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 py-20 text-center">
+      <div 
+        className={cn(
+          "relative z-10 container mx-auto px-4 py-20 text-center transition-all duration-700",
+          isEntering && "scale-110 opacity-0"
+        )}
+      >
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card/50 backdrop-blur-sm border border-gold/30 mb-6 animate-fade-in">
           <Star className="w-4 h-4 text-gold" />
           <span className="text-sm text-foreground">AI가 해석하는 나만의 타로</span>
@@ -31,31 +49,51 @@ export const HeroSection = ({ onStartReading }: HeroSectionProps) => {
           오늘의 한 장
         </h1>
         
-        <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-          당신의 운명을 비추는 타로 카드<br />
-          AI 타로 마스터가 깊이 있는 해석을 전해드립니다
+        {/* Fixed 2-line text */}
+        <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-8 animate-fade-in leading-relaxed" style={{ animationDelay: "0.2s" }}>
+          <span className="block">당신의 운명을 비추는 타로 카드</span>
+          <span className="block">AI 타로 마스터가 깊이 있는 해석을 전해드립니다</span>
         </p>
 
-        {/* Floating Card */}
-        <div className="my-10 animate-float">
-          <TarotCard size="lg" interactive={false} className="mx-auto glow-gold" />
+        {/* Clickable Card with Entry Animation */}
+        <div 
+          className={cn(
+            "my-10 cursor-pointer transition-all duration-700",
+            !isEntering && "animate-float hover:scale-105",
+            isEntering && "scale-150 opacity-0"
+          )}
+          onClick={handleCardClick}
+        >
+          <div className="relative mx-auto w-fit">
+            <TarotCard size="lg" interactive={false} className="mx-auto glow-gold" />
+            
+            {/* Click indicator */}
+            <div className={cn(
+              "absolute -bottom-8 left-1/2 -translate-x-1/2 text-gold/80 text-sm font-medium transition-opacity",
+              isEntering && "opacity-0"
+            )}>
+              <span className="animate-pulse">카드를 터치하세요</span>
+            </div>
+            
+            {/* Glow effect on hover */}
+            <div className="absolute inset-0 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+              <div className="absolute inset-0 rounded-xl glow-mystic" />
+            </div>
+          </div>
         </div>
 
-        <Button
-          variant="gold"
-          size="xl"
-          onClick={onStartReading}
-          className="animate-fade-in"
-          style={{ animationDelay: "0.3s" }}
-        >
-          <Sparkles className="w-5 h-5" />
-          오늘의 카드 뽑기
-        </Button>
-
-        <p className="mt-4 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.4s" }}>
+        <p className="mt-12 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.4s" }}>
           무료로 시작하기 • 매일 새로운 운세
         </p>
       </div>
+
+      {/* Entry overlay effect */}
+      <div 
+        className={cn(
+          "absolute inset-0 z-20 bg-background pointer-events-none transition-opacity duration-500",
+          isEntering ? "opacity-100" : "opacity-0"
+        )}
+      />
     </section>
   );
 };

@@ -43,7 +43,7 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
             setNicknameChecking(true);
             try {
                 const { data, error } = await supabase
-                    .from('users')
+                    .from('profiles')
                     .select('nickname')
                     .eq('nickname', nickname)
                     .maybeSingle();
