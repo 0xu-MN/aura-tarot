@@ -6,19 +6,13 @@ import { cn } from "@/lib/utils";
 
 interface HeroSectionProps {
   onStartReading?: () => void;
+  isEntering?: boolean;
 }
 
-export const HeroSection = ({ onStartReading }: HeroSectionProps) => {
-  const [isEntering, setIsEntering] = useState(false);
-
+export const HeroSection = ({ onStartReading, isEntering = false }: HeroSectionProps) => {
   const handleCardClick = () => {
     if (isEntering) return;
-    setIsEntering(true);
-    
-    // Trigger the callback after the animation
-    setTimeout(() => {
-      onStartReading?.();
-    }, 800);
+    onStartReading?.();
   };
 
   return (
@@ -34,7 +28,7 @@ export const HeroSection = ({ onStartReading }: HeroSectionProps) => {
       </div>
 
       {/* Content */}
-      <div 
+      <div
         className={cn(
           "relative z-10 container mx-auto px-4 py-20 text-center transition-all duration-700",
           isEntering && "scale-110 opacity-0"
@@ -48,7 +42,7 @@ export const HeroSection = ({ onStartReading }: HeroSectionProps) => {
         <h1 className="font-display text-4xl md:text-6xl lg:text-7xl text-gold-gradient mb-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
           오늘의 한 장
         </h1>
-        
+
         {/* Fixed 2-line text */}
         <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-8 animate-fade-in leading-relaxed" style={{ animationDelay: "0.2s" }}>
           <span className="block">당신의 운명을 비추는 타로 카드</span>
@@ -56,7 +50,7 @@ export const HeroSection = ({ onStartReading }: HeroSectionProps) => {
         </p>
 
         {/* Clickable Card with Entry Animation */}
-        <div 
+        <div
           className={cn(
             "my-10 cursor-pointer transition-all duration-700",
             !isEntering && "animate-float hover:scale-105",
@@ -66,7 +60,7 @@ export const HeroSection = ({ onStartReading }: HeroSectionProps) => {
         >
           <div className="relative mx-auto w-fit">
             <TarotCard size="lg" interactive={false} className="mx-auto glow-gold" />
-            
+
             {/* Click indicator */}
             <div className={cn(
               "absolute -bottom-8 left-1/2 -translate-x-1/2 text-gold/80 text-sm font-medium transition-opacity",
@@ -74,7 +68,7 @@ export const HeroSection = ({ onStartReading }: HeroSectionProps) => {
             )}>
               <span className="animate-pulse">카드를 터치하세요</span>
             </div>
-            
+
             {/* Glow effect on hover */}
             <div className="absolute inset-0 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
               <div className="absolute inset-0 rounded-xl glow-mystic" />
@@ -88,7 +82,7 @@ export const HeroSection = ({ onStartReading }: HeroSectionProps) => {
       </div>
 
       {/* Entry overlay effect */}
-      <div 
+      <div
         className={cn(
           "absolute inset-0 z-20 bg-background pointer-events-none transition-opacity duration-500",
           isEntering ? "opacity-100" : "opacity-0"

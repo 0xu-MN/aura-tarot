@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,8 +8,11 @@ import { SpreadLayout } from '@/components/tarot/SpreadLayout';
 import { TarotCard } from '@/components/TarotCard';
 import { Heart, Lock, Sparkles, User, RefreshCw, Share2, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { premiumStore } from '@/lib/premiumStore';
 
-// Mock Card Data (would come from DB/API)
+const FEATURE_ID = 'love-tarot';
+
+// Mock Card Data
 const MOCK_CARDS = [
     { name: "The Lovers", korean: "연인", meaning: "사랑, 조화, 선택...", advice: "마음을 열고..." },
     { name: "Two of Cups", korean: "컵 2", meaning: "파트너십, 끌림...", advice: "대화가 중요합니다..." },
@@ -24,6 +28,36 @@ export const LoveTarot = () => {
     const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
     const [revealedCards, setRevealedCards] = useState<number[]>([]);
 
+    // Load persisted state on mount
+    useEffect(() => {
+        const saved = premiumStore.getFeatureState(FEATURE_ID);
+        if (saved.hasPaid && premiumStore.isPaid(FEATURE_ID)) {
+            setHasPaid(true);
+        }
+
+        if (saved.readingState) {
+            const { step: savedStep, question: savedQuestion, partnerInfo: savedPartner, selectedCardIndices: savedIndices, revealedCards: savedRevealed } = saved.readingState;
+            if (savedStep) setStep(savedStep);
+            if (savedQuestion) setQuestion(savedQuestion);
+            if (savedPartner) setPartnerInfo(savedPartner);
+            if (savedIndices) setSelectedCardIndices(savedIndices);
+            if (savedRevealed) setRevealedCards(savedRevealed);
+        }
+    }, []);
+
+    // Save state whenever it changes
+    useEffect(() => {
+        if (step !== 'intro') {
+            premiumStore.saveReadingState(FEATURE_ID, {
+                step,
+                question,
+                partnerInfo,
+                selectedCardIndices,
+                revealedCards
+            });
+        }
+    }, [step, question, partnerInfo, selectedCardIndices, revealedCards]);
+
     const handleStart = () => {
         setStep('input');
     };
@@ -31,6 +65,12 @@ export const LoveTarot = () => {
     const handleInputSubmit = () => {
         if (!question.trim()) {
             toast.error('질문을 입력해주세요!');
+            return;
+        }
+        if (question.length < 10) {
+            toast.error('내용을 더 구체적으로 적어주세요', {
+                description: '정확한 분석을 위해 최소 10자 이상 입력해주세요.'
+            });
             return;
         }
 
@@ -42,7 +82,7 @@ export const LoveTarot = () => {
     };
 
     const handleUnlock = () => {
-        setHasPaid(true); // Persist this in a real app context/DB
+        setHasPaid(true);
         setStep('spread');
     };
 
@@ -50,7 +90,6 @@ export const LoveTarot = () => {
         setSelectedCardIndices(indices);
         setTimeout(() => {
             setStep('result');
-            // Auto reveal sequence simulation could go here or be manual
         }, 1000);
     };
 
@@ -189,7 +228,7 @@ export const LoveTarot = () => {
                                         <TarotCard
                                             size="lg"
                                             isFlipped={revealedCards.includes(i)}
-                                            frontImage={undefined} // Map real images here
+                                            frontImage={undefined}
                                             interactive={false}
                                         />
                                     </div>
@@ -210,7 +249,7 @@ export const LoveTarot = () => {
                                     AI 심층 리딩 결과
                                 </h3>
 
-                                <div className="space-y-6 text-foreground/90 leading-relaxed text-sm md:text-base">
+                                <div id="love-result-content" className="space-y-6 text-foreground/90 leading-relaxed text-sm md:text-base">
                                     <div className="p-4 bg-background/50 rounded-xl">
                                         <h4 className="font-bold text-gold mb-2">Q. {question}</h4>
                                         <p className="opacity-80">
@@ -230,10 +269,10 @@ export const LoveTarot = () => {
                                     </div>
 
                                     <div className="flex gap-3 pt-4">
-                                        <Button variant="outline" className="flex-1">
+                                        <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('love-result-content', 'aura-love-tarot')}>
                                             <Download className="w-4 h-4 mr-2" /> 저장
                                         </Button>
-                                        <Button variant="outline" className="flex-1">
+                                        <Button variant="outline" className="flex-1" onClick={() => shareResult('연애운 타로 결과', '제 연애운 결과를 확인해보세요!')}>
                                             <Share2 className="w-4 h-4 mr-2" /> 공유
                                         </Button>
                                     </div>
@@ -242,6 +281,8 @@ export const LoveTarot = () => {
                                         variant="ghost"
                                         className="w-full mt-4 border border-gold/30 hover:bg-gold/10"
                                         onClick={() => {
+                                            premiumStore.resetFeature(FEATURE_ID);
+                                            setHasPaid(false);
                                             setStep('input');
                                             setSelectedCardIndices([]);
                                             setRevealedCards([]);
@@ -268,6 +309,7 @@ export const LoveTarot = () => {
                 onClose={() => setShowPaymentModal(false)}
                 onSuccess={handleUnlock}
                 featureName="연애운 타로 프리미엄"
+                featureId={FEATURE_ID}
                 price={1}
             />
         </AppLayout>

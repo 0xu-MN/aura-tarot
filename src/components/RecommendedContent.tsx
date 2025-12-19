@@ -21,7 +21,7 @@ export const RecommendedContent = () => {
 
     const handleFeatureClick = (title: string) => {
         if (title === "오늘의 운세") {
-            navigate('/'); // Navigate to home
+            navigate('/home'); // Navigate to post-login home
             return;
         }
 

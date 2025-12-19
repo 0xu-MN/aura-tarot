@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { premiumStore } from '@/lib/premiumStore';
 
 interface PaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
     featureName: string;
+    featureId: string; // Added to track which feature is being paid for
     price?: number;
 }
 
@@ -16,6 +18,7 @@ export const PaymentModal = ({
     onClose,
     onSuccess,
     featureName,
+    featureId,
     price = 1
 }: PaymentModalProps) => {
     const [isProcessing, setIsProcessing] = useState(false);
@@ -26,11 +29,19 @@ export const PaymentModal = ({
         // Simulate payment processing delay
         setTimeout(() => {
             setIsProcessing(false);
-            onSuccess();
-            toast.success('결제가 완료되었습니다!', {
-                description: `${featureName} 컨텐츠가 해금되었습니다.`,
-            });
+
+            // Persist payment status
+            premiumStore.setPaid(featureId);
+
+            // Close modal first, then trigger success to avoid UI transition conflicts
             onClose();
+
+            setTimeout(() => {
+                onSuccess();
+                toast.success('결제가 완료되었습니다!', {
+                    description: `${featureName} 컨텐츠가 해금되었습니다.`,
+                });
+            }, 300);
         }, 1500);
     };
 
@@ -117,9 +128,12 @@ export const PaymentModal = ({
                             size="sm"
                             className="w-full mt-4 text-xs text-muted-foreground hover:text-red-500 hover:bg-red-500/10 h-auto py-1"
                             onClick={() => {
-                                toast.info('⚡️ 개발자 모드: 결제가 우회되었습니다.');
-                                onSuccess();
+                                premiumStore.setPaid(featureId);
                                 onClose();
+                                setTimeout(() => {
+                                    onSuccess();
+                                    toast.info('⚡️ 개발자 모드: 결제가 우회되었습니다.');
+                                }, 300);
                             }}
                         >
                             ⚡️ DEVELOPER BYPASS

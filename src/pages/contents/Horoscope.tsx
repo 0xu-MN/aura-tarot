@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { PaymentModal } from '@/components/premium/PaymentModal';
 import { Star, Moon, Sun, Share2, Download, ChevronRight, Lock, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { premiumStore } from '@/lib/premiumStore';
+
+const FEATURE_ID = 'horoscope-premium';
 
 const ZODIAC_SIGNS = [
     { name: "물병자리", date: "1.20~2.18", icon: "🏺", element: "Air", trait: "창의적, 독립적" },
@@ -34,6 +37,35 @@ export const Horoscope = () => {
     const [selectedTimeframe, setSelectedTimeframe] = useState<typeof TIMEFRAMES[0] | null>(null);
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+    // Load persisted state on mount
+    useEffect(() => {
+        const saved = premiumStore.getFeatureState(FEATURE_ID);
+        if (saved.hasPaid && premiumStore.isPaid(FEATURE_ID)) {
+            setHasPaid(true);
+        }
+
+        if (saved.readingState) {
+            const { step: savedStep, selectedSign: savedSign, selectedTimeframeId } = saved.readingState;
+            if (savedStep) setStep(savedStep);
+            if (savedSign) setSelectedSign(savedSign);
+            if (selectedTimeframeId) {
+                const tf = TIMEFRAMES.find(t => t.id === selectedTimeframeId);
+                if (tf) setSelectedTimeframe(tf);
+            }
+        }
+    }, []);
+
+    // Save state whenever it changes
+    useEffect(() => {
+        if (step !== 'select-sign') {
+            premiumStore.saveReadingState(FEATURE_ID, {
+                step,
+                selectedSign,
+                selectedTimeframeId: selectedTimeframe?.id
+            });
+        }
+    }, [step, selectedSign, selectedTimeframe]);
 
     const handleSignSelect = (sign: typeof ZODIAC_SIGNS[0]) => {
         setSelectedSign(sign);
@@ -99,7 +131,10 @@ export const Horoscope = () => {
                                 <h3 className="font-bold text-lg text-gold">{selectedSign.name}</h3>
                                 <p className="text-xs text-muted-foreground">{selectedSign.date} • {selectedSign.element}</p>
                             </div>
-                            <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setStep('select-sign')}>
+                            <Button variant="ghost" size="sm" className="ml-auto" onClick={() => {
+                                setStep('select-sign');
+                                premiumStore.clearReadingState(FEATURE_ID);
+                            }}>
                                 변경
                             </Button>
                         </div>
@@ -118,8 +153,12 @@ export const Horoscope = () => {
                                         <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">무료</span>
                                     ) : (
                                         <div className="flex items-center gap-2">
-                                            <Lock className="w-3 h-3 text-muted-foreground" />
-                                            <span className="text-xs text-muted-foreground">Premiun</span>
+                                            {hasPaid ? (
+                                                <Sparkles className="w-3 h-3 text-gold" />
+                                            ) : (
+                                                <Lock className="w-3 h-3 text-muted-foreground" />
+                                            )}
+                                            <span className="text-xs text-muted-foreground">Premium</span>
                                         </div>
                                     )}
                                 </button>
@@ -162,7 +201,7 @@ export const Horoscope = () => {
 
                 {/* Result */}
                 {step === 'result' && selectedSign && selectedTimeframe && (
-                    <div id="horoscope-result" className="w-full max-w-2xl animate-fade-in pb-20">
+                    <div id="horoscope-result-content" className="w-full max-w-2xl animate-fade-in pb-20">
                         <div className="bg-card/40 backdrop-blur-md rounded-2xl p-8 border border-gold/20 relative overflow-hidden">
                             {/* Background decoration */}
                             <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
@@ -222,7 +261,7 @@ export const Horoscope = () => {
                                     </div>
 
                                     <div className="flex gap-3 pt-6 border-t border-white/10">
-                                        <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('horoscope-result', `aura-horoscope-${selectedSign.name}`)}>
+                                        <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('horoscope-result-content', `aura-horoscope-${selectedSign.name}`)}>
                                             <Download className="w-4 h-4 mr-2" /> 저장
                                         </Button>
                                         <Button variant="outline" className="flex-1" onClick={() => shareResult(`${selectedSign.name}의 운세`, `제 별자리 운세 결과가 나왔습니다! 행운의 컬러는 ${selectedSign.element === 'Fire' ? 'Red' : 'Blue'}네요.`)}>
@@ -237,6 +276,8 @@ export const Horoscope = () => {
                             variant="ghost"
                             className="w-full mt-6"
                             onClick={() => {
+                                premiumStore.resetFeature(FEATURE_ID);
+                                setHasPaid(false);
                                 setStep('select-sign');
                                 setSelectedSign(null);
                                 setSelectedTimeframe(null);
@@ -253,6 +294,7 @@ export const Horoscope = () => {
                 onClose={() => setShowPaymentModal(false)}
                 onSuccess={handleUnlock}
                 featureName={`${selectedSign?.name} 프리미엄 운세`}
+                featureId={FEATURE_ID}
                 price={1}
             />
         </AppLayout>

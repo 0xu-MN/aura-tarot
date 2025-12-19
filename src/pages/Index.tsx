@@ -14,6 +14,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [isEntering, setIsEntering] = useState(false);
 
   // Redirect to home if already logged in
   useEffect(() => {
@@ -26,7 +27,11 @@ const Index = () => {
     if (user) {
       navigate("/home");
     } else {
-      setShowLoginModal(true);
+      setIsEntering(true);
+      // Wait for the card zoom effect to complete before showing login modal
+      setTimeout(() => {
+        setShowLoginModal(true);
+      }, 700);
     }
   };
 
@@ -41,12 +46,22 @@ const Index = () => {
     }
   };
 
+  const handleCloseLogin = () => {
+    setShowLoginModal(false);
+    setIsEntering(false);
+  };
+
+  const handleCloseRegister = () => {
+    setShowRegisterModal(false);
+    setIsEntering(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
       <main className="pt-16">
-        <HeroSection onStartReading={handleStartReading} />
+        <HeroSection onStartReading={handleStartReading} isEntering={isEntering} />
         <FeaturesSection onFeatureClick={handleFeatureClick} />
 
         {/* Footer */}
@@ -68,7 +83,7 @@ const Index = () => {
       {/* Auth Modals */}
       <LoginModal
         isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
+        onClose={handleCloseLogin}
         onSwitchToRegister={() => {
           setShowLoginModal(false);
           setShowRegisterModal(true);
@@ -76,7 +91,7 @@ const Index = () => {
       />
       <RegisterModal
         isOpen={showRegisterModal}
-        onClose={() => setShowRegisterModal(false)}
+        onClose={handleCloseRegister}
         onSwitchToLogin={() => {
           setShowRegisterModal(false);
           setShowLoginModal(true);

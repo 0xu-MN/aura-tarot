@@ -44,7 +44,7 @@ const Contents = () => {
                             description: "하루를 시작하는 특별한 메시지를 받아보세요",
                             category: "운세",
                             icon: "✨",
-                            link: "/",
+                            link: "/home",
                         },
                         {
                             title: "연애운 타로",
