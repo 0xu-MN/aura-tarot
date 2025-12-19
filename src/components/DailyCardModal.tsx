@@ -4,6 +4,8 @@ import { Button } from "./ui/button";
 import { TarotCard } from "./TarotCard";
 import { cn } from "@/lib/utils";
 import { LiquidEther } from "./ui/liquid-ether";
+import { PlasmaBackground } from "./effects/PlasmaBackground";
+import { MysticMist } from "./effects/MysticMist";
 import tarotBack from "@/assets/tarot-back.png";
 
 interface DailyCardModalProps {
@@ -98,9 +100,18 @@ export const DailyCardModal = ({ isOpen, onClose, question }: DailyCardModalProp
 
       {/* Modal */}
       <div className="relative w-full max-w-lg h-[80vh] bg-card rounded-3xl border border-gold/30 shadow-2xl animate-scale-in flex flex-col overflow-hidden">
-        {/* Liquid Ether Background - Fixed Position inside Modal */}
-        {phase === "reading" && (
+        {/* Plasma & Mystic Effects Background */}
+        {(phase === "select" || phase === "reading") && (
           <div className="absolute inset-0 z-0">
+            <PlasmaBackground intensity={phase === "reading" ? 1.5 : 0.8} />
+            <MysticMist isActive={true} />
+            <div className="absolute inset-0 bg-background/30 backdrop-blur-[2px]" />
+          </div>
+        )}
+
+        {/* Liquid Ether Background - Additional layer for reading phase */}
+        {phase === "reading" && (
+          <div className="absolute inset-0 z-[1] opacity-50">
             <LiquidEther className="h-full w-full" />
           </div>
         )}
