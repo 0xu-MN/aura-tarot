@@ -10,6 +10,10 @@ import { saveResultAsImage, shareResult } from "@/lib/shareUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tarotBack from "@/assets/tarot-back.png";
+import { PaymentModal } from "./premium/PaymentModal";
+
+const MAX_FREE_DRAWS = 3;
+const DAILY_DRAW_KEY = 'daily_card_draws';
 
 interface DailyCardModalProps {
   isOpen: boolean;
@@ -51,15 +55,44 @@ const cardMeanings = [
   },
 ];
 
+// Helper functions for daily draw tracking
+const getTodayKey = () => {
+  const today = new Date();
+  return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+};
+
+const getDailyDrawCount = (): number => {
+  try {
+    const stored = localStorage.getItem(DAILY_DRAW_KEY);
+    if (!stored) return 0;
+    const data = JSON.parse(stored);
+    if (data.date !== getTodayKey()) return 0;
+    return data.count || 0;
+  } catch {
+    return 0;
+  }
+};
+
+const incrementDailyDrawCount = () => {
+  const currentCount = getDailyDrawCount();
+  localStorage.setItem(DAILY_DRAW_KEY, JSON.stringify({
+    date: getTodayKey(),
+    count: currentCount + 1
+  }));
+};
+
 export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: DailyCardModalProps) => {
   const [phase, setPhase] = useState<"shuffle" | "select" | "reading">("shuffle");
   const [selectedCard, setSelectedCard] = useState<typeof cardMeanings[0] | null>(null);
   const [isReversed, setIsReversed] = useState(false);
   const [showCard, setShowCard] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [drawCount, setDrawCount] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
+      setDrawCount(getDailyDrawCount());
       setPhase("shuffle");
       setSelectedCard(null);
       setShowCard(false);
@@ -93,10 +126,21 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
   };
 
   const handleCardSelect = async () => {
+    // Check if user has exceeded free draws
+    const currentDraws = getDailyDrawCount();
+    if (currentDraws >= MAX_FREE_DRAWS) {
+      setShowPaymentModal(true);
+      return;
+    }
+
     const randomCard = cardMeanings[Math.floor(Math.random() * cardMeanings.length)];
     const reversed = Math.random() > 0.7;
     setSelectedCard(randomCard);
     setIsReversed(reversed);
+
+    // Increment draw count
+    incrementDailyDrawCount();
+    setDrawCount(currentDraws + 1);
 
     // Record reading to Supabase
     await recordReading(randomCard, reversed);
@@ -131,6 +175,19 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
   };
 
   const handleDrawAgain = () => {
+    // Check if user has exceeded free draws
+    const currentDraws = getDailyDrawCount();
+    if (currentDraws >= MAX_FREE_DRAWS) {
+      setShowPaymentModal(true);
+      return;
+    }
+    onDrawAgain?.();
+  };
+
+  const handlePaymentSuccess = () => {
+    // After payment, allow unlimited draws for today
+    setShowPaymentModal(false);
+    // Continue with card selection
     onDrawAgain?.();
   };
 
@@ -340,6 +397,16 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
           50% { box-shadow: 0 0 40px hsl(43 74% 49% / 0.6), 0 0 60px hsl(280 70% 50% / 0.4); }
         }
       `}</style>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={handlePaymentSuccess}
+        featureName="오늘의 타로 - 추가 뽑기"
+        featureId="daily-tarot-extra"
+        price={1}
+      />
     </div>
   );
 };
