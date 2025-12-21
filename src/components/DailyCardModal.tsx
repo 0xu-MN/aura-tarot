@@ -6,11 +6,15 @@ import { cn } from "@/lib/utils";
 import { LiquidEther } from "./ui/liquid-ether";
 import { PlasmaBackground } from "./effects/PlasmaBackground";
 import { MysticMist } from "./effects/MysticMist";
+import { saveResultAsImage, shareResult } from "@/lib/shareUtils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import tarotBack from "@/assets/tarot-back.png";
 
 interface DailyCardModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onDrawAgain?: () => void;
   question?: string;
 }
 
@@ -47,11 +51,12 @@ const cardMeanings = [
   },
 ];
 
-export const DailyCardModal = ({ isOpen, onClose, question }: DailyCardModalProps) => {
+export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: DailyCardModalProps) => {
   const [phase, setPhase] = useState<"shuffle" | "select" | "reading">("shuffle");
   const [selectedCard, setSelectedCard] = useState<typeof cardMeanings[0] | null>(null);
   const [isReversed, setIsReversed] = useState(false);
   const [showCard, setShowCard] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -67,25 +72,66 @@ export const DailyCardModal = ({ isOpen, onClose, question }: DailyCardModalProp
     }
   }, [isOpen]);
 
-  const handleCardSelect = () => {
+  const recordReading = async (card: typeof cardMeanings[0], reversed: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase.from('daily_readings').insert({
+        user_id: user.id,
+        question: question || '오늘의 운세',
+        card_name: card.name,
+        interpretation: card.meaning,
+        advice: card.advice,
+        is_reversed: reversed
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error recording reading:', error);
+    }
+  };
+
+  const handleCardSelect = async () => {
     const randomCard = cardMeanings[Math.floor(Math.random() * cardMeanings.length)];
     const reversed = Math.random() > 0.7;
     setSelectedCard(randomCard);
     setIsReversed(reversed);
+
+    // Record reading to Supabase
+    await recordReading(randomCard, reversed);
 
     // Immediate transition to reading
     setPhase("reading");
     setTimeout(() => setShowCard(true), 100);
   };
 
-  const handleDrawAgain = () => {
-    setPhase("shuffle");
-    setSelectedCard(null);
-    setShowCard(false);
+  const handleSave = async () => {
+    setIsSaving(true);
+    const success = await saveResultAsImage('daily-reading-result', `AuraTarot_${new Date().getTime()}`);
+    if (success) {
+      toast.success('이미지가 저장되었습니다');
+    } else {
+      toast.error('이미지 저장에 실패했습니다');
+    }
+    setIsSaving(false);
+  };
 
-    setTimeout(() => {
-      setPhase("select");
-    }, 2000);
+  const handleShare = async () => {
+    if (!selectedCard) return;
+    const success = await shareResult(
+      'Aura Tarot - 오늘의 운세',
+      `오늘 나의 카드는 "${selectedCard.korean}"입니다. 당신의 운세도 확인해보세요!`
+    );
+    if (!success) {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(window.location.href);
+      toast.info('링크가 클립보드에 복사되었습니다');
+    }
+  };
+
+  const handleDrawAgain = () => {
+    onDrawAgain?.();
   };
 
   if (!isOpen) return null;
@@ -125,127 +171,137 @@ export const DailyCardModal = ({ isOpen, onClose, question }: DailyCardModalProp
         </button>
 
         {/* Scrollable Content Container */}
-        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden relative z-10 p-6 md:p-8">
-
-          {/* Question Display (Always visible if exists) */}
-          {question && phase !== "shuffle" && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-gold/10 to-mystic-purple/10 rounded-xl backdrop-blur-sm border border-gold/20">
-              <p className="text-sm text-muted-foreground mb-1">당신의 질문:</p>
-              <p className="text-foreground italic">"{question}"</p>
-            </div>
-          )}
-
-          {/* Shuffle Phase */}
-          {phase === "shuffle" && (
-            <div className="h-full flex flex-col items-center justify-center pb-20">
-              <div className="flex justify-center gap-2 mb-8">
-                {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-16 h-24 rounded-lg bg-card border border-gold/30"
-                    style={{
-                      animation: `shuffle ${0.5}s ease-in-out infinite`,
-                      animationDelay: `${i * 0.1}s`,
-                      transform: `rotate(${(i - 1) * 5}deg)`,
-                    }}
-                  >
-                    <img src={tarotBack} alt="" className="w-full h-full object-cover rounded-lg" />
-                  </div>
-                ))}
+        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden relative z-10">
+          <div id="daily-reading-result" className="p-6 md:p-8 min-h-full flex flex-col">
+            {/* Question Display (Always visible if exists) */}
+            {question && phase !== "shuffle" && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-gold/10 to-mystic-purple/10 rounded-xl backdrop-blur-sm border border-gold/20">
+                <p className="text-sm text-muted-foreground mb-1">당신의 질문:</p>
+                <p className="text-foreground italic">"{question}"</p>
               </div>
-              <p className="text-lg text-foreground animate-pulse">카드를 섞고 있습니다...</p>
-              <p className="text-sm text-muted-foreground mt-2">마음을 집중하고 질문을 떠올려 보세요</p>
-            </div>
-          )}
+            )}
 
-          {/* Select Phase */}
-          {phase === "select" && (
-            <div className="h-full flex flex-col items-center justify-center pb-20 animate-fade-in">
-              <h3 className="font-display text-2xl text-gold-gradient mb-4">카드를 선택하세요</h3>
-              <p className="text-muted-foreground mb-8">마음이 이끄는 카드를 터치하세요</p>
+            {/* Shuffle Phase */}
+            {phase === "shuffle" && (
+              <div className="flex-1 flex flex-col items-center justify-center py-20">
+                <div className="flex justify-center gap-2 mb-8">
+                  {[...Array(3)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-16 h-24 rounded-lg bg-card border border-gold/30"
+                      style={{
+                        animation: `shuffle ${0.5}s ease-in-out infinite`,
+                        animationDelay: `${i * 0.1}s`,
+                        transform: `rotate(${(i - 1) * 5}deg)`,
+                      }}
+                    >
+                      <img src={tarotBack} alt="" className="w-full h-full object-cover rounded-lg" />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-lg text-foreground animate-pulse">카드를 섞고 있습니다...</p>
+                <p className="text-sm text-muted-foreground mt-2">마음을 집중하고 질문을 떠올려 보세요</p>
+              </div>
+            )}
 
-              <div className="flex justify-center gap-4">
-                {[...Array(3)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={handleCardSelect}
-                    className={cn(
-                      "w-24 h-40 rounded-xl border-2 border-gold/30 overflow-hidden transition-all duration-300",
-                      "hover:border-gold hover:scale-105 hover:shadow-[0_0_30px_hsl(43_74%_49%_/_0.3)]",
-                      "animate-fade-in card-glow cursor-pointer"
+            {/* Select Phase */}
+            {phase === "select" && (
+              <div className="flex-1 flex flex-col items-center justify-center py-20 animate-fade-in">
+                <h3 className="font-display text-2xl text-gold-gradient mb-4">카드를 선택하세요</h3>
+                <p className="text-muted-foreground mb-8">마음이 이끄는 카드를 터치하세요</p>
+
+                <div className="flex justify-center gap-4">
+                  {[...Array(3)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={handleCardSelect}
+                      className={cn(
+                        "w-24 h-40 rounded-xl border-2 border-gold/30 overflow-hidden transition-all duration-300",
+                        "hover:border-gold hover:scale-105 hover:shadow-[0_0_30px_hsl(43_74%_49%_/_0.3)]",
+                        "animate-fade-in card-glow cursor-pointer"
+                      )}
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    >
+                      <img src={tarotBack} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Reading Phase */}
+            {phase === "reading" && selectedCard && (
+              <div className={cn("text-center pb-8", showCard && "animate-fade-in")}>
+                <div className="mb-6 relative inline-block">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="halo-effect" />
+                  </div>
+                  <TarotCard
+                    size="lg"
+                    isReversed={isReversed}
+                    className="relative z-10"
+                    isFlipped={showCard}
+                    interactive={false}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <h3 className="font-display text-2xl text-gold">{selectedCard.korean}</h3>
+                    {isReversed && (
+                      <span className="px-2 py-0.5 text-xs bg-mystic-purple/30 text-mystic-purple rounded-full">
+                        역방향
+                      </span>
                     )}
-                    style={{ animationDelay: `${i * 0.1}s` }}
-                  >
-                    <img src={tarotBack} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{selectedCard.name}</p>
 
-          {/* Reading Phase */}
-          {phase === "reading" && selectedCard && (
-            <div className={cn("text-center pb-8", showCard && "animate-fade-in")}>
-              <div className="mb-6 relative inline-block">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="halo-effect" />
-                </div>
-                <TarotCard
-                  size="lg"
-                  isReversed={isReversed}
-                  className="relative z-10"
-                  isFlipped={showCard}
-                  interactive={false}
-                />
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-center gap-2">
-                  <h3 className="font-display text-2xl text-gold">{selectedCard.korean}</h3>
-                  {isReversed && (
-                    <span className="px-2 py-0.5 text-xs bg-mystic-purple/30 text-mystic-purple rounded-full">
-                      역방향
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">{selectedCard.name}</p>
-
-                <div className="bg-background/40 backdrop-blur-md rounded-xl p-5 mt-6 text-left border border-gold/10 shadow-sm">
-                  <h4 className="text-sm font-medium text-gold mb-3 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" /> 카드 해석
-                  </h4>
-                  <p className="text-foreground leading-relaxed whitespace-pre-line text-sm opacity-90">
-                    {selectedCard.meaning}
-                  </p>
-                </div>
-
-                <div className="bg-gradient-to-r from-gold/10 to-mystic-purple/10 backdrop-blur-md rounded-xl p-5 text-left border border-gold/20 shadow-sm">
-                  <h4 className="text-sm font-medium text-gold mb-3">✨ 오늘의 조언</h4>
-                  <p className="text-foreground leading-relaxed whitespace-pre-line text-sm opacity-90">
-                    {selectedCard.advice}
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-3 mt-8">
-                  <div className="flex gap-3">
-                    <Button variant="outline" className="flex-1 bg-background/50 backdrop-blur-sm border-gold/20 hover:bg-gold/10">
-                      <Download className="w-4 h-4 mr-2" />
-                      이미지 저장
-                    </Button>
-                    <Button variant="outline" className="flex-1 bg-background/50 backdrop-blur-sm border-gold/20 hover:bg-gold/10">
-                      <Share2 className="w-4 h-4 mr-2" />
-                      공유하기
-                    </Button>
+                  <div className="bg-background/40 backdrop-blur-md rounded-xl p-5 mt-6 text-left border border-gold/10 shadow-sm">
+                    <h4 className="text-sm font-medium text-gold mb-3 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" /> 카드 해석
+                    </h4>
+                    <p className="text-foreground leading-relaxed whitespace-pre-line text-sm opacity-90">
+                      {selectedCard.meaning}
+                    </p>
                   </div>
 
-                  <Button variant="gold" className="w-full shadow-lg shadow-gold/20" onClick={handleDrawAgain}>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    한 장 더 뽑기
-                  </Button>
+                  <div className="bg-gradient-to-r from-gold/10 to-mystic-purple/10 backdrop-blur-md rounded-xl p-5 text-left border border-gold/20 shadow-sm">
+                    <h4 className="text-sm font-medium text-gold mb-3">✨ 오늘의 조언</h4>
+                    <p className="text-foreground leading-relaxed whitespace-pre-line text-sm opacity-90">
+                      {selectedCard.advice}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-3 mt-8 no-capture">
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="flex-1 bg-background/50 backdrop-blur-sm border-gold/20 hover:bg-gold/10"
+                        onClick={handleSave}
+                        disabled={isSaving}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        이미지 저장
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1 bg-background/50 backdrop-blur-sm border-gold/20 hover:bg-gold/10"
+                        onClick={handleShare}
+                      >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        공유하기
+                      </Button>
+                    </div>
+
+                    <Button variant="gold" className="w-full shadow-lg shadow-gold/20" onClick={handleDrawAgain}>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      한 장 더 뽑기
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

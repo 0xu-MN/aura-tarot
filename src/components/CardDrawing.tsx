@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { RegisterModal } from '@/components/auth/RegisterModal';
 import { DailyCardModal } from '@/components/DailyCardModal';
+import { PaymentModal } from '@/components/premium/PaymentModal';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -25,21 +26,15 @@ export const CardDrawing = () => {
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [showCardModal, setShowCardModal] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [drawCount, setDrawCount] = useState(0); // Used to force modal reset
     const [suggestedQuestions, setSuggestedQuestions] = useState(() => {
         // Get 3 random suggestions
         const shuffled = [...AI_SUGGESTED_QUESTIONS].sort(() => Math.random() - 0.5);
         return shuffled.slice(0, 3);
     });
 
-    const handleDrawCard = () => {
-        // Allow card drawing without authentication for testing
-        if (userProfile && userProfile.daily_draws_remaining <= 0) {
-            toast.error('오늘의 무료 카드를 모두 사용했습니다', {
-                description: '내일 다시 시도해주세요!',
-            });
-            return;
-        }
-
+    const handleDrawCard = async () => {
         if (!question.trim()) {
             toast.error('질문을 입력해주세요', {
                 description: '카드에게 물어볼 질문을 작성해주세요.',
@@ -47,7 +42,31 @@ export const CardDrawing = () => {
             return;
         }
 
+        // Refresh profile to get the absolute latest count from DB
+        if (user) {
+            await refreshProfile();
+        }
+
+        // If user is logged in and has exhausted free draws
+        if (user && userProfile && userProfile.daily_draws_remaining <= 0) {
+            // Check if this specific draw was already paid for? 
+            // For now, simple trigger: if remaining is 0, show payment.
+            setShowPaymentModal(true);
+            return;
+        }
+
+        // Increment drawCount to force DailyCardModal state reset
+        setDrawCount(prev => prev + 1);
         setShowCardModal(true);
+    };
+
+    const handlePaymentSuccess = () => {
+        setShowPaymentModal(false);
+        // Add a tiny delay to ensure state transitions smoothly
+        setTimeout(() => {
+            setDrawCount(prev => prev + 1);
+            setShowCardModal(true);
+        }, 100);
     };
 
     const handleCardModalClose = async () => {
@@ -160,13 +179,23 @@ export const CardDrawing = () => {
                 onClose={() => setShowRegisterModal(false)}
                 onSwitchToLogin={() => {
                     setShowRegisterModal(false);
-                    setShowLoginModal(true);
+                    setShowRegisterModal(true);
                 }}
             />
             <DailyCardModal
+                key={drawCount}
                 isOpen={showCardModal}
                 onClose={handleCardModalClose}
+                onDrawAgain={handleDrawCard}
                 question={question}
+            />
+            <PaymentModal
+                isOpen={showPaymentModal}
+                onClose={() => setShowPaymentModal(false)}
+                onSuccess={handlePaymentSuccess}
+                featureName="오늘의 한 장 추가 뽑기"
+                featureId="daily-extra-draw"
+                price={1}
             />
         </>
     );
