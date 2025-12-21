@@ -3,9 +3,8 @@ import { X, Share2, Download, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { TarotCard } from "./TarotCard";
 import { cn } from "@/lib/utils";
-import { LiquidEther } from "./ui/liquid-ether";
-import { PlasmaBackground } from "./effects/PlasmaBackground";
-import { MysticMist } from "./effects/MysticMist";
+import { Plasma } from "./effects/Plasma";
+import { DryIceMist } from "./effects/DryIceMist";
 import { saveResultAsImage, shareResult } from "@/lib/shareUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -203,19 +202,17 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
 
       {/* Modal */}
       <div className="relative w-full max-w-lg h-[80vh] bg-card rounded-3xl border border-gold/30 shadow-2xl animate-scale-in flex flex-col overflow-hidden">
-        {/* Plasma & Mystic Effects Background */}
+        {/* New Plasma & Dry Ice Effects Background */}
         {(phase === "select" || phase === "reading") && (
-          <div className="absolute inset-0 z-0">
-            <PlasmaBackground intensity={phase === "reading" ? 1.5 : 0.8} />
-            <MysticMist isActive={true} />
-            <div className="absolute inset-0 bg-background/30 backdrop-blur-[2px]" />
-          </div>
-        )}
-
-        {/* Liquid Ether Background - Additional layer for reading phase */}
-        {phase === "reading" && (
-          <div className="absolute inset-0 z-[1] opacity-50">
-            <LiquidEther className="h-full w-full" />
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            <Plasma
+              color="#d4af37"
+              speed={phase === "reading" ? 0.8 : 0.4}
+              opacity={0.6}
+              scale={1.2}
+            />
+            <DryIceMist isActive={true} />
+            <div className="absolute inset-0 bg-background/20 backdrop-blur-[1px]" />
           </div>
         )}
 
