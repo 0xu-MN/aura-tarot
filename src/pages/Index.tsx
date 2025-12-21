@@ -35,15 +35,8 @@ const Index = () => {
     }
   };
 
-  const handleFeatureClick = (feature: string) => {
-    if (feature === "daily") {
-      handleStartReading();
-    } else {
-      toast("준비 중입니다", {
-        description: "이 기능은 곧 출시될 예정입니다.",
-        duration: 3000,
-      });
-    }
+  const handleFeatureClick = () => {
+    handleStartReading();
   };
 
   const handleCloseLogin = () => {
@@ -60,7 +53,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="pt-16">
+      <main>
         <HeroSection onStartReading={handleStartReading} isEntering={isEntering} />
         <FeaturesSection onFeatureClick={handleFeatureClick} />
 

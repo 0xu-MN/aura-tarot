@@ -44,7 +44,7 @@ const features = [
   {
     id: "yearly",
     icon: Calendar,
-    title: "2025 신년운세",
+    title: "2026 신년운세",
     description: "새해 12개월의 운세를 상세히 풀이",
     badge: "NEW",
   },

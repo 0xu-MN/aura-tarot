@@ -91,7 +91,7 @@ const Settings = () => {
                         관심 분야
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                        {userProfile?.interests?.map((interest: string) => (
+                        {userProfile?.interests?.map((interest) => (
                             <span
                                 key={interest}
                                 className="px-3 py-1.5 rounded-full bg-gold/20 text-gold text-sm"
@@ -99,16 +99,15 @@ const Settings = () => {
                                 {interest === 'love' && '연애운'}
                                 {interest === 'compatibility' && '궁합'}
                                 {interest === 'reunion' && '재회확률'}
-                                {interest === 'newyear' && '신년운세'}
+                                {interest === 'yearly' && '연간운세'}
                                 {interest === 'zodiac' && '별자리 운세'}
                                 {interest === 'career' && '직업운'}
-                                {interest === 'wealth' && '재물운'}
+                                {interest === 'money' && '재물운'}
                                 {interest === 'health' && '건강운'}
-                                {interest === 'study' && '학업운'}
-                                {interest === 'family' && '가족운'}
                             </span>
                         ))}
                     </div>
+
                     <Button variant="outline" size="sm" className="mt-4">
                         관심분야 수정
                     </Button>

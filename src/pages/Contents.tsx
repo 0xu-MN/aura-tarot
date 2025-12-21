@@ -68,7 +68,7 @@ const Contents = () => {
                             link: "/contents/compatibility"
                         },
                         {
-                            title: "2025 신년운세",
+                            title: "2026 신년운세",
                             description: "새해 12개월의 운세를 상세히 풀이해드립니다",
                             category: "신년",
                             icon: "📅",

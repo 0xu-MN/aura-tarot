@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import supabase from '@/utils/supabase';
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -24,21 +25,56 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
         e.preventDefault();
         setLoading(true);
 
-        const { error } = await signIn(username, password);
+        // const { error } = await signIn(username, password);
 
-        if (error) {
-            toast.error('로그인 실패', {
-                description: error,
+        // if (error) {
+        //     toast.error('로그인 실패', {
+        //         description: error,
+        //     });
+        // } else {
+        //     toast.success('로그인 성공!');
+        //     onClose();
+        //     setUsername('');
+        //     setPassword('');
+        // }
+
+        try {
+            const {
+                data: { user, session },
+                error: signInError,
+            } = await supabase.auth.signInWithPassword({
+                email: username,
+                password: password,
             });
-        } else {
-            toast.success('로그인 성공!');
-            onClose();
-            setUsername('');
-            setPassword('');
-        }
 
-        setLoading(false);
-    };
+            if (signInError) {
+                toast.error(signInError.message === "Invalid login credentials" ? "입력하신 정보가 일치하지 않습니다." : "로그인 중 오류가 발생하였습니다.");
+                return;
+            }
+
+            console.log("user: ", user);
+            console.log("session: ", session);
+
+            // user와 session 두 값 모두 null이 아닐 경우에만 로그인이 완료되었음을 의미
+            if (user && session) {
+                // 로그인 성공 시,
+                // setUser({
+                //     id: user.id,
+                //     email: user.email,
+                //     role: user.role,
+                //     nickname: user.user_metadata.display_name,
+                // });
+                toast.success("로그인을 완료하였습니다.");
+                navigate("/"); // => 메인 페이지로 리디렉션
+            }
+
+
+            setLoading(false);
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
 
     // Developer mode bypass
     const handleDevMode = () => {
@@ -50,6 +86,7 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
     };
 
     if (!isOpen) return null;
+
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">

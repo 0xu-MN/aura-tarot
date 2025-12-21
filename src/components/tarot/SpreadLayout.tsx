@@ -148,13 +148,6 @@ export const SpreadLayout = ({
                     50% { transform: translate(-50%, -50%) rotate(var(--rotation)) translateX(-20px) rotateY(10deg); }
                     100% { transform: translate(-50%, -50%) rotate(var(--rotation)) translateX(20px) rotateY(-10deg); }
                 }
-                .hide-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-                .hide-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
             `}</style>
         </div>
     );

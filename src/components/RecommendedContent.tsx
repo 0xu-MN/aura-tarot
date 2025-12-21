@@ -40,7 +40,7 @@ export const RecommendedContent = () => {
             return;
         }
 
-        if (title === "2025 신년운세") {
+        if (title === "2026 신년운세") {
             navigate('/contents/yearly');
             return;
         }
@@ -102,7 +102,7 @@ export const RecommendedContent = () => {
         {
             id: "yearly",
             icon: Calendar,
-            title: "2025 신년운세",
+            title: "2026 신년운세",
             description: "새해 12개월의 운세를 상세히 풀이",
             badge: "NEW",
             category: "fortune",
@@ -188,7 +188,7 @@ export const RecommendedContent = () => {
         {
             id: "yearly",
             icon: Calendar,
-            title: "2025 신년운세",
+            title: "2026 신년운세",
             description: "새해 12개월의 운세를 상세히 풀이",
             badge: "NEW",
             category: "fortune",

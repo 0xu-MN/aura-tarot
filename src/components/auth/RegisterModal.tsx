@@ -110,7 +110,7 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
             password,
             name,
             nickname,
-            interests: selectedInterests,
+            interests: selectedInterests as any,
         });
 
         if (error) {
