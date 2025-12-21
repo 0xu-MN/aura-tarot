@@ -1,1 +1,4 @@
 project_id = "dxnrmcidaqsjuoglwcrr"
+
+[functions.tarot-chat]
+verify_jwt = false
