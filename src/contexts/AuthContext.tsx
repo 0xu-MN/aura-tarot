@@ -192,7 +192,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const signIn = async (username: string, password: string) => {
         try {
-            const email = `${username}@aura-tarot.app`;
+            const email = `${username}`;
 
             const { error } = await supabase.auth.signInWithPassword({
                 email,
@@ -222,7 +222,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         interests: Interest[];
     }) => {
         try {
-            const email = `${data.username}@aura-tarot.app`;
+            const email = `${data.username}`;
 
             // 아이디 중복 체크
             const { data: exists } = await supabase
