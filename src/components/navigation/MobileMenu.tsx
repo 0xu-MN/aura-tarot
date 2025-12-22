@@ -90,7 +90,8 @@ export const MobileMenu = ({
                     {/* Header */}
                     <div className="p-6 border-b border-gold/10">
                         <div className="flex items-center justify-between">
-                            <h2 className="font-display text-xl text-gold">오늘의 한장</h2>
+                            <h2 className="font-display text-xl text-gold">​오늘의 운세를 확인하세요     
+            </h2>
                             <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors">
                                 <X className="w-4 h-4" />
                             </button>
