@@ -71,9 +71,12 @@ const Settings = () => {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-background/50 rounded-xl p-4 text-center">
                             <p className="text-2xl font-display text-gold mb-1">
-                                {userProfile?.daily_draws_remaining || 0}/3
+                                {userProfile?.daily_draws_remaining !== undefined
+                                    ? `${3 - userProfile.daily_draws_remaining}/3`
+                                    : '0/3'
+                                }
                             </p>
-                            <p className="text-sm text-muted-foreground">오늘 남은 카드</p>
+                            <p className="text-sm text-muted-foreground">오늘 사용한 카드</p>
                         </div>
                         <div className="bg-background/50 rounded-xl p-4 text-center">
                             <p className="text-2xl font-display text-gold mb-1">

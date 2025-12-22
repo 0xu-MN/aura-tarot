@@ -29,7 +29,6 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
-    const [autoLogin, setAutoLogin] = useState(false);
 
     // Load remembered email on mount
     useEffect(() => {
@@ -38,26 +37,11 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
             setUsername(rememberedEmail);
             setRememberMe(true);
         }
-        const autoLoginPref = getAutoLoginPreference();
-        setAutoLogin(autoLoginPref);
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-
-        // const { error } = await signIn(username, password);
-
-        // if (error) {
-        //     toast.error('로그인 실패', {
-        //         description: error,
-        //     });
-        // } else {
-        //     toast.success('로그인 성공!');
-        //     onClose();
-        //     setUsername('');
-        //     setPassword('');
-        // }
 
         try {
             const {
@@ -70,11 +54,9 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
 
             if (signInError) {
                 toast.error(signInError.message === "Invalid login credentials" ? "입력하신 정보가 일치하지 않습니다." : "로그인 중 오류가 발생하였습니다.");
+                setLoading(false);
                 return;
             }
-
-            console.log("user: ", user);
-            console.log("session: ", session);
 
             // user와 session 두 값 모두 null이 아닐 경우에만 로그인이 완료되었음을 의미
             if (user && session) {
@@ -84,7 +66,6 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
                 } else {
                     clearRememberedEmail();
                 }
-                saveAutoLoginPreference(autoLogin);
 
                 toast.success("로그인을 완료하였습니다.");
                 onClose();
@@ -93,7 +74,8 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
 
             setLoading(false);
         } catch (error) {
-            console.log(error);
+            console.error('Login error:', error);
+            toast.error("로그인 중 오류가 발생하였습니다.");
             setLoading(false);
         }
     }
@@ -163,34 +145,19 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
                             />
                         </div>
 
-                        {/* Remember Me & Auto Login */}
-                        <div className="space-y-3">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="remember-me"
-                                    checked={rememberMe}
-                                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                                />
-                                <Label
-                                    htmlFor="remember-me"
-                                    className="text-sm font-normal cursor-pointer"
-                                >
-                                    아이디 기억하기
-                                </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="auto-login"
-                                    checked={autoLogin}
-                                    onCheckedChange={(checked) => setAutoLogin(checked as boolean)}
-                                />
-                                <Label
-                                    htmlFor="auto-login"
-                                    className="text-sm font-normal cursor-pointer"
-                                >
-                                    자동 로그인
-                                </Label>
-                            </div>
+                        {/* Remember Me */}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="remember-me"
+                                checked={rememberMe}
+                                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                            />
+                            <Label
+                                htmlFor="remember-me"
+                                className="text-sm font-normal cursor-pointer"
+                            >
+                                이메일 기억하기
+                            </Label>
                         </div>
 
                         <Button

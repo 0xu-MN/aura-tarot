@@ -80,15 +80,41 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
             {/* Menu Drawer */}
             <div
                 className={cn(
-                    'fixed top-0 right-0 h-full w-80 bg-card border-l border-gold/20 shadow-2xl z-50',
+                    'fixed top-0 right-0 h-full w-96 max-w-[85vw] bg-card border-l border-gold/20 shadow-2xl z-50',
                     'transform transition-transform duration-300 ease-in-out',
                     isOpen ? 'translate-x-0' : 'translate-x-full'
                 )}
             >
                 <div className="flex flex-col h-full">
+                    {/* User Greeting Header */}
+                    {user && (
+                        <div className="p-6 border-b border-gold/10">
+                            <button
+                                onClick={() => handleNavigation('/settings')}
+                                className="w-full text-left hover:opacity-80 transition-opacity"
+                            >
+                                <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-gold/10 to-mystic-purple/10 border border-gold/20">
+                                    <Avatar className="w-14 h-14">
+                                        <AvatarFallback className="bg-gold/20 text-gold font-display text-xl">
+                                            {user.nickname?.charAt(0) || 'U'}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-display text-lg font-medium truncate">
+                                            {user.nickname}님
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            프로필 보기 &gt;
+                                        </p>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    )}
+
                     {/* Header */}
                     <div className="p-6 border-b border-gold/10">
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between">
                             <h2 className="font-display text-xl text-gold">메뉴</h2>
                             <button
                                 onClick={onClose}
@@ -97,21 +123,6 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
-
-                        {/* User Profile Section */}
-                        {user && (
-                            <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-gold/10 to-mystic-purple/10 border border-gold/20">
-                                <Avatar className="w-12 h-12">
-                                    <AvatarFallback className="bg-gold/20 text-gold font-display text-lg">
-                                        {user.nickname?.charAt(0) || 'U'}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">{user.nickname}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{user.name}</p>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
                     {/* Navigation Items */}
