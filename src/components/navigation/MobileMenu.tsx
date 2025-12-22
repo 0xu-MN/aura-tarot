@@ -127,23 +127,32 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
 
                     {/* Navigation Items */}
                     <nav className="flex-1 overflow-y-auto p-4">
-                        <div className="space-y-1">
-                            {menuItems.map((item) => (
-                                <button
-                                    key={item.path}
-                                    onClick={() => handleNavigation(item.path)}
-                                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gold/10 transition-colors group"
-                                >
-                                    <div className="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center group-hover:bg-gold/20 transition-colors">
-                                        <item.icon className="w-5 h-5 text-gold" />
-                                    </div>
-                                    <div className="flex-1 text-left">
-                                        <p className="font-medium">{item.label}</p>
-                                        <p className="text-xs text-muted-foreground">{item.description}</p>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
+                        {user ? (
+                            <div className="space-y-1">
+                                {menuItems.map((item) => (
+                                    <button
+                                        key={item.path}
+                                        onClick={() => handleNavigation(item.path)}
+                                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gold/10 transition-colors group"
+                                    >
+                                        <div className="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center group-hover:bg-gold/20 transition-colors">
+                                            <item.icon className="w-5 h-5 text-gold" />
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <p className="font-medium">{item.label}</p>
+                                            <p className="text-xs text-muted-foreground">{item.description}</p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-full">
+                                <p className="text-muted-foreground text-center">
+                                    로그인하여 더 많은<br />
+                                    기능을 이용하세요
+                                </p>
+                            </div>
+                        )}
                     </nav>
 
                     {/* Footer */}

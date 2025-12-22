@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Share2, Download, Sparkles } from "lucide-react";
+import { X, Share2, Download, Sparkles, RotateCcw, Home } from "lucide-react";
 import { Button } from "./ui/button";
 import { TarotCard } from "./TarotCard";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tarotBack from "@/assets/tarot-back.png";
 import { PaymentModal } from "./premium/PaymentModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MAX_FREE_DRAWS = 3;
 const DAILY_DRAW_KEY = 'daily_card_draws';
@@ -81,6 +82,7 @@ const incrementDailyDrawCount = () => {
 };
 
 export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: DailyCardModalProps) => {
+  const { refreshProfile } = useAuth();
   const [phase, setPhase] = useState<"shuffle" | "select" | "reading">("shuffle");
   const [selectedCard, setSelectedCard] = useState<typeof cardMeanings[0] | null>(null);
   const [isReversed, setIsReversed] = useState(false);
@@ -88,6 +90,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
   const [isSaving, setIsSaving] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [drawCount, setDrawCount] = useState(0);
+  const [showDrawAgainModal, setShowDrawAgainModal] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -109,7 +112,8 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase.from('daily_readings').insert({
+      // Record the reading
+      const { error: readingError } = await supabase.from('daily_readings').insert({
         user_id: user.id,
         question: question || '오늘의 운세',
         card_name: card.name,
@@ -118,7 +122,27 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
         is_reversed: reversed
       });
 
-      if (error) throw error;
+      if (readingError) throw readingError;
+
+      // Decrement daily_draws_remaining in profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('daily_draws_remaining')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        const newRemaining = Math.max(0, (profile.daily_draws_remaining || 3) - 1);
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ daily_draws_remaining: newRemaining })
+          .eq('id', user.id);
+
+        if (updateError) throw updateError;
+
+        // Refresh user profile in context
+        await refreshProfile();
+      }
     } catch (error) {
       console.error('Error recording reading:', error);
     }
