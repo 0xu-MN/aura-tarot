@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { Sparkles, Menu } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { MobileMenu } from "./navigation/MobileMenu";
 
 export const Header = () => {
   const { user } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-gold/10">
@@ -18,10 +21,17 @@ export const Header = () => {
           </span>
         </Link>
 
-        <Button variant="ghost" size="icon" className="text-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-foreground"
+          onClick={() => setMenuOpen(true)}
+        >
           <Menu className="w-5 h-5" />
         </Button>
       </div>
+
+      <MobileMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
     </header>
   );
 };

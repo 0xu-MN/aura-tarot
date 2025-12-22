@@ -1,12 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import supabase from '@/utils/supabase';
+import {
+    saveRememberedEmail,
+    getRememberedEmail,
+    clearRememberedEmail,
+    saveAutoLoginPreference,
+    getAutoLoginPreference
+} from '@/lib/authStorage';
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -20,6 +28,19 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
+    const [autoLogin, setAutoLogin] = useState(false);
+
+    // Load remembered email on mount
+    useEffect(() => {
+        const rememberedEmail = getRememberedEmail();
+        if (rememberedEmail) {
+            setUsername(rememberedEmail);
+            setRememberMe(true);
+        }
+        const autoLoginPref = getAutoLoginPreference();
+        setAutoLogin(autoLoginPref);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,22 +78,23 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
 
             // user와 session 두 값 모두 null이 아닐 경우에만 로그인이 완료되었음을 의미
             if (user && session) {
-                // 로그인 성공 시,
-                // setUser({
-                //     id: user.id,
-                //     email: user.email,
-                //     role: user.role,
-                //     nickname: user.user_metadata.display_name,
-                // });
-                toast.success("로그인을 완료하였습니다.");
-                navigate("/"); // => 메인 페이지로 리디렉션
-            }
+                // Save preferences
+                if (rememberMe) {
+                    saveRememberedEmail(username);
+                } else {
+                    clearRememberedEmail();
+                }
+                saveAutoLoginPreference(autoLogin);
 
+                toast.success("로그인을 완료하였습니다.");
+                onClose();
+                navigate("/home");
+            }
 
             setLoading(false);
         } catch (error) {
             console.log(error);
-            throw error;
+            setLoading(false);
         }
     }
 
@@ -116,13 +138,13 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="username">아이디</Label>
+                            <Label htmlFor="username">이메일</Label>
                             <Input
                                 id="username"
-                                type="text"
+                                type="email"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                placeholder="아이디를 입력하세요"
+                                placeholder="이메일을 입력하세요 (예: user@example.com)"
                                 required
                                 className="bg-background/50"
                             />
@@ -139,6 +161,36 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
                                 required
                                 className="bg-background/50"
                             />
+                        </div>
+
+                        {/* Remember Me & Auto Login */}
+                        <div className="space-y-3">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="remember-me"
+                                    checked={rememberMe}
+                                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                                />
+                                <Label
+                                    htmlFor="remember-me"
+                                    className="text-sm font-normal cursor-pointer"
+                                >
+                                    아이디 기억하기
+                                </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="auto-login"
+                                    checked={autoLogin}
+                                    onCheckedChange={(checked) => setAutoLogin(checked as boolean)}
+                                />
+                                <Label
+                                    htmlFor="auto-login"
+                                    className="text-sm font-normal cursor-pointer"
+                                >
+                                    자동 로그인
+                                </Label>
+                            </div>
                         </div>
 
                         <Button

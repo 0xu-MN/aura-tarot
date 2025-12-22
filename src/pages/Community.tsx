@@ -80,74 +80,85 @@ const Community = () => {
 
                         <TabsContent value={activeTab} className="mt-6">
                             <div className="space-y-4">
-                                {mockPosts.map((post) => (
-                                    <div
-                                        key={post.id}
-                                        className="bg-card rounded-2xl border border-gold/20 p-6 hover:border-gold/50 transition-all duration-300 cursor-pointer"
-                                        onClick={() => handlePostClick(post)}
-                                    >
-                                        {/* Author */}
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <Avatar>
-                                                <AvatarFallback className="bg-gold/20 text-gold">
-                                                    {post.avatar}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <p className="font-medium">{post.author}</p>
-                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-gold/20 text-gold">
-                                                        {post.type}
-                                                    </span>
+                                {mockPosts
+                                    .filter((post) => {
+                                        if (activeTab === 'all') return true;
+                                        const categoryMap: Record<string, string> = {
+                                            'tarot': '타로공유',
+                                            'general': '일상',
+                                            'expert': '전문가',
+                                            'ad': '광고',
+                                        };
+                                        return post.type === categoryMap[activeTab];
+                                    })
+                                    .map((post) => (
+                                        <div
+                                            key={post.id}
+                                            className="bg-card rounded-2xl border border-gold/20 p-6 hover:border-gold/50 transition-all duration-300 cursor-pointer"
+                                            onClick={() => handlePostClick(post)}
+                                        >
+                                            {/* Author */}
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <Avatar>
+                                                    <AvatarFallback className="bg-gold/20 text-gold">
+                                                        {post.avatar}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-medium">{post.author}</p>
+                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-gold/20 text-gold">
+                                                            {post.type}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {post.timestamp}
+                                                    </p>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {post.timestamp}
-                                                </p>
+                                            </div>
+
+                                            {/* Content */}
+                                            <h3 className="font-display text-lg mb-2">{post.title}</h3>
+                                            <p className="text-muted-foreground mb-4 line-clamp-2">
+                                                {post.content}
+                                            </p>
+
+                                            {/* Image Preview */}
+                                            {post.images && post.images.length > 0 && (
+                                                <div className="flex gap-2 mb-4">
+                                                    {post.images.slice(0, 3).map((_, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="w-20 h-20 rounded-lg bg-gradient-to-br from-gold/20 to-mystic-purple/20 flex items-center justify-center text-2xl"
+                                                        >
+                                                            🖼️
+                                                        </div>
+                                                    ))}
+                                                    {post.images.length > 3 && (
+                                                        <div className="w-20 h-20 rounded-lg bg-muted/50 flex items-center justify-center text-sm">
+                                                            +{post.images.length - 3}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Actions */}
+                                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                                <button className="flex items-center gap-1 hover:text-gold transition-colors">
+                                                    <Heart className="w-4 h-4" />
+                                                    <span>{post.likes}</span>
+                                                </button>
+                                                <button className="flex items-center gap-1 hover:text-gold transition-colors">
+                                                    <MessageCircle className="w-4 h-4" />
+                                                    <span>{post.comments}</span>
+                                                </button>
+                                                <button className="flex items-center gap-1 hover:text-gold transition-colors ml-auto">
+                                                    <Share2 className="w-4 h-4" />
+                                                    <span>공유</span>
+                                                </button>
                                             </div>
                                         </div>
-
-                                        {/* Content */}
-                                        <h3 className="font-display text-lg mb-2">{post.title}</h3>
-                                        <p className="text-muted-foreground mb-4 line-clamp-2">
-                                            {post.content}
-                                        </p>
-
-                                        {/* Image Preview */}
-                                        {post.images && post.images.length > 0 && (
-                                            <div className="flex gap-2 mb-4">
-                                                {post.images.slice(0, 3).map((_, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="w-20 h-20 rounded-lg bg-gradient-to-br from-gold/20 to-mystic-purple/20 flex items-center justify-center text-2xl"
-                                                    >
-                                                        🖼️
-                                                    </div>
-                                                ))}
-                                                {post.images.length > 3 && (
-                                                    <div className="w-20 h-20 rounded-lg bg-muted/50 flex items-center justify-center text-sm">
-                                                        +{post.images.length - 3}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Actions */}
-                                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                            <button className="flex items-center gap-1 hover:text-gold transition-colors">
-                                                <Heart className="w-4 h-4" />
-                                                <span>{post.likes}</span>
-                                            </button>
-                                            <button className="flex items-center gap-1 hover:text-gold transition-colors">
-                                                <MessageCircle className="w-4 h-4" />
-                                                <span>{post.comments}</span>
-                                            </button>
-                                            <button className="flex items-center gap-1 hover:text-gold transition-colors ml-auto">
-                                                <Share2 className="w-4 h-4" />
-                                                <span>공유</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
                             </div>
                         </TabsContent>
                     </Tabs>

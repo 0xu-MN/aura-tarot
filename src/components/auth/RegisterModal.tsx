@@ -193,13 +193,13 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
                     {step === 1 && (
                         <form onSubmit={handleStep1Submit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="username">아이디</Label>
+                                <Label htmlFor="username">이메일</Label>
                                 <Input
                                     id="username"
-                                    type="text"
+                                    type="email"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
-                                    placeholder="아이디를 입력하세요"
+                                    placeholder="이메일을 입력하세요 (예: user@example.com)"
                                     required
                                     className="bg-background/50"
                                 />
