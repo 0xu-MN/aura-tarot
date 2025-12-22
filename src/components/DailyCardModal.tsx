@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import tarotBack from "@/assets/tarot-back.png";
 import { PaymentModal } from "./premium/PaymentModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { DrawAgainModal } from "./DrawAgainModal";
 
 const MAX_FREE_DRAWS = 3;
 const DAILY_DRAW_KEY = 'daily_card_draws';
@@ -400,6 +401,23 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
           50% { box-shadow: 0 0 40px hsl(43 74% 49% / 0.6), 0 0 60px hsl(280 70% 50% / 0.4); }
         }
       `}</style>
+
+      {/* Draw Again Modal */}
+      <DrawAgainModal
+        isOpen={showDrawAgainModal}
+        onClose={() => setShowDrawAgainModal(false)}
+        onSameQuestion={() => {
+          setShowDrawAgainModal(false);
+          setPhase("shuffle");
+          setSelectedCard(null);
+          setShowCard(false);
+          setTimeout(() => setPhase("select"), 2000);
+        }}
+        onNewQuestion={() => {
+          setShowDrawAgainModal(false);
+          onClose();
+        }}
+      />
 
       {/* Payment Modal */}
       <PaymentModal
