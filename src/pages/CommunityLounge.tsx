@@ -94,7 +94,7 @@ const CommunityLounge = () => {
         return null;
     }
 
-    const isPremium = userProfile?.is_premium || false;
+    const isPremium = (userProfile as any)?.is_premium || false;
 
     return (
         <AppLayout>

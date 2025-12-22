@@ -5,6 +5,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { clearAuthPreferences } from '@/lib/authStorage';
+import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
 
 interface MobileMenuProps {
     isOpen: boolean;
@@ -23,6 +25,14 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     };
 
     const handleNavigation = (path: string) => {
+        // Check if it's lounge and not in dev mode
+        if (path === '/lounge' && !isDeveloperMode) {
+            toast.info('라운지 준비 중', {
+                description: '곧 오픈 예정입니다. 조금만 기다려주세요!',
+            });
+            onClose();
+            return;
+        }
         navigate(path);
         onClose();
     };
@@ -42,8 +52,8 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
         },
         {
             icon: Users,
-            label: '커뮤니티',
-            path: '/community',
+            label: '라운지',
+            path: '/lounge',
             description: '소통 공간',
         },
         {
