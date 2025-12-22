@@ -124,25 +124,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
 
       if (readingError) throw readingError;
 
-      // Decrement daily_draws_remaining in profiles table
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('daily_draws_remaining')
-        .eq('id', user.id)
-        .single();
-
-      if (profile) {
-        const newRemaining = Math.max(0, (profile.daily_draws_remaining || 3) - 1);
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ daily_draws_remaining: newRemaining })
-          .eq('id', user.id);
-
-        if (updateError) throw updateError;
-
-        // Refresh user profile in context
-        await refreshProfile();
-      }
+      // Note: Draw count is tracked via localStorage
     } catch (error) {
       console.error('Error recording reading:', error);
     }
