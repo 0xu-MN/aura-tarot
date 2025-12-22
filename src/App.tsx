@@ -16,6 +16,7 @@ import { PalmReading } from "./pages/contents/PalmReading";
 import { Horoscope } from "./pages/contents/Horoscope";
 import Chatbot from "./pages/Chatbot";
 import Community from "./pages/Community";
+import CommunityLounge from "./pages/CommunityLounge";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/contents/horoscope" element={<Horoscope />} />
             <Route path="/chatbot" element={<Chatbot />} />
             <Route path="/community" element={<Community />} />
+            <Route path="/lounge" element={<CommunityLounge />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
