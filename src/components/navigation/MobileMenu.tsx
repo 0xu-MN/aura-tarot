@@ -35,12 +35,6 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
             description: '내 정보 관리',
         },
         {
-            icon: Settings,
-            label: '설정',
-            path: '/settings',
-            description: '앱 설정',
-        },
-        {
             icon: BookOpen,
             label: '콘텐츠',
             path: '/contents',
