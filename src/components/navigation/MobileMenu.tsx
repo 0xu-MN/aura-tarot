@@ -83,43 +83,37 @@ export const MobileMenu = ({
         isOpen ? 'translate-x-0' : 'translate-x-full'
       )}>
         <div className="flex flex-col h-full">
-          {/* User Greeting Header */}
-          {user && (
-            <div className="p-6 border-b border-gold/10">
-              <button onClick={() => handleNavigation('/settings')} className="w-full text-left hover:opacity-80 transition-opacity">
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-gold/10 to-mystic-purple/10 border border-gold/20">
-                  <Avatar className="w-14 h-14">
-                    <AvatarFallback className="bg-gold/20 text-gold font-display text-xl">
-                      {user.nickname?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-lg font-medium truncate">
-                      {user.nickname}님
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      프로필 보기 &gt;
-                    </p>
-                  </div>
-                </div>
-              </button>
-            </div>
-          )}
-
           {/* Header */}
           <div className="p-6 border-b border-gold/10">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl text-gold">오늘의 운세를 확인하세요</h2>
-              <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10">
+                    <AvatarFallback className="bg-gold/20 text-gold font-display">
+                      {user.nickname?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="font-display text-lg text-gold">{user.nickname}님</p>
+                </div>
+              ) : (
+                <p className="font-display text-lg text-muted-foreground">로그인 후 이용가능합니다</p>
+              )}
+              <button 
+                onClick={onClose} 
+                className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Navigation Items */}
-          <nav className="flex-1 overflow-y-auto p-4">
+          {/* Main Content */}
+          <div className={cn(
+            "flex-1 p-4",
+            user ? "overflow-visible" : "flex items-center justify-center"
+          )}>
             {user ? (
-              <div className="space-y-1 min-h-[400px]">
+              <div className="space-y-2">
                 {menuItems.map(item => (
                   <button 
                     key={item.path + item.label} 
@@ -137,27 +131,27 @@ export const MobileMenu = ({
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-full min-h-[400px]">
-                <Button variant="gold" className="w-full max-w-xs" onClick={() => handleNavigation('/')}>
-                  로그인
-                </Button>
-              </div>
+              <p className="text-muted-foreground text-center">로그인 후 이용가능합니다</p>
             )}
-          </nav>
+          </div>
 
-          {/* Footer - Only show logout when logged in */}
-          {user && (
-            <div className="p-4 mt-auto border-t border-gold/10">
+          {/* Footer */}
+          <div className="p-4 border-t border-gold/10">
+            {user ? (
               <Button 
                 variant="outline" 
-                className="w-full justify-start gap-2 border-red-500/50 text-red-500 hover:bg-red-500/10 hover:text-red-500" 
+                className="w-full justify-center gap-2 border-red-500/50 text-red-500 hover:bg-red-500/10 hover:text-red-500" 
                 onClick={handleSignOut}
               >
                 <LogOut className="w-4 h-4" />
                 로그아웃
               </Button>
-            </div>
-          )}
+            ) : (
+              <Button variant="gold" className="w-full" onClick={() => handleNavigation('/')}>
+                로그인
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </>
