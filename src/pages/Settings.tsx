@@ -150,6 +150,12 @@ const Settings = () => {
                     <LogOut className="w-4 h-4" />
                     로그아웃
                 </Button>
+
+                {/* Profile Edit Modal */}
+                <ProfileEditModal
+                    isOpen={showProfileEdit}
+                    onClose={() => setShowProfileEdit(false)}
+                />
             </div>
         </AppLayout>
     );
