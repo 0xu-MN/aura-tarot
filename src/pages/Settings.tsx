@@ -6,9 +6,12 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { ProfileEditModal } from '@/components/ProfileEditModal';
+import { useState } from 'react';
 
 const Settings = () => {
     const { user, userProfile, signOut } = useAuth();
+    const [showProfileEdit, setShowProfileEdit] = useState(false);
 
     const handleLogout = async () => {
         await signOut();
@@ -38,7 +41,7 @@ const Settings = () => {
                                 @{userProfile?.username}
                             </p>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => setShowProfileEdit(true)}>
                             <User className="w-4 h-4" />
                             수정
                         </Button>

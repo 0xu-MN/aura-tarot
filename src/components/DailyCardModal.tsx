@@ -187,14 +187,15 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
       setShowPaymentModal(true);
       return;
     }
-    onDrawAgain?.();
+    // Show draw again modal to let user choose
+    setShowDrawAgainModal(true);
   };
 
   const handlePaymentSuccess = () => {
     // After payment, allow unlimited draws for today
     setShowPaymentModal(false);
-    // Continue with card selection
-    onDrawAgain?.();
+    // Show draw again modal
+    setShowDrawAgainModal(true);
   };
 
   if (!isOpen) return null;
