@@ -46,7 +46,9 @@ export const HeroSection = ({ onStartReading, isEntering = false }: HeroSectionP
         {/* Fixed 2-line text */}
         <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-8 animate-fade-in leading-relaxed" style={{ animationDelay: "0.2s" }}>
           <span className="block">당신의 운명을 비추는 타로 카드</span>
-          <span className="block">AI 타로 마스터가 깊이 있는 해석을 전해드립니다</span>
+          <span className="hidden md:block">AI 타로 마스터가 깊이 있는 해석을 전해드립니다</span>
+          <span className="block md:hidden">AI 타로 마스터가 깊이 있는</span>
+          <span className="block md:hidden">해석을 전해드립니다</span>
         </p>
 
         {/* Clickable Card with Entry Animation */}
