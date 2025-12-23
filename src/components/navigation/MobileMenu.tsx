@@ -16,6 +16,12 @@ interface MobileMenuProps {
 export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
+    const [isDeveloperMode, setIsDeveloperMode] = useState(false);
+
+    useEffect(() => {
+        const devMode = localStorage.getItem('dev_mode') === 'true';
+        setIsDeveloperMode(devMode);
+    }, []);
 
     const handleSignOut = async () => {
         await signOut();

@@ -1,16 +1,35 @@
-import { NavLink as RouterNavLink } from 'react-router-dom';
+import { NavLink as RouterNavLink, useNavigate } from 'react-router-dom';
 import { Home, BookOpen, MessageCircle, Users, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
 
 const navItems = [
     { path: '/home', label: '홈', icon: Home },
     { path: '/contents', label: '컨텐츠', icon: BookOpen },
     { path: '/chatbot', label: '챗봇', icon: MessageCircle },
-    { path: '/community', label: '커뮤니티', icon: Users },
+    { path: '/lounge', label: '라운지', icon: Users },
     { path: '/settings', label: '설정', icon: Settings },
 ];
 
 export const BottomNav = () => {
+    const navigate = useNavigate();
+    const [isDeveloperMode, setIsDeveloperMode] = useState(false);
+
+    useEffect(() => {
+        const devMode = localStorage.getItem('dev_mode') === 'true';
+        setIsDeveloperMode(devMode);
+    }, []);
+
+    const handleNavClick = (e: React.MouseEvent, path: string) => {
+        if (path === '/lounge' && !isDeveloperMode) {
+            e.preventDefault();
+            toast.info('라운지 준비 중', {
+                description: '곧 오픈 예정입니다. 조금만 기다려주세요!',
+            });
+        }
+    };
+
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-t border-gold/20">
             <div className="container mx-auto px-4">
@@ -19,6 +38,7 @@ export const BottomNav = () => {
                         <RouterNavLink
                             key={item.path}
                             to={item.path}
+                            onClick={(e) => handleNavClick(e, item.path)}
                             className={({ isActive }) =>
                                 cn(
                                     'flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200',
