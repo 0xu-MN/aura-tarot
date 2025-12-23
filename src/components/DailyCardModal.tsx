@@ -5,6 +5,7 @@ import { TarotCard } from "./TarotCard";
 import { cn } from "@/lib/utils";
 import { Plasma } from "./effects/Plasma";
 import { DryIceMist } from "./effects/DryIceMist";
+import { CardRevealMist } from "./effects/CardRevealMist";
 import { saveResultAsImage, shareResult } from "@/lib/shareUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -294,6 +295,9 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
             {/* Reading Phase */}
             {phase === "reading" && selectedCard && (
               <div className={cn("text-center pb-8", showCard && "animate-fade-in")}>
+                {/* Spirit reveal mist effect */}
+                <CardRevealMist isActive={showCard} />
+                
                 <div className="mb-6 relative inline-block">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="halo-effect" />
