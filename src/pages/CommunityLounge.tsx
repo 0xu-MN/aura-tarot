@@ -1,81 +1,142 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AppLayout } from '@/layouts/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { Lock, MessageSquare, Eye, Heart, Edit3 } from 'lucide-react';
+import { Lock, MessageSquare, Eye, Heart, Edit3, Share2, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { CreatePostModal } from '@/components/community/CreatePostModal';
+import { PostDetailModal } from '@/components/community/PostDetailModal';
+
+const CATEGORIES = [
+    { id: 'all', label: '전체' },
+    { id: 'love', label: '연애고민' },
+    { id: 'story', label: '썰소' },
+    { id: 'invest', label: '투자' },
+    { id: 'random', label: '아무거나' },
+];
 
 const CommunityLounge = () => {
     const { user, userProfile } = useAuth();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'lounge' | 'premium'>('lounge');
+    const [activeCategory, setActiveCategory] = useState('all');
     const [isDeveloperMode, setIsDeveloperMode] = useState(false);
+    const location = useLocation();
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [selectedPost, setSelectedPost] = useState<any>(null);
+    const [initialPostData, setInitialPostData] = useState<{
+        images: string[];
+        title: string;
+        content: string;
+        type: string;
+    } | null>(null);
 
-    // Check developer mode
+    // Check developer mode and location state
     useEffect(() => {
         const devMode = localStorage.getItem('dev_mode') === 'true';
         setIsDeveloperMode(devMode);
-        
-        // If not in developer mode, redirect back with toast
         if (!devMode) {
             toast.info('라운지 준비 중', {
                 description: '곧 오픈 예정입니다. 조금만 기다려주세요!',
             });
             navigate('/home');
         }
-    }, [navigate]);
+
+        if (location.state?.autoOpenCreate) {
+            setInitialPostData({
+                images: location.state.attachedImage ? [location.state.attachedImage] : [],
+                title: location.state.initialTitle || '',
+                content: location.state.initialContent || '',
+                type: 'tarot'
+            });
+            setShowCreateModal(true);
+            // Clear location state to prevent re-opening on refresh
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state, navigate]);
 
     // Mock data for general lounge
-    const mockPosts = [
+    const [mockPosts, setMockPosts] = useState([
         {
             id: 1,
-            user: { nickname: '에뛰드', avatar: '에' },
-            title: '승무원이야 썬다걸 했는데',
+            author: '에뛰드',
+            avatar: '에',
+            type: '연애고민',
+            title: '예쁜 승무원이랑 썸타게 됐는데',
+            content: '오늘 타로 결과가 너무 좋게 나와서 대시해봤는데 정말 잘 됐어요! 앞날이 기대되네요.',
             time: '25분전',
+            timestamp: '25분전',
             views: 180,
+            likes: 122,
             comments: 32,
             category: 'BEST'
         },
         {
             id: 2,
-            user: { nickname: '타로마스터', avatar: '타' },
-            title: '2025 부동산 전망 공유',
-            time: '45분전',
-            views: 122,
-            comments: 18,
+            author: '푸른늑대',
+            avatar: '푸',
+            type: '투자',
+            title: '2025 부동산 정책 공유',
+            content: '새로운 부동산 정책이 발표되었습니다. 투자에 참고하세요!',
+            time: '15분전',
+            timestamp: '15분전',
+            views: 400,
+            likes: 122,
+            comments: 42,
             category: 'BEST'
         },
         {
             id: 3,
-            user: { nickname: '썰녀', avatar: '썰' },
-            title: '썰녀의 오마카세 가서 사치했음ㅋㅋ',
-            time: '1시간전',
-            views: 95,
-            comments: 24,
+            author: '오마카세킬러',
+            avatar: '오',
+            type: '썰소',
+            title: '썸녀랑 오마카세 가서 사진찍어줄래',
+            content: '오마카세 갔는데 분위기 너무 좋았어요. 사진 잘 찍어주는 법 공유합니다.',
+            time: '20분전',
+            timestamp: '20분전',
+            views: 180,
+            likes: 122,
+            comments: 3,
             image: true
-        },
-        {
-            id: 4,
-            user: { nickname: '알쓸정', avatar: '알' },
-            title: '알쓸정 데이트 코스 알려줌ㅋㅋ',
-            time: '2시간전',
-            views: 122,
-            comments: 32
-        },
-        {
-            id: 5,
-            user: { nickname: '최사운', avatar: '최' },
-            title: '최사 운빨로 코인 비교',
-            time: '3시간전',
-            views: 122,
-            comments: 21
-        },
-    ];
+        }
+    ]);
 
-    // Premium lounges
+    const handlePostClick = (post: any) => {
+        setSelectedPost({
+            ...post,
+            id: post.id,
+            author: post.author,
+            avatar: post.avatar,
+            type: post.type,
+            title: post.title,
+            content: post.content,
+            likes: post.likes || 0,
+            comments: post.comments || 0,
+            timestamp: post.time,
+        });
+    };
+
+    const handleCreatePost = (newPostData: any) => {
+        const newPost = {
+            id: mockPosts.length + 1,
+            author: userProfile?.nickname || '사용자',
+            avatar: (userProfile?.nickname || '사')[0],
+            type: CATEGORIES.find(c => c.id === activeCategory)?.label || '아무거나',
+            title: newPostData.title,
+            content: newPostData.content,
+            time: '방금 전',
+            timestamp: '방금 전',
+            views: 0,
+            likes: 0,
+            comments: 0,
+            category: '',
+        };
+        setMockPosts([newPost, ...mockPosts]);
+    };
+
     const premiumLounges = [
         {
             id: 1,
@@ -109,96 +170,115 @@ const CommunityLounge = () => {
 
     return (
         <AppLayout>
-            <div className="container mx-auto px-4 py-8 max-w-4xl">
-                {/* Header with Tab Switcher */}
-                <div className="mb-6">
-                    <div className="flex items-center justify-center gap-4 mb-4">
-                        <button
-                            onClick={() => setActiveTab('lounge')}
-                            className={cn(
-                                'font-display text-2xl transition-colors',
-                                activeTab === 'lounge'
-                                    ? 'text-gold'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            )}
-                        >
-                            Lounge
-                        </button>
-                        <span className="text-2xl text-muted-foreground">|</span>
-                        <button
-                            onClick={() => setActiveTab('premium')}
-                            className={cn(
-                                'font-display text-2xl transition-colors flex items-center gap-2',
-                                activeTab === 'premium'
-                                    ? 'text-gold'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            )}
-                        >
-                            Premium
-                            {!isPremium && <Lock className="w-5 h-5" />}
-                        </button>
-                    </div>
+            <div className="container mx-auto px-4 py-8 max-w-4xl min-h-screen">
+                {/* Lounge | Premium Header */}
+                <div className="flex justify-center items-center gap-6 mb-8 border-b border-gold/10 pb-4">
+                    <button
+                        onClick={() => setActiveTab('lounge')}
+                        className={cn(
+                            "text-3xl font-display transition-all duration-300",
+                            activeTab === 'lounge' ? "text-gold scale-105" : "text-muted-foreground hover:text-foreground opacity-50"
+                        )}
+                    >
+                        Lounge
+                    </button>
+                    <div className="h-8 w-px bg-gold/20" />
+                    <button
+                        onClick={() => setActiveTab('premium')}
+                        className={cn(
+                            "text-3xl font-display transition-all duration-300 flex items-center gap-2",
+                            activeTab === 'premium' ? "text-gold scale-105" : "text-muted-foreground hover:text-foreground opacity-50"
+                        )}
+                    >
+                        Premium
+                        {!isPremium && <Lock className="w-5 h-5" />}
+                    </button>
                 </div>
 
-                {/* Lounge Tab */}
+                {/* Lounge Content */}
                 {activeTab === 'lounge' && (
-                    <div className="space-y-4">
-                        <div className="bg-card rounded-2xl border border-gold/20 p-6">
-                            <h2 className="font-display text-xl text-gold mb-4">
-                                오늘의 한 장 라운지
-                            </h2>
-                            <p className="text-sm text-muted-foreground mb-6">
-                                타로 결과를 공유하고 소통하는 공간입니다
-                            </p>
+                    <div className="space-y-6">
+                        {/* Title Section */}
+                        <div className="text-center mb-10">
+                            <h2 className="text-4xl font-display text-white mb-4">상위 1% 대화는 다르니까</h2>
+                            <p className="text-muted-foreground">부동산, 재테크, 핫플레이스 등 다양한 정보 교류와 데이트까지 가능해요</p>
+                        </div>
 
-                            {/* Post List */}
-                            <div className="space-y-3">
-                                {mockPosts.map((post) => (
-                                    <div
-                                        key={post.id}
-                                        className="bg-background/50 rounded-xl p-4 hover:bg-background/80 transition-colors cursor-pointer border border-transparent hover:border-gold/20"
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <Avatar className="w-10 h-10">
-                                                <AvatarFallback className="bg-gold/20 text-gold text-sm">
-                                                    {post.user.avatar}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    {post.category && (
-                                                        <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-500 text-xs font-medium">
-                                                            {post.category}
-                                                        </span>
-                                                    )}
-                                                    <span className="text-sm font-medium">
-                                                        {post.user.nickname}
-                                                    </span>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {post.time}
-                                                    </span>
-                                                </div>
-                                                <p className="text-sm mb-2 truncate">
-                                                    {post.title}
-                                                </p>
-                                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                                    <span className="flex items-center gap-1">
-                                                        <Eye className="w-3 h-3" />
-                                                        {post.views}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <MessageSquare className="w-3 h-3" />
-                                                        {post.comments}
-                                                    </span>
-                                                </div>
+                        {/* Category Selector */}
+                        <div className="flex overflow-x-auto gap-2 pb-4 scrollbar-hide">
+                            {CATEGORIES.map((category) => (
+                                <button
+                                    key={category.id}
+                                    onClick={() => setActiveCategory(category.id)}
+                                    className={cn(
+                                        "px-6 py-2 rounded-full border transition-all duration-300 whitespace-nowrap",
+                                        activeCategory === category.id
+                                            ? "bg-gold text-background border-gold font-bold"
+                                            : "border-gold/20 text-muted-foreground hover:border-gold/50"
+                                    )}
+                                >
+                                    {category.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Post List */}
+                        <div className="space-y-4">
+                            {mockPosts.map((post) => (
+                                <div
+                                    key={post.id}
+                                    onClick={() => handlePostClick(post)}
+                                    className="bg-card rounded-2xl border border-gold/10 p-5 hover:border-gold/30 transition-all cursor-pointer group"
+                                >
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <Avatar className="w-10 h-10 border border-gold/20">
+                                            <AvatarFallback className="bg-gold/10 text-gold">{post.avatar}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-white group-hover:text-gold transition-colors">{post.author}</span>
+                                                <span className="text-xs text-muted-foreground">{post.time} · 조회 {post.views}</span>
+                                                {post.category === 'BEST' && (
+                                                    <span className="px-2 py-0.5 rounded bg-red-500/10 text-red-500 text-[10px] font-bold tracking-tighter">BEST</span>
+                                                )}
                                             </div>
-                                            {post.image && (
-                                                <div className="w-12 h-12 rounded-lg bg-gold/10 flex-shrink-0" />
-                                            )}
+                                            <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                                                <span>{post.type}</span>
+                                            </div>
                                         </div>
+                                        <button className="text-muted-foreground hover:text-white transition-colors">
+                                            <MessageSquare className="w-5 h-5" />
+                                        </button>
                                     </div>
-                                ))}
-                            </div>
+
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">{post.title}</h3>
+                                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{post.content}</p>
+                                        </div>
+                                        {post.image && (
+                                            <div className="w-20 h-20 rounded-xl bg-gold/5 flex-shrink-0 flex items-center justify-center text-4xl border border-gold/10">
+                                                🖼️
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-4 pt-4 border-t border-gold/5 text-sm text-muted-foreground">
+                                        <button className="flex items-center gap-1.5 hover:text-gold transition-colors">
+                                            <Heart className="w-4 h-4" />
+                                            <span>{post.likes}</span>
+                                        </button>
+                                        <button className="flex items-center gap-1.5 hover:text-gold transition-colors">
+                                            <MessageCircle className="w-4 h-4" />
+                                            <span>{post.comments}</span>
+                                        </button>
+                                        <button className="flex items-center gap-1.5 hover:text-gold transition-colors ml-auto">
+                                            <Share2 className="w-4 h-4" />
+                                            <span>공유하기</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}
@@ -265,9 +345,31 @@ const CommunityLounge = () => {
 
                 {/* Floating Write Button (Lounge only) */}
                 {activeTab === 'lounge' && (
-                    <button className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-gold hover:bg-gold/90 shadow-lg shadow-gold/20 flex items-center justify-center transition-all hover:scale-110">
-                        <Edit3 className="w-6 h-6 text-background" />
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-gold hover:bg-gold/90 shadow-lg shadow-gold/20 flex items-center justify-center transition-all hover:scale-110 z-50 text-background"
+                    >
+                        <Edit3 className="w-6 h-6" />
                     </button>
+                )}
+
+                {/* Modals */}
+                <CreatePostModal
+                    isOpen={showCreateModal}
+                    onClose={() => {
+                        setShowCreateModal(false);
+                        setInitialPostData(null);
+                    }}
+                    onSubmit={handleCreatePost}
+                    initialImages={initialPostData?.images}
+                    initialType={initialPostData?.type || 'random'}
+                />
+                {selectedPost && (
+                    <PostDetailModal
+                        isOpen={!!selectedPost}
+                        onClose={() => setSelectedPost(null)}
+                        post={selectedPost}
+                    />
                 )}
             </div>
         </AppLayout>

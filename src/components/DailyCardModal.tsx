@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { X, Share2, Download, Sparkles, RotateCcw, Home } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { X, Share2, Download, Sparkles, RotateCcw, Home, MessageCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { TarotCard } from "./TarotCard";
 import { cn } from "@/lib/utils";
 import { Plasma } from "./effects/Plasma";
 import { DryIceMist } from "./effects/DryIceMist";
 import { CardRevealMist } from "./effects/CardRevealMist";
-import { saveResultAsImage, shareResult } from "@/lib/shareUtils";
+import { saveResultAsImage, shareResult, captureResultAsDataURL } from "@/lib/shareUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tarotBack from "@/assets/tarot-back.png";
@@ -85,6 +86,7 @@ const incrementDailyDrawCount = () => {
 
 export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: DailyCardModalProps) => {
   const { refreshProfile } = useAuth();
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<"shuffle" | "select" | "reading">("shuffle");
   const [selectedCard, setSelectedCard] = useState<typeof cardMeanings[0] | null>(null);
   const [isReversed, setIsReversed] = useState(false);
@@ -179,6 +181,26 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
       navigator.clipboard.writeText(window.location.href);
       toast.info('링크가 클립보드에 복사되었습니다');
     }
+  };
+
+  const handleShareToLounge = async () => {
+    setIsSaving(true);
+    const imageData = await captureResultAsDataURL('daily-reading-result');
+    if (imageData) {
+      // Navigate to lounge and pass image data in state
+      navigate('/lounge', {
+        state: {
+          autoOpenCreate: true,
+          attachedImage: imageData,
+          initialTitle: `오늘 나의 ${selectedCard?.korean} 카드 결과`,
+          initialContent: `오늘 저는 "${selectedCard?.korean}" 카드를 뽑았습니다.\n\n해석: ${selectedCard?.meaning.substring(0, 100)}...`
+        }
+      });
+      onClose();
+    } else {
+      toast.error('라운지 공유에 실패했습니다');
+    }
+    setIsSaving(false);
   };
 
   const handleDrawAgain = () => {
@@ -297,7 +319,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
               <div className={cn("text-center pb-8", showCard && "animate-fade-in")}>
                 {/* Spirit reveal mist effect */}
                 <CardRevealMist isActive={showCard} />
-                
+
                 <div className="mb-6 relative inline-block">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="halo-effect" />
@@ -339,6 +361,15 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
                   </div>
 
                   <div className="flex flex-col gap-3 mt-8 no-capture">
+                    <Button
+                      variant="gold"
+                      className="w-full bg-gold/10 hover:bg-gold/20 text-gold border-gold/30"
+                      onClick={handleShareToLounge}
+                      disabled={isSaving}
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      라운지에 공유하기
+                    </Button>
                     <div className="flex gap-3">
                       <Button
                         variant="outline"

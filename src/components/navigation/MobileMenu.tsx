@@ -18,10 +18,13 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     const navigate = useNavigate();
     const [isDeveloperMode, setIsDeveloperMode] = useState(false);
 
+    // Check developer mode when menu opens
     useEffect(() => {
-        const devMode = localStorage.getItem('dev_mode') === 'true';
-        setIsDeveloperMode(devMode);
-    }, []);
+        if (isOpen) {
+            const devMode = localStorage.getItem('dev_mode') === 'true';
+            setIsDeveloperMode(devMode);
+        }
+    }, [isOpen]);
 
     const handleSignOut = async () => {
         await signOut();

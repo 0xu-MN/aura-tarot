@@ -1,17 +1,28 @@
 import html2canvas from 'html2canvas';
 
-export const saveResultAsImage = async (elementId: string, fileName: string) => {
+export const captureResultAsDataURL = async (elementId: string): Promise<string | null> => {
     try {
         const element = document.getElementById(elementId);
-        if (!element) return false;
+        if (!element) return null;
 
         const canvas = await html2canvas(element, {
             scale: 2,
-            backgroundColor: '#0F0F12', // Match dark theme bg
+            backgroundColor: '#0F0F12',
             useCORS: true,
         });
 
-        const image = canvas.toDataURL('image/png');
+        return canvas.toDataURL('image/png');
+    } catch (error) {
+        console.error('Capture image error:', error);
+        return null;
+    }
+};
+
+export const saveResultAsImage = async (elementId: string, fileName: string) => {
+    try {
+        const image = await captureResultAsDataURL(elementId);
+        if (!image) return false;
+
         const link = document.createElement('a');
         link.href = image;
         link.download = `${fileName}.png`;

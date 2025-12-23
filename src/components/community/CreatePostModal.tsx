@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Image as ImageIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,23 +11,35 @@ import { cn } from '@/lib/utils';
 interface CreatePostModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit?: (post: { title: string; content: string; type: string; images: File[] }) => void;
+    onSubmit?: (post: { title: string; content: string; type: string; images: (File | string)[] }) => void;
+    initialImages?: string[];
+    initialType?: string;
 }
 
 const POST_TYPES = [
-    { value: 'general', label: '일상' },
+    { value: 'all', label: '전체' },
+    { value: 'love', label: '연애고민' },
+    { value: 'story', label: '썰소' },
+    { value: 'invest', label: '투자' },
+    { value: 'random', label: '아무거나' },
     { value: 'tarot', label: '타로공유' },
-    { value: 'question', label: '질문' },
-    { value: 'ad', label: '광고' },
 ];
 
-export const CreatePostModal = ({ isOpen, onClose, onSubmit }: CreatePostModalProps) => {
+export const CreatePostModal = ({ isOpen, onClose, onSubmit, initialImages = [], initialType = 'random' }: CreatePostModalProps) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const [postType, setPostType] = useState('general');
-    const [images, setImages] = useState<File[]>([]);
-    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [postType, setPostType] = useState(initialType);
+    const [images, setImages] = useState<(File | string)[]>(initialImages);
+    const [imagePreviews, setImagePreviews] = useState<string[]>(initialImages);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setImages(initialImages);
+            setImagePreviews(initialImages);
+            setPostType(initialType);
+        }
+    }, [isOpen, initialImages, initialType]);
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
