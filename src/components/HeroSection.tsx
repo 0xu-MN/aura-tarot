@@ -63,7 +63,7 @@ export const HeroSection = ({ onStartReading, isEntering = false }: HeroSectionP
 
             {/* Click indicator */}
             <div className={cn(
-              "absolute -bottom-8 left-1/2 -translate-x-1/2 text-gold/80 text-sm font-medium transition-opacity",
+              "absolute -bottom-8 left-1/2 -translate-x-1/2 text-gold/80 text-sm font-medium transition-opacity whitespace-nowrap",
               isEntering && "opacity-0"
             )}>
               <span className="animate-pulse">카드를 터치하세요</span>
