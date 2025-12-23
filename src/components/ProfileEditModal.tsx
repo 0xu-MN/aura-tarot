@@ -31,33 +31,11 @@ export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => 
     }, [isOpen, userProfile]);
 
     // Check if user can edit nickname (30-day restriction)
+    // Note: nickname_last_changed column needs to be added to profiles table
     const checkNicknameEditPermission = async () => {
         if (!user) return;
-
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('nickname_last_changed')
-                .eq('id', user.id)
-                .single();
-
-            if (error) throw error;
-
-            if (data?.nickname_last_changed) {
-                const lastChanged = new Date(data.nickname_last_changed);
-                const now = new Date();
-                const daysSinceChange = Math.floor((now.getTime() - lastChanged.getTime()) / (1000 * 60 * 60 * 24));
-
-                if (daysSinceChange < 30) {
-                    setCanEditNickname(false);
-                    setDaysUntilEdit(30 - daysSinceChange);
-                } else {
-                    setCanEditNickname(true);
-                }
-            }
-        } catch (error) {
-            console.error('Error checking nickname edit permission:', error);
-        }
+        // For now, allow editing since column doesn't exist yet
+        setCanEditNickname(true);
     };
 
     // Nickname duplicate check with debounce
@@ -115,7 +93,6 @@ export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => 
             // Update nickname if changed
             if (nickname !== userProfile?.nickname) {
                 updates.nickname = nickname;
-                updates.nickname_last_changed = new Date().toISOString();
             }
 
             if (Object.keys(updates).length > 0) {

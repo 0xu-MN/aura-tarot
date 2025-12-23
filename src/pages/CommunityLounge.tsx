@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/layouts/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { Lock, MessageSquare, Eye, Heart, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const CommunityLounge = () => {
     const { user, userProfile } = useAuth();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'lounge' | 'premium'>('lounge');
     const [isDeveloperMode, setIsDeveloperMode] = useState(false);
 
@@ -15,7 +18,15 @@ const CommunityLounge = () => {
     useEffect(() => {
         const devMode = localStorage.getItem('dev_mode') === 'true';
         setIsDeveloperMode(devMode);
-    }, []);
+        
+        // If not in developer mode, redirect back with toast
+        if (!devMode) {
+            toast.info('라운지 준비 중', {
+                description: '곧 오픈 예정입니다. 조금만 기다려주세요!',
+            });
+            navigate('/home');
+        }
+    }, [navigate]);
 
     // Mock data for general lounge
     const mockPosts = [
@@ -89,7 +100,7 @@ const CommunityLounge = () => {
         }
     ];
 
-    // If not in developer mode, don't render
+    // If not in developer mode, don't render (will redirect)
     if (!isDeveloperMode) {
         return null;
     }
