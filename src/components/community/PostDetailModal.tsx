@@ -1,70 +1,164 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Heart, MessageCircle, Share2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PostDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     post: {
-        id: number;
+        id: string;
         author: string;
         avatar: string;
         type: string;
         title: string;
         content: string;
-        images?: string[];
-        likes: number;
-        comments: number;
+        tarot_image_url?: string;
+        likes_count: number;
+        comments_count: number;
         timestamp: string;
+        category?: string;
     };
 }
 
 interface Comment {
-    id: number;
-    author: string;
-    avatar: string;
+    id: string;
+    profiles: {
+        nickname: string;
+    };
     content: string;
-    timestamp: string;
+    created_at: string;
 }
 
 export const PostDetailModal = ({ isOpen, onClose, post }: PostDetailModalProps) => {
     const [comment, setComment] = useState('');
-    const [comments, setComments] = useState<Comment[]>([
-        {
-            id: 1,
-            author: '타로러버',
-            avatar: 'ㅌ',
-            content: '저도 비슷한 경험이 있어요! 궁금하네요',
-            timestamp: '1시간 전',
-        },
-        {
-            id: 2,
-            author: '운세전문',
-            avatar: '운',
-            content: '좋은 정보 감사합니다!',
-            timestamp: '30분 전',
-        },
-    ]);
+    const [comments, setComments] = useState<Comment[]>([]);
     const [liked, setLiked] = useState(false);
+    const [initialLiked, setInitialLiked] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmitComment = (e: React.SyntheticEvent) => {
+    useEffect(() => {
+        if (isOpen && post.id) {
+            fetchComments();
+            checkIfLiked();
+        }
+    }, [isOpen, post.id]);
+
+    const fetchComments = async () => {
+        try {
+            // 1. Fetch comments
+            const { data: commentsData, error: commentsError } = await supabase
+                .from('post_comments')
+                .select('*')
+                .eq('post_id', post.id)
+                .order('created_at', { ascending: true });
+
+            if (commentsError) throw commentsError;
+            if (!commentsData || commentsData.length === 0) {
+                setComments([]);
+                return;
+            }
+
+            // 2. Fetch profiles for comments
+            const userIds = Array.from(new Set(commentsData.map(c => c.user_id)));
+            const { data: profilesData, error: profilesError } = await supabase
+                .from('profiles')
+                .select('user_id, nickname')
+                .in('user_id', userIds);
+
+            if (profilesError) throw profilesError;
+
+            // 3. Merge profiles into comments
+            const mergedComments = commentsData.map(comment => ({
+                ...comment,
+                profiles: profilesData?.find(p => p.user_id === comment.user_id) || { nickname: '익명' }
+            }));
+
+            setComments(mergedComments);
+        } catch (error) {
+            console.error('Error fetching comments:', error);
+        }
+    };
+
+    const checkIfLiked = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+            .from('post_likes')
+            .select('id')
+            .eq('post_id', post.id)
+            .eq('user_id', user.id)
+            .single();
+
+        if (data) {
+            setLiked(true);
+            setInitialLiked(true);
+        }
+    };
+
+    const handleLike = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                toast.error('로그인이 필요합니다.');
+                return;
+            }
+
+            if (liked) {
+                await supabase
+                    .from('post_likes')
+                    .delete()
+                    .eq('post_id', post.id)
+                    .eq('user_id', user.id);
+                setLiked(false);
+            } else {
+                await supabase
+                    .from('post_likes')
+                    .insert({ post_id: post.id, user_id: user.id });
+                setLiked(true);
+            }
+        } catch (error) {
+            console.error('Error toggling like:', error);
+        }
+    };
+
+    const handleSubmitComment = async (e: React.SyntheticEvent) => {
         e.preventDefault();
         if (!comment.trim()) return;
 
-        const newComment: Comment = {
-            id: comments.length + 1,
-            author: '나',
-            avatar: 'N',
-            content: comment,
-            timestamp: '방금 전',
-        };
+        setIsLoading(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                toast.error('로그인이 필요합니다.');
+                return;
+            }
 
-        setComments([...comments, newComment]);
-        setComment('');
+            const { error } = await supabase
+                .from('post_comments')
+                .insert({
+                    post_id: post.id,
+                    user_id: user.id,
+                    content: comment,
+                });
+
+            if (error) throw error;
+
+            setComment('');
+            fetchComments();
+            toast.success('댓글이 등록되었습니다.');
+        } catch (error) {
+            console.error('Error submitting comment:', error);
+            toast.error('댓글 등록에 실패했습니다.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -119,33 +213,21 @@ export const PostDetailModal = ({ isOpen, onClose, post }: PostDetailModalProps)
                         </p>
 
                         {/* Images */}
-                        {post.images && post.images.length > 0 && (
-                            <div className={`grid gap-2 mb-6 ${post.images.length === 1 ? 'grid-cols-1' :
-                                post.images.length === 2 ? 'grid-cols-2' :
-                                    'grid-cols-2 md:grid-cols-3'
-                                }`}>
-                                {post.images.map((image, index) => (
-                                    <div
-                                        key={index}
-                                        className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gold/20 to-mystic-purple/20"
-                                    >
-                                        <div className="w-full h-full flex items-center justify-center text-4xl">
-                                            🖼️
-                                        </div>
-                                    </div>
-                                ))}
+                        {post.tarot_image_url && (
+                            <div className="rounded-xl overflow-hidden bg-gradient-to-br from-gold/20 to-mystic-purple/20 mb-6 border border-gold/20 max-w-sm mx-auto">
+                                <img src={post.tarot_image_url} alt="Tarot Result" className="w-full h-auto" />
                             </div>
                         )}
 
                         {/* Actions */}
                         <div className="flex items-center gap-6 mb-6">
                             <button
-                                onClick={() => setLiked(!liked)}
+                                onClick={handleLike}
                                 className={`flex items-center gap-2 transition-colors ${liked ? 'text-red-500' : 'text-muted-foreground hover:text-gold'
                                     }`}
                             >
                                 <Heart className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
-                                <span>{post.likes + (liked ? 1 : 0)}</span>
+                                <span>{post.likes_count + (liked ? (initialLiked ? 0 : 1) : (initialLiked ? -1 : 0))}</span>
                             </button>
                             <button className="flex items-center gap-2 text-muted-foreground hover:text-gold transition-colors">
                                 <MessageCircle className="w-5 h-5" />
@@ -170,14 +252,14 @@ export const PostDetailModal = ({ isOpen, onClose, post }: PostDetailModalProps)
                                     <div key={comment.id} className="flex gap-3">
                                         <Avatar className="w-8 h-8">
                                             <AvatarFallback className="bg-muted text-sm">
-                                                {comment.avatar}
+                                                {(comment.profiles?.nickname || '익')[0]}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <p className="text-sm font-medium">{comment.author}</p>
+                                                <p className="text-sm font-medium">{comment.profiles?.nickname || '익명'}</p>
                                                 <span className="text-xs text-muted-foreground">
-                                                    {comment.timestamp}
+                                                    {new Date(comment.created_at).toLocaleDateString()}
                                                 </span>
                                             </div>
                                             <p className="text-sm text-foreground">

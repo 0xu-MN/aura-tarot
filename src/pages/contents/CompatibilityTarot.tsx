@@ -1,34 +1,33 @@
 import { useState, useEffect } from 'react';
-import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
+import { useNavigate } from 'react-router-dom';
+import { saveResultAsImage, shareResult, captureResultAsDataURL } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PaymentModal } from '@/components/premium/PaymentModal';
 import { SpreadLayout } from '@/components/tarot/SpreadLayout';
 import { TarotCard } from '@/components/TarotCard';
-import { Users, Lock, Sparkles, RefreshCw, Share2, Download, User } from 'lucide-react';
+import { Users, Lock, Sparkles, RefreshCw, Share2, Download, User, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { premiumStore } from '@/lib/premiumStore';
+import { getRandomCards, TarotCardData } from '@/lib/tarot-data';
+import { supabase } from '@/integrations/supabase/client';
 
 const FEATURE_ID = 'compatibility-tarot';
 
-// Mock Card Data
-const MOCK_CARDS = [
-    { name: "The Sun", korean: "태양", meaning: "성공, 기쁨, 활력...", advice: "긍정적인 에너지가 넘칩니다." },
-    { name: "Ten of Cups", korean: "컵 10", meaning: "가족애, 평화, 행운...", advice: "정서적 만족이 큽니다." },
-    { name: "Strength", korean: "힘", meaning: "인내, 자제력, 부드러운 힘...", advice: "포용력 있는 대화가 필요합니다." },
-    { name: "The Star", korean: "별", meaning: "희망, 영감, 치유...", advice: "꿈을 함께 나누세요." },
-    { name: "The Empress", korean: "여황제", meaning: "풍요, 모성, 물질적 안락...", advice: "관계를 가꾸는 기쁨을 만끽하세요." },
-];
-
 export const CompatibilityTarot = () => {
+    const navigate = useNavigate();
     const [step, setStep] = useState<'intro' | 'input' | 'payment-check' | 'spread' | 'result'>('intro');
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [myName, setMyName] = useState('');
     const [partnerName, setPartnerName] = useState('');
     const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
+    const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [revealedCards, setRevealedCards] = useState<number[]>([]);
+    const [score, setScore] = useState(0);
+    const [aiReading, setAiReading] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // Load persisted state on mount
     useEffect(() => {
@@ -38,12 +37,25 @@ export const CompatibilityTarot = () => {
         }
 
         if (saved.readingState) {
-            const { step: savedStep, myName: savedMyName, partnerName: savedPartnerName, selectedCardIndices: savedIndices, revealedCards: savedRevealed } = saved.readingState;
+            const {
+                step: savedStep,
+                myName: savedMyName,
+                partnerName: savedPartnerName,
+                selectedCardIndices: savedIndices,
+                revealedCards: savedRevealed,
+                drawnCards: savedDrawn,
+                aiReading: savedAiReading,
+                score: savedScore
+            } = saved.readingState;
+
             if (savedStep) setStep(savedStep);
             if (savedMyName) setMyName(savedMyName);
             if (savedPartnerName) setPartnerName(savedPartnerName);
             if (savedIndices) setSelectedCardIndices(savedIndices);
             if (savedRevealed) setRevealedCards(savedRevealed);
+            if (savedDrawn) setDrawnCards(savedDrawn);
+            if (savedAiReading) setAiReading(savedAiReading);
+            if (savedScore) setScore(savedScore);
         }
     }, []);
 
@@ -55,10 +67,13 @@ export const CompatibilityTarot = () => {
                 myName,
                 partnerName,
                 selectedCardIndices,
-                revealedCards
+                revealedCards,
+                drawnCards,
+                aiReading,
+                score
             });
         }
-    }, [step, myName, partnerName, selectedCardIndices, revealedCards]);
+    }, [step, myName, partnerName, selectedCardIndices, revealedCards, drawnCards, aiReading, score]);
 
     const handleStart = () => {
         setStep('input');
@@ -86,16 +101,69 @@ export const CompatibilityTarot = () => {
         setStep('spread');
     };
 
+    const fetchAiReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
+        setIsAnalyzing(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                body: {
+                    type: 'reading',
+                    context: {
+                        question: `${myName}님과 ${partnerName}님의 궁합은 어떤가요?`,
+                        cards: cards.map(c => ({
+                            name: c.card.name,
+                            isReversed: c.isReversed
+                        }))
+                    }
+                }
+            });
+
+            if (error) throw error;
+            if (data?.message) {
+                setAiReading(data.message);
+            }
+        } catch (err) {
+            console.error('Error fetching AI reading:', err);
+            toast.error('AI 리딩을 가져오는 중 오류가 발생했습니다.');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     const handleSpreadComplete = (indices: number[]) => {
+        const newDrawnCards = getRandomCards(5);
+        setDrawnCards(newDrawnCards);
         setSelectedCardIndices(indices);
+
+        fetchAiReading(newDrawnCards);
+
         setTimeout(() => {
             setStep('result');
+            setScore(Math.floor(Math.random() * 31) + 70); // 70-100 score
         }, 1000);
     };
 
     const handleReveal = (index: number) => {
         if (!revealedCards.includes(index)) {
             setRevealedCards([...revealedCards, index]);
+        }
+    };
+
+    const handleShareToLounge = async () => {
+        try {
+            const dataUrl = await captureResultAsDataURL('compatibility-result-content');
+            if (dataUrl) {
+                navigate('/lounge', {
+                    state: {
+                        autoOpenCreate: true,
+                        attachedImage: dataUrl,
+                        initialTitle: `${myName} & ${partnerName}의 AI 궁합 결과`,
+                        initialContent: `오늘 본 AI 궁합 타로 결과입니다. #타로 #궁합 #연애`
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing to lounge:', error);
+            toast.error('라운지 공유 중 오류가 발생했습니다.');
         }
     };
 
@@ -192,18 +260,22 @@ export const CompatibilityTarot = () => {
                     <div className="w-full max-w-4xl animate-fade-in pb-20">
                         <div className="flex justify-center flex-wrap gap-4 mb-12">
                             {['현재 기류', '상대 속마음', '내 속마음', '조화도', '결과'].map((label, i) => (
-                                <div key={i} className="flex flex-col items-center">
-                                    <h4 className="text-[10px] text-muted-foreground mb-2">{label}</h4>
+                                <div key={i} className="flex flex-col items-center min-w-[80px]">
+                                    <h4 className="text-[10px] text-muted-foreground mb-2 whitespace-nowrap">{label}</h4>
                                     <div onClick={() => handleReveal(i)} className="cursor-pointer transition-transform hover:scale-105">
                                         <TarotCard
                                             size="sm"
                                             isFlipped={revealedCards.includes(i)}
+                                            isReversed={drawnCards[i]?.isReversed}
                                             interactive={false}
                                         />
                                     </div>
-                                    {revealedCards.includes(i) && (
+                                    {revealedCards.includes(i) && drawnCards[i] && (
                                         <div className="mt-2 text-center animate-fade-in">
-                                            <span className="text-xs font-medium text-gold">{MOCK_CARDS[i].korean}</span>
+                                            <span className="text-[11px] font-medium text-gold leading-tight">
+                                                {drawnCards[i].card.koreanName}
+                                                {drawnCards[i].isReversed && <span className="opacity-70 ml-0.5">(역)</span>}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -211,7 +283,7 @@ export const CompatibilityTarot = () => {
                         </div>
 
                         {revealedCards.length === 5 && (
-                            <div className="bg-card/40 backdrop-blur-md rounded-2xl p-6 border border-gold/20">
+                            <div className="bg-card/40 backdrop-blur-md rounded-2xl p-6 border border-gold/20 animate-fade-in">
                                 <h3 className="font-display text-xl text-gold-gradient mb-6 flex items-center gap-2">
                                     <Sparkles className="w-5 h-5" />
                                     {myName} ❤️ {partnerName} 궁합 리포트
@@ -220,30 +292,40 @@ export const CompatibilityTarot = () => {
                                 <div id="compatibility-result-content" className="space-y-6 text-foreground/90 leading-relaxed text-sm md:text-base">
                                     <div className="p-4 bg-background/50 rounded-xl flex items-center justify-between">
                                         <h4 className="font-bold text-gold">최종 궁합 점수</h4>
-                                        <span className="text-2xl font-display text-gold">92점</span>
+                                        <span className="text-2xl font-display text-gold">{score}점</span>
                                     </div>
 
                                     <div className="space-y-4">
-                                        <p className="opacity-80">
-                                            두 분은 서로의 에너지를 북돋아주는 매우 이상적인 궁합(태양 & 컵 10)입니다.
-                                            특히 가치관적인 면에서 높은 일치도를 보이며, 서로를 향한 배려와
-                                            인내심(힘)이 바탕이 되어 안정적인 관계를 이어나갈 수 있습니다.
-                                        </p>
-                                        <p>
-                                            함께 있을 때 새로운 목표와 꿈(별)이 생겨나며, 정서적뿐만 아니라
-                                            물질적으로도 서로에게 행운을 가져다주는 관계(여황제)라고 할 수 있습니다.
-                                            작은 오해가 생기더라도 솔직한 대화를 통해 쉽게 해결될 것입니다.
-                                        </p>
+                                        {isAnalyzing ? (
+                                            <div className="flex flex-col items-center justify-center py-8 gap-3">
+                                                <Loader2 className="w-8 h-8 animate-spin text-gold" />
+                                                <p className="text-sm text-muted-foreground animate-pulse">AI 마스터가 두 분의 어울림을 분석하고 있습니다...</p>
+                                            </div>
+                                        ) : (
+                                            <p className="whitespace-pre-wrap leading-relaxed">
+                                                {aiReading || '리딩 결과를 불러올 수 없습니다.'}
+                                            </p>
+                                        )}
                                     </div>
 
-                                    <div className="flex gap-3 pt-4">
-                                        <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('compatibility-result-content', 'aura-compat-tarot')}>
-                                            <Download className="w-4 h-4 mr-2" /> 저장
-                                        </Button>
-                                        <Button variant="outline" className="flex-1" onClick={() => shareResult('궁합 타로 결과', `${myName}님과 ${partnerName}님의 궁합을 확인해보세요!`)}>
-                                            <Share2 className="w-4 h-4 mr-2" /> 공유
-                                        </Button>
-                                    </div>
+                                    {!isAnalyzing && aiReading && (
+                                        <div className="space-y-3 pt-4">
+                                            <div className="flex gap-3">
+                                                <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('compatibility-result-content', 'aura-compat-tarot')}>
+                                                    <Download className="w-4 h-4 mr-2" /> 저장
+                                                </Button>
+                                                <Button variant="outline" className="flex-1" onClick={() => shareResult('궁합 타로 결과', `${myName}님과 ${partnerName}님의 궁합을 확인해보세요!`)}>
+                                                    <Share2 className="w-4 h-4 mr-2" /> 공유
+                                                </Button>
+                                            </div>
+                                            <Button
+                                                className="w-full bg-mystic-purple/20 hover:bg-mystic-purple/30 border border-mystic-purple/40 text-white"
+                                                onClick={handleShareToLounge}
+                                            >
+                                                <Share2 className="w-4 h-4 mr-2" /> 라운지에 공유하여 자랑하기
+                                            </Button>
+                                        </div>
+                                    )}
 
                                     <Button
                                         variant="ghost"
@@ -256,6 +338,9 @@ export const CompatibilityTarot = () => {
                                             setPartnerName('');
                                             setSelectedCardIndices([]);
                                             setRevealedCards([]);
+                                            setDrawnCards([]);
+                                            setAiReading('');
+                                            setScore(0);
                                         }}
                                     >
                                         <RefreshCw className="w-4 h-4 mr-2" />

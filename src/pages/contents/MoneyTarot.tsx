@@ -1,31 +1,31 @@
 import { useState, useEffect } from 'react';
-import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
+import { useNavigate } from 'react-router-dom';
+import { saveResultAsImage, shareResult, captureResultAsDataURL } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { PaymentModal } from '@/components/premium/PaymentModal';
 import { SpreadLayout } from '@/components/tarot/SpreadLayout';
 import { TarotCard } from '@/components/TarotCard';
-import { Coins, Lock, Sparkles, RefreshCw, Share2, Download } from 'lucide-react';
+import { Coins, Lock, Sparkles, RefreshCw, Share2, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { premiumStore } from '@/lib/premiumStore';
+import { getRandomCards, TarotCardData } from '@/lib/tarot-data';
+import { supabase } from '@/integrations/supabase/client';
 
 const FEATURE_ID = 'money-tarot';
 
-// Mock Card Data
-const MOCK_CARDS = [
-    { name: "Ten of Pentacles", korean: "펜타클 10", meaning: "부, 유산, 가족의 안정...", advice: "장기적인 투자가 길합니다." },
-    { name: "Ace of Swords", korean: "검 에이스", meaning: "기회, 승리, 지성...", advice: "단호한 결단이 필요합니다." },
-    { name: "The Wheel of Fortune", korean: "운명의 수레바퀴", meaning: "운의 변화, 기회...", advice: "흐름이 당신의 편입니다." },
-];
-
 export const MoneyTarot = () => {
+    const navigate = useNavigate();
     const [step, setStep] = useState<'intro' | 'input' | 'payment-check' | 'spread' | 'result'>('intro');
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [question, setQuestion] = useState('');
     const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
+    const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [revealedCards, setRevealedCards] = useState<number[]>([]);
+    const [aiReading, setAiReading] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // Load persisted state on mount
     useEffect(() => {
@@ -35,11 +35,21 @@ export const MoneyTarot = () => {
         }
 
         if (saved.readingState) {
-            const { step: savedStep, question: savedQuestion, selectedCardIndices: savedIndices, revealedCards: savedRevealed } = saved.readingState;
+            const {
+                step: savedStep,
+                question: savedQuestion,
+                selectedCardIndices: savedIndices,
+                revealedCards: savedRevealed,
+                drawnCards: savedDrawn,
+                aiReading: savedAiReading
+            } = saved.readingState;
+
             if (savedStep) setStep(savedStep);
             if (savedQuestion) setQuestion(savedQuestion);
             if (savedIndices) setSelectedCardIndices(savedIndices);
             if (savedRevealed) setRevealedCards(savedRevealed);
+            if (savedDrawn) setDrawnCards(savedDrawn);
+            if (savedAiReading) setAiReading(savedAiReading);
         }
     }, []);
 
@@ -50,10 +60,12 @@ export const MoneyTarot = () => {
                 step,
                 question,
                 selectedCardIndices,
-                revealedCards
+                revealedCards,
+                drawnCards,
+                aiReading
             });
         }
-    }, [step, question, selectedCardIndices, revealedCards]);
+    }, [step, question, selectedCardIndices, revealedCards, drawnCards, aiReading]);
 
     const handleStart = () => {
         setStep('input');
@@ -83,8 +95,41 @@ export const MoneyTarot = () => {
         setStep('spread');
     };
 
+    const fetchAiReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
+        setIsAnalyzing(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                body: {
+                    type: 'reading',
+                    context: {
+                        question: question,
+                        cards: cards.map(c => ({
+                            name: c.card.name,
+                            isReversed: c.isReversed
+                        }))
+                    }
+                }
+            });
+
+            if (error) throw error;
+            if (data?.message) {
+                setAiReading(data.message);
+            }
+        } catch (err) {
+            console.error('Error fetching AI reading:', err);
+            toast.error('AI 리딩을 가져오는 중 오류가 발생했습니다.');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     const handleSpreadComplete = (indices: number[]) => {
+        const newDrawnCards = getRandomCards(3);
+        setDrawnCards(newDrawnCards);
         setSelectedCardIndices(indices);
+
+        fetchAiReading(newDrawnCards);
+
         setTimeout(() => {
             setStep('result');
         }, 1000);
@@ -93,6 +138,25 @@ export const MoneyTarot = () => {
     const handleReveal = (index: number) => {
         if (!revealedCards.includes(index)) {
             setRevealedCards([...revealedCards, index]);
+        }
+    };
+
+    const handleShareToLounge = async () => {
+        try {
+            const dataUrl = await captureResultAsDataURL('money-result-content');
+            if (dataUrl) {
+                navigate('/lounge', {
+                    state: {
+                        autoOpenCreate: true,
+                        attachedImage: dataUrl,
+                        initialTitle: `${question}에 대한 금전운 AI 타로 결과`,
+                        initialContent: `오늘 본 금전운 타로 결과입니다. #타로 #금전운 #재물운`
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing to lounge:', error);
+            toast.error('라운지 공유 중 오류가 발생했습니다.');
         }
     };
 
@@ -176,6 +240,7 @@ export const MoneyTarot = () => {
                     </div>
                 )}
 
+                {/* Result Step */}
                 {step === 'result' && (
                     <div className="w-full max-w-4xl animate-fade-in pb-20">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
@@ -186,13 +251,17 @@ export const MoneyTarot = () => {
                                         <TarotCard
                                             size="lg"
                                             isFlipped={revealedCards.includes(i)}
+                                            isReversed={drawnCards[i]?.isReversed}
                                             interactive={false}
                                         />
                                     </div>
-                                    {revealedCards.includes(i) && (
+                                    {revealedCards.includes(i) && drawnCards[i] && (
                                         <div className="mt-4 text-center animate-fade-in">
-                                            <h4 className="font-display text-lg text-gold">{MOCK_CARDS[i].korean}</h4>
-                                            <p className="text-xs text-muted-foreground">{MOCK_CARDS[i].name}</p>
+                                            <h4 className="font-display text-lg text-gold">
+                                                {drawnCards[i].card.koreanName}
+                                                {drawnCards[i].isReversed && <span className="text-xs ml-1 text-mystic-purple">(역방향)</span>}
+                                            </h4>
+                                            <p className="text-xs text-muted-foreground">{drawnCards[i].card.name}</p>
                                         </div>
                                     )}
                                 </div>
@@ -200,7 +269,7 @@ export const MoneyTarot = () => {
                         </div>
 
                         {revealedCards.length === 3 && (
-                            <div className="bg-card/40 backdrop-blur-md rounded-2xl p-6 border border-gold/20">
+                            <div className="bg-card/40 backdrop-blur-md rounded-2xl p-6 border border-gold/20 animate-fade-in">
                                 <h3 className="font-display text-xl text-gold-gradient mb-6 flex items-center gap-2">
                                     <Sparkles className="w-5 h-5" />
                                     AI 재물운 리딩 결과
@@ -209,30 +278,36 @@ export const MoneyTarot = () => {
                                 <div id="money-result-content" className="space-y-6 text-foreground/90 leading-relaxed text-sm md:text-base">
                                     <div className="p-4 bg-background/50 rounded-xl">
                                         <h4 className="font-bold text-gold mb-2">Q. {question}</h4>
-                                        <p className="opacity-80">
-                                            현재 당신의 재물운은 매우 견고한 상태(펜타클 10)입니다.
-                                            조만간 중요한 금전적 판단을 내려야 할 시점(검 에이스)이 올 것인데,
-                                            이때의 결정이 당신의 자산을 크게 키우는 터닝포인트(운명의 수레바퀴)가 될 것입니다.
-                                        </p>
+                                        {isAnalyzing ? (
+                                            <div className="flex flex-col items-center justify-center py-8 gap-3">
+                                                <Loader2 className="w-8 h-8 animate-spin text-gold" />
+                                                <p className="text-sm text-muted-foreground animate-pulse">AI 마스터가 금전의 흐름을 분석하고 있습니다...</p>
+                                            </div>
+                                        ) : (
+                                            <p className="whitespace-pre-wrap leading-relaxed">
+                                                {aiReading || '리딩 결과를 불러올 수 없습니다.'}
+                                            </p>
+                                        )}
                                     </div>
 
-                                    <div>
-                                        <h4 className="font-bold mb-2">💰 풍요를 위한 조언</h4>
-                                        <p>
-                                            지금은 공격적인 투자보다는 내실을 기하고 정보를 수집할 때입니다.
-                                            특히 주변의 신뢰할 만한 전문가의 조언을 귀담아들으세요.
-                                            횡재수보다는 노력에 의한 결실이 큰 시기이므로, 현재 진행 중인 일에 집중하세요.
-                                        </p>
-                                    </div>
-
-                                    <div className="flex gap-3 pt-4">
-                                        <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('money-result-content', 'aura-money-tarot')}>
-                                            <Download className="w-4 h-4 mr-2" /> 저장
-                                        </Button>
-                                        <Button variant="outline" className="flex-1" onClick={() => shareResult('금전운 타로 결과', '제 금전운 리딩 결과를 확인해보세요!')}>
-                                            <Share2 className="w-4 h-4 mr-2" /> 공유
-                                        </Button>
-                                    </div>
+                                    {!isAnalyzing && aiReading && (
+                                        <div className="space-y-3 pt-4">
+                                            <div className="flex gap-3">
+                                                <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('money-result-content', 'aura-money-tarot')}>
+                                                    <Download className="w-4 h-4 mr-2" /> 저장
+                                                </Button>
+                                                <Button variant="outline" className="flex-1" onClick={() => shareResult('금전운 타로 결과', '제 금전운 리딩 결과를 확인해보세요!')}>
+                                                    <Share2 className="w-4 h-4 mr-2" /> 공유
+                                                </Button>
+                                            </div>
+                                            <Button
+                                                className="w-full bg-mystic-purple/20 hover:bg-mystic-purple/30 border border-mystic-purple/40 text-white"
+                                                onClick={handleShareToLounge}
+                                            >
+                                                <Share2 className="w-4 h-4 mr-2" /> 라운지에 공유하여 자랑하기
+                                            </Button>
+                                        </div>
+                                    )}
 
                                     <Button
                                         variant="ghost"
@@ -243,6 +318,8 @@ export const MoneyTarot = () => {
                                             setStep('input');
                                             setSelectedCardIndices([]);
                                             setRevealedCards([]);
+                                            setDrawnCards([]);
+                                            setAiReading('');
                                         }}
                                     >
                                         <RefreshCw className="w-4 h-4 mr-2" />

@@ -1,34 +1,33 @@
 import { useState, useEffect } from 'react';
-import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
+import { useNavigate } from 'react-router-dom';
+import { saveResultAsImage, shareResult, captureResultAsDataURL } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { PaymentModal } from '@/components/premium/PaymentModal';
 import { SpreadLayout } from '@/components/tarot/SpreadLayout';
 import { TarotCard } from '@/components/TarotCard';
-import { Moon, Lock, Sparkles, RefreshCw, Share2, Download, User } from 'lucide-react';
+import { Moon, Lock, Sparkles, RefreshCw, Share2, Download, User, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { premiumStore } from '@/lib/premiumStore';
+import { getRandomCards, TarotCardData } from '@/lib/tarot-data';
+import { supabase } from '@/integrations/supabase/client';
 
 const FEATURE_ID = 'reunion-tarot';
 
-// Mock Card Data
-const MOCK_CARDS = [
-    { name: "Five of Cups", korean: "컵 5", meaning: "상실감, 후회...", advice: "과거에 얽매이지 마세요." },
-    { name: "The Hierophant", korean: "교황", meaning: "조언, 신념, 관습...", advice: "주변의 조언을 구하세요." },
-    { name: "Eight of Swords", korean: "검 8", meaning: "고립, 두려움...", advice: "스스로 만든 감옥에서 나오세요." },
-    { name: "Wheel of Fortune", korean: "운명의 수레바퀴", meaning: "변화, 기회, 운명...", advice: "흐름에 몸을 맡기세요." },
-];
-
 export const ReunionTarot = () => {
+    const navigate = useNavigate();
     const [step, setStep] = useState<'intro' | 'input' | 'payment-check' | 'spread' | 'result'>('intro');
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [question, setQuestion] = useState('');
     const [partnerInfo, setPartnerInfo] = useState('');
     const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
+    const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [revealedCards, setRevealedCards] = useState<number[]>([]);
     const [probability, setProbability] = useState(0);
+    const [aiReading, setAiReading] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // Load persisted state on mount
     useEffect(() => {
@@ -38,12 +37,25 @@ export const ReunionTarot = () => {
         }
 
         if (saved.readingState) {
-            const { step: savedStep, question: savedQuestion, partnerInfo: savedPartner, selectedCardIndices: savedIndices, revealedCards: savedRevealed } = saved.readingState;
+            const {
+                step: savedStep,
+                question: savedQuestion,
+                partnerInfo: savedPartner,
+                selectedCardIndices: savedIndices,
+                revealedCards: savedRevealed,
+                drawnCards: savedDrawn,
+                aiReading: savedAiReading,
+                probability: savedProb
+            } = saved.readingState;
+
             if (savedStep) setStep(savedStep);
             if (savedQuestion) setQuestion(savedQuestion);
             if (savedPartner) setPartnerInfo(savedPartner);
             if (savedIndices) setSelectedCardIndices(savedIndices);
             if (savedRevealed) setRevealedCards(savedRevealed);
+            if (savedDrawn) setDrawnCards(savedDrawn);
+            if (savedAiReading) setAiReading(savedAiReading);
+            if (savedProb) setProbability(savedProb);
         }
     }, []);
 
@@ -55,10 +67,13 @@ export const ReunionTarot = () => {
                 question,
                 partnerInfo,
                 selectedCardIndices,
-                revealedCards
+                revealedCards,
+                drawnCards,
+                aiReading,
+                probability
             });
         }
-    }, [step, question, partnerInfo, selectedCardIndices, revealedCards]);
+    }, [step, question, partnerInfo, selectedCardIndices, revealedCards, drawnCards, aiReading, probability]);
 
     const handleStart = () => {
         setStep('input');
@@ -88,8 +103,41 @@ export const ReunionTarot = () => {
         setStep('spread');
     };
 
+    const fetchAiReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
+        setIsAnalyzing(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                body: {
+                    type: 'reading',
+                    context: {
+                        question: `${question}${partnerInfo ? ` (상황: ${partnerInfo})` : ''}`,
+                        cards: cards.map(c => ({
+                            name: c.card.name,
+                            isReversed: c.isReversed
+                        }))
+                    }
+                }
+            });
+
+            if (error) throw error;
+            if (data?.message) {
+                setAiReading(data.message);
+            }
+        } catch (err) {
+            console.error('Error fetching AI reading:', err);
+            toast.error('AI 리딩을 가져오는 중 오류가 발생했습니다.');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     const handleSpreadComplete = (indices: number[]) => {
+        const newDrawnCards = getRandomCards(4);
+        setDrawnCards(newDrawnCards);
         setSelectedCardIndices(indices);
+
+        fetchAiReading(newDrawnCards);
+
         setTimeout(() => {
             setStep('result');
             setProbability(Math.floor(Math.random() * 41) + 40); // 40-80%
@@ -99,6 +147,25 @@ export const ReunionTarot = () => {
     const handleReveal = (index: number) => {
         if (!revealedCards.includes(index)) {
             setRevealedCards([...revealedCards, index]);
+        }
+    };
+
+    const handleShareToLounge = async () => {
+        try {
+            const dataUrl = await captureResultAsDataURL('reunion-result-content');
+            if (dataUrl) {
+                navigate('/lounge', {
+                    state: {
+                        autoOpenCreate: true,
+                        attachedImage: dataUrl,
+                        initialTitle: `${question}에 대한 재회운 AI 타로 결과`,
+                        initialContent: `오늘 본 재회운 타로 결과입니다. #타로 #재회운 #인연`
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing to lounge:', error);
+            toast.error('라운지 공유 중 오류가 발생했습니다.');
         }
     };
 
@@ -152,7 +219,7 @@ export const ReunionTarot = () => {
                             <Textarea
                                 value={partnerInfo}
                                 onChange={(e) => setPartnerInfo(e.target.value)}
-                                placeholder="예: 헤어진 시기, 마지막 연락 내용 등"
+                                placeholder="예: 이름 초성(K), 헤어진 시기, 마지막 연락 내용 등"
                                 className="min-h-[60px] bg-card/50 px-4 py-3"
                             />
                         </div>
@@ -224,12 +291,16 @@ export const ReunionTarot = () => {
                                         <TarotCard
                                             size="sm"
                                             isFlipped={revealedCards.includes(i)}
+                                            isReversed={drawnCards[i]?.isReversed}
                                             interactive={false}
                                         />
                                     </div>
-                                    {revealedCards.includes(i) && (
+                                    {revealedCards.includes(i) && drawnCards[i] && (
                                         <div className="mt-2 text-center animate-fade-in">
-                                            <span className="text-sm font-medium text-gold">{MOCK_CARDS[i].korean}</span>
+                                            <span className="text-sm font-medium text-gold">
+                                                {drawnCards[i].card.koreanName}
+                                                {drawnCards[i].isReversed && <span className="text-[10px] ml-1 opacity-70">(역)</span>}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -237,39 +308,45 @@ export const ReunionTarot = () => {
                         </div>
 
                         {revealedCards.length === 4 && (
-                            <div className="bg-card/40 backdrop-blur-md rounded-2xl p-6 border border-gold/20">
+                            <div className="bg-card/40 backdrop-blur-md rounded-2xl p-6 border border-gold/20 animate-fade-in">
                                 <h3 className="font-display text-xl text-gold-gradient mb-6 flex items-center gap-2">
                                     <Sparkles className="w-5 h-5" />
-                                    재회 전략 리딩
+                                    AI 심층 재회 리딩
                                 </h3>
 
                                 <div id="reunion-result-content" className="space-y-6 text-foreground/90 leading-relaxed text-sm md:text-base">
                                     <div className="p-4 bg-background/50 rounded-xl">
-                                        <h4 className="font-bold text-gold mb-2">현재의 흐름</h4>
-                                        <p className="opacity-80">
-                                            현재 질문자님은 상실감(컵 5)을 느끼고 있지만, 운명의 흐름(운명의 수레바퀴)은
-                                            두 사람의 관계를 다시 끌어당기고 있습니다. 상대방은 현재 방어적인 입장(검 8)일 수 있으나,
-                                            지혜로운 접근(교황)을 통해 오해를 풀 기회가 생길 것입니다.
-                                        </p>
+                                        <h4 className="font-bold text-gold mb-2">Q. {question}</h4>
+                                        {isAnalyzing ? (
+                                            <div className="flex flex-col items-center justify-center py-8 gap-3">
+                                                <Loader2 className="w-8 h-8 animate-spin text-gold" />
+                                                <p className="text-sm text-muted-foreground animate-pulse">AI 마스터가 인연의 고리를 분석하고 있습니다...</p>
+                                            </div>
+                                        ) : (
+                                            <p className="whitespace-pre-wrap leading-relaxed">
+                                                {aiReading || '리딩 결과를 불러올 수 없습니다.'}
+                                            </p>
+                                        )}
                                     </div>
 
-                                    <div>
-                                        <h4 className="font-bold mb-2">💫 최적의 타이밍</h4>
-                                        <p>
-                                            지금 당장 연락하기보다는 2주 정도의 시간을 두고 상대방이 스스로
-                                            생각할 여유를 주시는 것이 좋습니다. 보름달이 뜨는 시기 근처가
-                                            두 사람의 대화가 가장 부드럽게 풀릴 좋은 시점입니다.
-                                        </p>
-                                    </div>
-
-                                    <div className="flex gap-3 pt-4">
-                                        <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('reunion-result-content', 'aura-reunion-tarot')}>
-                                            <Download className="w-4 h-4 mr-2" /> 저장
-                                        </Button>
-                                        <Button variant="outline" className="flex-1" onClick={() => shareResult('재회운 타로 결과', '제 재회 가능성을 확인해보세요!')}>
-                                            <Share2 className="w-4 h-4 mr-2" /> 공유
-                                        </Button>
-                                    </div>
+                                    {!isAnalyzing && aiReading && (
+                                        <div className="space-y-3 pt-4">
+                                            <div className="flex gap-3">
+                                                <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('reunion-result-content', 'aura-reunion-tarot')}>
+                                                    <Download className="w-4 h-4 mr-2" /> 저장
+                                                </Button>
+                                                <Button variant="outline" className="flex-1" onClick={() => shareResult('재회운 타로 결과', '제 재회 가능성을 확인해보세요!')}>
+                                                    <Share2 className="w-4 h-4 mr-2" /> 공유
+                                                </Button>
+                                            </div>
+                                            <Button
+                                                className="w-full bg-mystic-purple/20 hover:bg-mystic-purple/30 border border-mystic-purple/40 text-white"
+                                                onClick={handleShareToLounge}
+                                            >
+                                                <Share2 className="w-4 h-4 mr-2" /> 라운지에 공유하여 자랑하기
+                                            </Button>
+                                        </div>
+                                    )}
 
                                     <Button
                                         variant="ghost"
@@ -280,6 +357,8 @@ export const ReunionTarot = () => {
                                             setStep('input');
                                             setSelectedCardIndices([]);
                                             setRevealedCards([]);
+                                            setDrawnCards([]);
+                                            setAiReading('');
                                             setProbability(0);
                                         }}
                                     >

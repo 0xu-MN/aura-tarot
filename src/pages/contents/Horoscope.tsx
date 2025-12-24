@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
+import { useNavigate } from 'react-router-dom';
+import { saveResultAsImage, shareResult, captureResultAsDataURL } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { PaymentModal } from '@/components/premium/PaymentModal';
-import { Star, Moon, Sun, Share2, Download, ChevronRight, Lock, Sparkles } from 'lucide-react';
+import { Star, Moon, Sun, Share2, Download, ChevronRight, Lock, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { premiumStore } from '@/lib/premiumStore';
+import { supabase } from '@/integrations/supabase/client';
 
 const FEATURE_ID = 'horoscope-premium';
 
@@ -32,11 +34,14 @@ const TIMEFRAMES = [
 ];
 
 export const Horoscope = () => {
+    const navigate = useNavigate();
     const [step, setStep] = useState<'select-sign' | 'select-timeframe' | 'payment-check' | 'result'>('select-sign');
     const [selectedSign, setSelectedSign] = useState<typeof ZODIAC_SIGNS[0] | null>(null);
     const [selectedTimeframe, setSelectedTimeframe] = useState<typeof TIMEFRAMES[0] | null>(null);
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [aiReading, setAiReading] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // Load persisted state on mount
     useEffect(() => {
@@ -46,9 +51,10 @@ export const Horoscope = () => {
         }
 
         if (saved.readingState) {
-            const { step: savedStep, selectedSign: savedSign, selectedTimeframeId } = saved.readingState;
+            const { step: savedStep, selectedSign: savedSign, selectedTimeframeId, aiReading: savedAiReading } = saved.readingState;
             if (savedStep) setStep(savedStep);
             if (savedSign) setSelectedSign(savedSign);
+            if (savedAiReading) setAiReading(savedAiReading);
             if (selectedTimeframeId) {
                 const tf = TIMEFRAMES.find(t => t.id === selectedTimeframeId);
                 if (tf) setSelectedTimeframe(tf);
@@ -62,10 +68,36 @@ export const Horoscope = () => {
             premiumStore.saveReadingState(FEATURE_ID, {
                 step,
                 selectedSign,
-                selectedTimeframeId: selectedTimeframe?.id
+                selectedTimeframeId: selectedTimeframe?.id,
+                aiReading
             });
         }
-    }, [step, selectedSign, selectedTimeframe]);
+    }, [step, selectedSign, selectedTimeframe, aiReading]);
+
+    const fetchAiReading = async (sign: string, timeframe: string) => {
+        setIsAnalyzing(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                body: {
+                    type: 'horoscope',
+                    context: {
+                        sign,
+                        timeframe
+                    }
+                }
+            });
+
+            if (error) throw error;
+            if (data?.message) {
+                setAiReading(data.message);
+            }
+        } catch (err) {
+            console.error('Error fetching AI reading:', err);
+            toast.error('AI 운세를 가져오는 중 오류가 발생했습니다.');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
 
     const handleSignSelect = (sign: typeof ZODIAC_SIGNS[0]) => {
         setSelectedSign(sign);
@@ -78,12 +110,38 @@ export const Horoscope = () => {
             setStep('payment-check');
         } else {
             setStep('result');
+            if (selectedSign) {
+                fetchAiReading(selectedSign.name, timeframe.label);
+            }
         }
     };
 
     const handleUnlock = () => {
         setHasPaid(true);
         setStep('result');
+        if (selectedSign && selectedTimeframe) {
+            fetchAiReading(selectedSign.name, selectedTimeframe.label);
+        }
+    };
+
+    const handleShareToLounge = async () => {
+        if (!selectedSign || !selectedTimeframe) return;
+        try {
+            const dataUrl = await captureResultAsDataURL('horoscope-result-content');
+            if (dataUrl) {
+                navigate('/lounge', {
+                    state: {
+                        autoOpenCreate: true,
+                        attachedImage: dataUrl,
+                        initialTitle: `${selectedSign.name}의 ${selectedTimeframe.label} 결과`,
+                        initialContent: `오늘 본 ${selectedSign.name}의 ${selectedTimeframe.label}입니다. ✨ #별자리 #운세`
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing to lounge:', error);
+            toast.error('라운지 공유 중 오류가 발생했습니다.');
+        }
     };
 
     return (
@@ -221,53 +279,37 @@ export const Horoscope = () => {
 
                                 <div className="space-y-6 text-foreground/90 leading-relaxed">
                                     <div className="p-6 bg-background/50 rounded-xl border-l-4 border-indigo-500">
-                                        <h3 className="font-bold text-indigo-400 mb-2 text-lg">✨ 총평</h3>
-                                        <p className="opacity-90">
-                                            {selectedSign.element === 'Fire' ? "열정이 넘치는 시기입니다. 당신의 에너지가 주변을 밝히고 새로운 기회를 끌어당길 것입니다." :
-                                                selectedSign.element === 'Water' ? "감성적인 흐름이 강해집니다. 직관을 믿고 내면의 소리에 귀 기울이면 뜻밖의 행운을 발견할 수 있습니다." :
-                                                    selectedSign.element === 'Air' ? "새로운 아이디어와 만남이 가득합니다. 활발한 소통을 통해 당신의 영역을 확장하기 좋은 때입니다." :
-                                                        "안정적이고 실리적인 성과를 거둘 수 있습니다. 꾸준함이 당신의 가장 큰 무기가 되어줄 것입니다."}
-                                            {selectedTimeframe.id === 'yearly' && " 특히 올해는 당신의 잠재력이 폭발하는 한 해가 될 것입니다. 두려워하지 말고 도전하세요!"}
-                                        </p>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="p-4 bg-background/50 rounded-xl">
-                                            <h4 className="font-bold text-rose-400 mb-1">❤️ 애정운</h4>
-                                            <div className="flex items-center gap-1 mb-2">
-                                                {[1, 2, 3, 4, 5].map(i => <Star key={i} className={`w-3 h-3 ${i <= 4 ? 'fill-rose-400 text-rose-400' : 'text-gray-600'}`} />)}
+                                        <h3 className="font-bold text-indigo-400 mb-2 text-lg">✨ AI 심층 분석</h3>
+                                        {isAnalyzing ? (
+                                            <div className="flex flex-col items-center justify-center py-8 gap-3">
+                                                <Loader2 className="w-8 h-8 animate-spin text-gold" />
+                                                <p className="text-sm text-muted-foreground animate-pulse">별들의 움직임을 읽고 있습니다...</p>
                                             </div>
-                                            <p className="text-sm opacity-80">
-                                                매력지수가 상승하여 주목받는 날입니다.
+                                        ) : (
+                                            <p className="whitespace-pre-wrap leading-relaxed">
+                                                {aiReading || '운세 리딩을 불러올 수 없습니다.'}
                                             </p>
-                                        </div>
-                                        <div className="p-4 bg-background/50 rounded-xl">
-                                            <h4 className="font-bold text-emerald-400 mb-1">💰 금전운</h4>
-                                            <div className="flex items-center gap-1 mb-2">
-                                                {[1, 2, 3, 4, 5].map(i => <Star key={i} className={`w-3 h-3 ${i <= (selectedSign.element === 'Earth' ? 5 : 3) ? 'fill-emerald-400 text-emerald-400' : 'text-gray-600'}`} />)}
+                                        )}
+                                    </div>
+
+                                    {!isAnalyzing && aiReading && (
+                                        <div className="space-y-3 pt-6 border-t border-white/10">
+                                            <div className="flex gap-3">
+                                                <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('horoscope-result-content', `aura-horoscope-${selectedSign.name}`)}>
+                                                    <Download className="w-4 h-4 mr-2" /> 저장
+                                                </Button>
+                                                <Button variant="outline" className="flex-1" onClick={() => shareResult(`${selectedSign.name}의 운세`, `제 별자리 운세 결과가 나왔습니다! ${selectedSign.name}의 ${selectedTimeframe.label}를 확인해보세요.`)}>
+                                                    <Share2 className="w-4 h-4 mr-2" /> 공유
+                                                </Button>
                                             </div>
-                                            <p className="text-sm opacity-80">
-                                                {selectedSign.element === 'Earth' ? "뜻밖의 수익이 기대됩니다." : "지출 관리에 신경 써야 합니다."}
-                                            </p>
+                                            <Button
+                                                className="w-full bg-mystic-purple/20 hover:bg-mystic-purple/30 border border-mystic-purple/40 text-white"
+                                                onClick={handleShareToLounge}
+                                            >
+                                                <Share2 className="w-4 h-4 mr-2" /> 라운지에 공유하여 자랑하기
+                                            </Button>
                                         </div>
-                                    </div>
-
-                                    <div className="p-4 bg-background/50 rounded-xl">
-                                        <h4 className="font-bold text-gold mb-2">💡 행운의 팁</h4>
-                                        <div className="flex justify-between text-sm opacity-80">
-                                            <span>Lucky Color: <span className="text-white font-medium">{selectedSign.element === 'Fire' ? 'Red' : selectedSign.element === 'Water' ? 'Blue' : selectedSign.element === 'Air' ? 'White' : 'Green'}</span></span>
-                                            <span>Lucky Number: <span className="text-white font-medium">{Math.floor(Math.random() * 9) + 1}</span></span>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-3 pt-6 border-t border-white/10">
-                                        <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('horoscope-result-content', `aura-horoscope-${selectedSign.name}`)}>
-                                            <Download className="w-4 h-4 mr-2" /> 저장
-                                        </Button>
-                                        <Button variant="outline" className="flex-1" onClick={() => shareResult(`${selectedSign.name}의 운세`, `제 별자리 운세 결과가 나왔습니다! 행운의 컬러는 ${selectedSign.element === 'Fire' ? 'Red' : 'Blue'}네요.`)}>
-                                            <Share2 className="w-4 h-4 mr-2" /> 공유
-                                        </Button>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -281,6 +323,7 @@ export const Horoscope = () => {
                                 setStep('select-sign');
                                 setSelectedSign(null);
                                 setSelectedTimeframe(null);
+                                setAiReading('');
                             }}
                         >
                             다른 별자리 보기

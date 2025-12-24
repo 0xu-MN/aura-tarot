@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import supabase from '@/utils/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import {
     saveRememberedEmail,
     getRememberedEmail,

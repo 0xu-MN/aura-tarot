@@ -1,32 +1,31 @@
 import { useState, useEffect } from 'react';
-import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
+import { useNavigate } from 'react-router-dom';
+import { saveResultAsImage, shareResult, captureResultAsDataURL } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PaymentModal } from '@/components/premium/PaymentModal';
 import { SpreadLayout } from '@/components/tarot/SpreadLayout';
 import { TarotCard } from '@/components/TarotCard';
-import { Calendar, Lock, Sparkles, RefreshCw, Share2, Download, User } from 'lucide-react';
+import { Calendar, Lock, Sparkles, RefreshCw, Share2, Download, User, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { premiumStore } from '@/lib/premiumStore';
+import { getRandomCards, TarotCardData } from '@/lib/tarot-data';
+import { supabase } from '@/integrations/supabase/client';
 
 const FEATURE_ID = 'yearly-fortune';
 
-// Mock Card Data (4 cards for 4 seasons)
-const MOCK_CARDS = [
-    { name: "Ace of Pentacles", korean: "펜타클 에이스", meaning: "새로운 시작, 풍요...", advice: "봄에는 새로운 투자가 좋습니다." },
-    { name: "The Chariot", korean: "전차", meaning: "승리, 전진, 의지...", advice: "여름에는 거침없이 나아가세요." },
-    { name: "Queen of Pentacles", korean: "펜타클 퀸", meaning: "결실, 안정, 가꿈...", advice: "가을에는 노력의 결과가 나옵니다." },
-    { name: "Justice", korean: "정의", meaning: "균형, 공정, 결단...", advice: "겨울에는 한 해를 차분히 정리하세요." },
-];
-
 export const YearlyFortune = () => {
+    const navigate = useNavigate();
     const [step, setStep] = useState<'intro' | 'input' | 'payment-check' | 'spread' | 'result'>('intro');
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [name, setName] = useState('');
     const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
+    const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [revealedCards, setRevealedCards] = useState<number[]>([]);
+    const [aiReading, setAiReading] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // Load persisted state on mount
     useEffect(() => {
@@ -36,11 +35,21 @@ export const YearlyFortune = () => {
         }
 
         if (saved.readingState) {
-            const { step: savedStep, name: savedName, selectedCardIndices: savedIndices, revealedCards: savedRevealed } = saved.readingState;
+            const {
+                step: savedStep,
+                name: savedName,
+                selectedCardIndices: savedIndices,
+                revealedCards: savedRevealed,
+                drawnCards: savedDrawn,
+                aiReading: savedAiReading
+            } = saved.readingState;
+
             if (savedStep) setStep(savedStep);
             if (savedName) setName(savedName);
             if (savedIndices) setSelectedCardIndices(savedIndices);
             if (savedRevealed) setRevealedCards(savedRevealed);
+            if (savedDrawn) setDrawnCards(savedDrawn);
+            if (savedAiReading) setAiReading(savedAiReading);
         }
     }, []);
 
@@ -51,10 +60,12 @@ export const YearlyFortune = () => {
                 step,
                 name,
                 selectedCardIndices,
-                revealedCards
+                revealedCards,
+                drawnCards,
+                aiReading
             });
         }
-    }, [step, name, selectedCardIndices, revealedCards]);
+    }, [step, name, selectedCardIndices, revealedCards, drawnCards, aiReading]);
 
     const handleStart = () => {
         setStep('input');
@@ -82,8 +93,41 @@ export const YearlyFortune = () => {
         setStep('spread');
     };
 
+    const fetchAiReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
+        setIsAnalyzing(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                body: {
+                    type: 'reading',
+                    context: {
+                        question: `${name}님의 2025년 신년 운세는 어떤가요? (사계절 중심)`,
+                        cards: cards.map(c => ({
+                            name: c.card.name,
+                            isReversed: c.isReversed
+                        }))
+                    }
+                }
+            });
+
+            if (error) throw error;
+            if (data?.message) {
+                setAiReading(data.message);
+            }
+        } catch (err) {
+            console.error('Error fetching AI reading:', err);
+            toast.error('AI 리딩을 가져오는 중 오류가 발생했습니다.');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     const handleSpreadComplete = (indices: number[]) => {
+        const newDrawnCards = getRandomCards(4);
+        setDrawnCards(newDrawnCards);
         setSelectedCardIndices(indices);
+
+        fetchAiReading(newDrawnCards);
+
         setTimeout(() => {
             setStep('result');
         }, 1000);
@@ -92,6 +136,25 @@ export const YearlyFortune = () => {
     const handleReveal = (index: number) => {
         if (!revealedCards.includes(index)) {
             setRevealedCards([...revealedCards, index]);
+        }
+    };
+
+    const handleShareToLounge = async () => {
+        try {
+            const dataUrl = await captureResultAsDataURL('yearly-result-content');
+            if (dataUrl) {
+                navigate('/lounge', {
+                    state: {
+                        autoOpenCreate: true,
+                        attachedImage: dataUrl,
+                        initialTitle: `${name}님의 2025년 AI 신년운세 결과`,
+                        initialContent: `오늘 본 2025년 AI 신년운세 결과입니다. #타로 #신년운세 #2025`
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing to lounge:', error);
+            toast.error('라운지 공유 중 오류가 발생했습니다.');
         }
     };
 
@@ -187,12 +250,16 @@ export const YearlyFortune = () => {
                                         <TarotCard
                                             size="sm"
                                             isFlipped={revealedCards.includes(i)}
+                                            isReversed={drawnCards[i]?.isReversed}
                                             interactive={false}
                                         />
                                     </div>
-                                    {revealedCards.includes(i) && (
+                                    {revealedCards.includes(i) && drawnCards[i] && (
                                         <div className="mt-2 text-center animate-fade-in">
-                                            <span className="text-sm font-medium text-gold">{MOCK_CARDS[i].korean}</span>
+                                            <span className="text-sm font-medium text-gold">
+                                                {drawnCards[i].card.koreanName}
+                                                {drawnCards[i].isReversed && <span className="text-[10px] ml-1 opacity-70">(역)</span>}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -200,7 +267,7 @@ export const YearlyFortune = () => {
                         </div>
 
                         {revealedCards.length === 4 && (
-                            <div className="bg-card/40 backdrop-blur-md rounded-2xl p-6 border border-gold/20">
+                            <div className="bg-card/40 backdrop-blur-md rounded-2xl p-6 border border-gold/20 animate-fade-in">
                                 <h3 className="font-display text-xl text-gold-gradient mb-6 flex items-center gap-2">
                                     <Sparkles className="w-5 h-5" />
                                     {name}님의 2025년 운세 리포트
@@ -208,31 +275,37 @@ export const YearlyFortune = () => {
 
                                 <div id="yearly-result-content" className="space-y-6 text-foreground/90 leading-relaxed text-sm md:text-base">
                                     <div className="p-4 bg-background/50 rounded-xl">
-                                        <h4 className="font-bold text-gold mb-2">계절별 운세 흐름</h4>
-                                        <p className="opacity-80">
-                                            올해는 새로운 금전적 기회(펜타클 에이스)로 시작하여 정열적으로 전진(전차)하는
-                                            역동적인 한 해가 될 것입니다. 가을에는 안정적인 성과(펜타클 퀸)를 거두게 되며,
-                                            연말에는 공정한 보상과 정리(정의)를 통해 보람찬 마무리를 하게 됩니다.
-                                        </p>
+                                        <h4 className="font-bold text-gold mb-2">총괄적 분석</h4>
+                                        {isAnalyzing ? (
+                                            <div className="flex flex-col items-center justify-center py-8 gap-3">
+                                                <Loader2 className="w-8 h-8 animate-spin text-gold" />
+                                                <p className="text-sm text-muted-foreground animate-pulse">AI 마스터가 한 해의 운명을 엮고 있습니다...</p>
+                                            </div>
+                                        ) : (
+                                            <p className="whitespace-pre-wrap leading-relaxed">
+                                                {aiReading || '리딩 결과를 불러올 수 없습니다.'}
+                                            </p>
+                                        )}
                                     </div>
 
-                                    <div>
-                                        <h4 className="font-bold mb-2">🌟 올해의 행운 전략</h4>
-                                        <p>
-                                            상반기에는 과감한 도전이 성과로 이어집니다. 새로운 분야의 공부나 투자를 시작해보세요.
-                                            하반기에는 확장보다는 내실을 기하는 것이 유리합니다. 자신의 성취를 주변과 나누면
-                                            더 큰 복이 돌아올 것입니다.
-                                        </p>
-                                    </div>
-
-                                    <div className="flex gap-3 pt-4">
-                                        <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('yearly-result-content', 'aura-yearly-fortune')}>
-                                            <Download className="w-4 h-4 mr-2" /> 저장
-                                        </Button>
-                                        <Button variant="outline" className="flex-1" onClick={() => shareResult('신년 총운 결과', `${name}님의 2025년 운세 결과를 확인해보세요!`)}>
-                                            <Share2 className="w-4 h-4 mr-2" /> 공유
-                                        </Button>
-                                    </div>
+                                    {!isAnalyzing && aiReading && (
+                                        <div className="space-y-3 pt-4">
+                                            <div className="flex gap-3">
+                                                <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('yearly-result-content', 'aura-yearly-fortune')}>
+                                                    <Download className="w-4 h-4 mr-2" /> 저장
+                                                </Button>
+                                                <Button variant="outline" className="flex-1" onClick={() => shareResult('신년 총운 결과', `${name}님의 2025년 운세 결과를 확인해보세요!`)}>
+                                                    <Share2 className="w-4 h-4 mr-2" /> 공유
+                                                </Button>
+                                            </div>
+                                            <Button
+                                                className="w-full bg-mystic-purple/20 hover:bg-mystic-purple/30 border border-mystic-purple/40 text-white"
+                                                onClick={handleShareToLounge}
+                                            >
+                                                <Share2 className="w-4 h-4 mr-2" /> 라운지에 공유하여 자랑하기
+                                            </Button>
+                                        </div>
+                                    )}
 
                                     <Button
                                         variant="ghost"
@@ -243,6 +316,8 @@ export const YearlyFortune = () => {
                                             setStep('input');
                                             setSelectedCardIndices([]);
                                             setRevealedCards([]);
+                                            setDrawnCards([]);
+                                            setAiReading('');
                                         }}
                                     >
                                         <RefreshCw className="w-4 h-4 mr-2" />

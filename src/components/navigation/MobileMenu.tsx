@@ -35,13 +35,6 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
 
     const handleNavigation = (path: string) => {
         // Check if it's lounge and not in dev mode
-        if (path === '/lounge' && !isDeveloperMode) {
-            toast.info('라운지 준비 중', {
-                description: '곧 오픈 예정입니다. 조금만 기다려주세요!',
-            });
-            onClose();
-            return;
-        }
         navigate(path);
         onClose();
     };

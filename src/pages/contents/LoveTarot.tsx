@@ -1,32 +1,32 @@
 import { useState, useEffect } from 'react';
-import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
+import { useNavigate } from 'react-router-dom';
+import { saveResultAsImage, shareResult, captureResultAsDataURL } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { PaymentModal } from '@/components/premium/PaymentModal';
 import { SpreadLayout } from '@/components/tarot/SpreadLayout';
 import { TarotCard } from '@/components/TarotCard';
-import { Heart, Lock, Sparkles, User, RefreshCw, Share2, Download } from 'lucide-react';
+import { Heart, Lock, Sparkles, User, RefreshCw, Share2, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { premiumStore } from '@/lib/premiumStore';
+import { TAROT_CARDS, getRandomCards, TarotCardData } from '@/lib/tarot-data';
+import { supabase } from '@/integrations/supabase/client';
 
 const FEATURE_ID = 'love-tarot';
 
-// Mock Card Data
-const MOCK_CARDS = [
-    { name: "The Lovers", korean: "연인", meaning: "사랑, 조화, 선택...", advice: "마음을 열고..." },
-    { name: "Two of Cups", korean: "컵 2", meaning: "파트너십, 끌림...", advice: "대화가 중요합니다..." },
-    { name: "Ace of Wands", korean: "완드 에이스", meaning: "새로운 열정...", advice: "적극적으로 행동하세요..." },
-];
-
 export const LoveTarot = () => {
+    const navigate = useNavigate();
     const [step, setStep] = useState<'intro' | 'input' | 'payment-check' | 'spread' | 'result'>('intro');
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [question, setQuestion] = useState('');
     const [partnerInfo, setPartnerInfo] = useState('');
     const [selectedCardIndices, setSelectedCardIndices] = useState<number[]>([]);
+    const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [revealedCards, setRevealedCards] = useState<number[]>([]);
+    const [aiReading, setAiReading] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // Load persisted state on mount
     useEffect(() => {
@@ -36,12 +36,23 @@ export const LoveTarot = () => {
         }
 
         if (saved.readingState) {
-            const { step: savedStep, question: savedQuestion, partnerInfo: savedPartner, selectedCardIndices: savedIndices, revealedCards: savedRevealed } = saved.readingState;
+            const {
+                step: savedStep,
+                question: savedQuestion,
+                partnerInfo: savedPartner,
+                selectedCardIndices: savedIndices,
+                revealedCards: savedRevealed,
+                drawnCards: savedDrawn,
+                aiReading: savedAiReading
+            } = saved.readingState;
+
             if (savedStep) setStep(savedStep);
             if (savedQuestion) setQuestion(savedQuestion);
             if (savedPartner) setPartnerInfo(savedPartner);
             if (savedIndices) setSelectedCardIndices(savedIndices);
             if (savedRevealed) setRevealedCards(savedRevealed);
+            if (savedDrawn) setDrawnCards(savedDrawn);
+            if (savedAiReading) setAiReading(savedAiReading);
         }
     }, []);
 
@@ -53,10 +64,12 @@ export const LoveTarot = () => {
                 question,
                 partnerInfo,
                 selectedCardIndices,
-                revealedCards
+                revealedCards,
+                drawnCards,
+                aiReading
             });
         }
-    }, [step, question, partnerInfo, selectedCardIndices, revealedCards]);
+    }, [step, question, partnerInfo, selectedCardIndices, revealedCards, drawnCards, aiReading]);
 
     const handleStart = () => {
         setStep('input');
@@ -86,8 +99,42 @@ export const LoveTarot = () => {
         setStep('spread');
     };
 
+    const fetchAiReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
+        setIsAnalyzing(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                body: {
+                    type: 'reading',
+                    context: {
+                        question: `${question}${partnerInfo ? ` (상대방 정보: ${partnerInfo})` : ''}`,
+                        cards: cards.map(c => ({
+                            name: c.card.name,
+                            isReversed: c.isReversed
+                        }))
+                    }
+                }
+            });
+
+            if (error) throw error;
+            if (data?.message) {
+                setAiReading(data.message);
+            }
+        } catch (err) {
+            console.error('Error fetching AI reading:', err);
+            toast.error('AI 리딩을 가져오는 중 오류가 발생했습니다.');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     const handleSpreadComplete = (indices: number[]) => {
+        const newDrawnCards = getRandomCards(3);
+        setDrawnCards(newDrawnCards);
         setSelectedCardIndices(indices);
+
+        // Start fetching reading immediately
+        fetchAiReading(newDrawnCards);
+
         setTimeout(() => {
             setStep('result');
         }, 1000);
@@ -96,6 +143,25 @@ export const LoveTarot = () => {
     const handleReveal = (index: number) => {
         if (!revealedCards.includes(index)) {
             setRevealedCards([...revealedCards, index]);
+        }
+    };
+
+    const handleShareToLounge = async () => {
+        try {
+            const dataUrl = await captureResultAsDataURL('love-result-content');
+            if (dataUrl) {
+                navigate('/lounge', {
+                    state: {
+                        autoOpenCreate: true,
+                        attachedImage: dataUrl,
+                        initialTitle: `${question}에 대한 AI 타로 결과`,
+                        initialContent: `오늘 본 연애운 타로 결과입니다. #타로 #연애운`
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing to lounge:', error);
+            toast.error('라운지 공유 중 오류가 발생했습니다.');
         }
     };
 
@@ -228,14 +294,18 @@ export const LoveTarot = () => {
                                         <TarotCard
                                             size="lg"
                                             isFlipped={revealedCards.includes(i)}
+                                            isReversed={drawnCards[i]?.isReversed}
                                             frontImage={undefined}
                                             interactive={false}
                                         />
                                     </div>
-                                    {revealedCards.includes(i) && (
+                                    {revealedCards.includes(i) && drawnCards[i] && (
                                         <div className="mt-4 text-center animate-fade-in">
-                                            <h4 className="font-display text-lg text-gold">{MOCK_CARDS[i].korean}</h4>
-                                            <p className="text-xs text-muted-foreground">{MOCK_CARDS[i].name}</p>
+                                            <h4 className="font-display text-lg text-gold">
+                                                {drawnCards[i].card.koreanName}
+                                                {drawnCards[i].isReversed && <span className="text-xs ml-1 text-mystic-purple">(역방향)</span>}
+                                            </h4>
+                                            <p className="text-xs text-muted-foreground">{drawnCards[i].card.name}</p>
                                         </div>
                                     )}
                                 </div>
@@ -252,30 +322,36 @@ export const LoveTarot = () => {
                                 <div id="love-result-content" className="space-y-6 text-foreground/90 leading-relaxed text-sm md:text-base">
                                     <div className="p-4 bg-background/50 rounded-xl">
                                         <h4 className="font-bold text-gold mb-2">Q. {question}</h4>
-                                        <p className="opacity-80">
-                                            선택하신 카드들은 현재 질문자님의 상황에서 매우 긍정적인 신호를 보내고 있습니다.
-                                            특히 과거의 인연(연인 카드)이 현재의 감정적 교류(컵 2)로 이어지고 있어,
-                                            두 분 사이의 유대감이 깊어지는 시기라고 해석됩니다.
-                                        </p>
+                                        {isAnalyzing ? (
+                                            <div className="flex flex-col items-center justify-center py-8 gap-3">
+                                                <Loader2 className="w-8 h-8 animate-spin text-gold" />
+                                                <p className="text-sm text-muted-foreground animate-pulse">AI 마스터가 카드를 분석하고 있습니다...</p>
+                                            </div>
+                                        ) : (
+                                            <p className="whitespace-pre-wrap leading-relaxed">
+                                                {aiReading || '리딩 결과를 불러올 수 없습니다.'}
+                                            </p>
+                                        )}
                                     </div>
 
-                                    <div>
-                                        <h4 className="font-bold mb-2">💡 미래의 조언</h4>
-                                        <p>
-                                            곧 새로운 기회나 열정적인 사건(완드 에이스)이 찾아올 것입니다.
-                                            망설이지 말고 마음이 이끄는 대로 표현해보세요.
-                                            재회나 새로운 시작을 원하신다면 지금이 적기입니다.
-                                        </p>
-                                    </div>
-
-                                    <div className="flex gap-3 pt-4">
-                                        <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('love-result-content', 'aura-love-tarot')}>
-                                            <Download className="w-4 h-4 mr-2" /> 저장
-                                        </Button>
-                                        <Button variant="outline" className="flex-1" onClick={() => shareResult('연애운 타로 결과', '제 연애운 결과를 확인해보세요!')}>
-                                            <Share2 className="w-4 h-4 mr-2" /> 공유
-                                        </Button>
-                                    </div>
+                                    {!isAnalyzing && aiReading && (
+                                        <div className="space-y-3 pt-4">
+                                            <div className="flex gap-3">
+                                                <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('love-result-content', 'aura-love-tarot')}>
+                                                    <Download className="w-4 h-4 mr-2" /> 저장
+                                                </Button>
+                                                <Button variant="outline" className="flex-1" onClick={() => shareResult('연애운 타로 결과', '제 연애운 결과를 확인해보세요!')}>
+                                                    <Share2 className="w-4 h-4 mr-2" /> 공유
+                                                </Button>
+                                            </div>
+                                            <Button
+                                                className="w-full bg-mystic-purple/20 hover:bg-mystic-purple/30 border border-mystic-purple/40 text-white"
+                                                onClick={handleShareToLounge}
+                                            >
+                                                <Share2 className="w-4 h-4 mr-2" /> 라운지에 공유하여 자랑하기
+                                            </Button>
+                                        </div>
+                                    )}
 
                                     <Button
                                         variant="ghost"
@@ -286,6 +362,8 @@ export const LoveTarot = () => {
                                             setStep('input');
                                             setSelectedCardIndices([]);
                                             setRevealedCards([]);
+                                            setDrawnCards([]);
+                                            setAiReading('');
                                         }}
                                     >
                                         <RefreshCw className="w-4 h-4 mr-2" />

@@ -6,7 +6,6 @@ import { FeaturesSection } from "@/components/FeaturesSection";
 import { LoginModal } from "@/components/auth/LoginModal";
 import { RegisterModal } from "@/components/auth/RegisterModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -90,7 +89,6 @@ const Index = () => {
           setShowLoginModal(true);
         }}
       />
-      <Toaster />
     </div>
   );
 };

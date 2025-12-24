@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react';
-import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
+import { useNavigate } from 'react-router-dom';
+import { saveResultAsImage, shareResult, captureResultAsDataURL } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { PaymentModal } from '@/components/premium/PaymentModal';
-import { Hand, Camera, Lock, Sparkles, RefreshCw, Share2, Download, CheckCircle2 } from 'lucide-react';
+import { Hand, Camera, Lock, Sparkles, RefreshCw, Share2, Download, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { premiumStore } from '@/lib/premiumStore';
+import { supabase } from '@/integrations/supabase/client';
 
 const FEATURE_ID = 'palm-reading';
 
 export const PalmReading = () => {
+    const navigate = useNavigate();
     const [step, setStep] = useState<'intro' | 'upload' | 'payment-check' | 'analyzing' | 'result'>('intro');
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [aiReading, setAiReading] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // Load persisted state on mount
     useEffect(() => {
@@ -23,9 +28,10 @@ export const PalmReading = () => {
         }
 
         if (saved.readingState) {
-            const { step: savedStep, selectedImage: savedImage } = saved.readingState;
+            const { step: savedStep, selectedImage: savedImage, aiReading: savedAiReading } = saved.readingState;
             if (savedStep) setStep(savedStep);
             if (savedImage) setSelectedImage(savedImage);
+            if (savedAiReading) setAiReading(savedAiReading);
         }
     }, []);
 
@@ -34,10 +40,35 @@ export const PalmReading = () => {
         if (step !== 'intro') {
             premiumStore.saveReadingState(FEATURE_ID, {
                 step,
-                selectedImage
+                selectedImage,
+                aiReading
             });
         }
-    }, [step, selectedImage]);
+    }, [step, selectedImage, aiReading]);
+
+    const fetchAiReading = async () => {
+        setIsAnalyzing(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                body: {
+                    type: 'palm',
+                    context: {}
+                }
+            });
+
+            if (error) throw error;
+            if (data?.message) {
+                setAiReading(data.message);
+                setStep('result');
+            }
+        } catch (err) {
+            console.error('Error fetching AI reading:', err);
+            toast.error('AI 손금 분석 중 오류가 발생했습니다.');
+            setStep('upload');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
 
     const handleStart = () => {
         setStep('upload');
@@ -46,13 +77,12 @@ export const PalmReading = () => {
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // In a real app, you'd upload this to a server
             const reader = new FileReader();
             reader.onloadend = () => {
                 setSelectedImage(reader.result as string);
                 if (hasPaid) {
                     setStep('analyzing');
-                    startAnalysis();
+                    fetchAiReading();
                 } else {
                     setStep('payment-check');
                 }
@@ -61,16 +91,29 @@ export const PalmReading = () => {
         }
     };
 
-    const startAnalysis = () => {
-        setTimeout(() => {
-            setStep('result');
-        }, 3000);
-    };
-
     const handleUnlock = () => {
         setHasPaid(true);
         setStep('analyzing');
-        startAnalysis();
+        fetchAiReading();
+    };
+
+    const handleShareToLounge = async () => {
+        try {
+            const dataUrl = await captureResultAsDataURL('palm-result-content');
+            if (dataUrl) {
+                navigate('/lounge', {
+                    state: {
+                        autoOpenCreate: true,
+                        attachedImage: dataUrl,
+                        initialTitle: `AI 손금 분석 결과`,
+                        initialContent: `오늘 본 AI 손금 분석 결과입니다. ✋ #손금 #운세 #AI`
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing to lounge:', error);
+            toast.error('라운지 공유 중 오류가 발생했습니다.');
+        }
     };
 
     return (
@@ -188,33 +231,43 @@ export const PalmReading = () => {
                                 <h3 className="font-display text-2xl text-gold-gradient">당신의 손금 분석 결과</h3>
 
                                 <div id="palm-result-content" className="space-y-4">
-                                    {[
-                                        { label: '생명선', score: 85, desc: '강한 생명력과 건강운을 타고나셨습니다. 규칙적인 운동이 운을 더해줍니다.' },
-                                        { label: '두뇌선', score: 92, desc: '창의적이고 직관적인 사고력이 뛰어납니다. 기술이나 예술 분야에서 대성할 운입니다.' },
-                                        { label: '감정선', score: 78, desc: '주변 사람들에게 따뜻하고 포용력이 넓어 대인관계 운이 매우 좋습니다.' }
-                                    ].map((item, i) => (
-                                        <div key={i} className="p-4 rounded-2xl bg-card border border-gold/10">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="font-bold flex items-center gap-2">
-                                                    <CheckCircle2 className="w-4 h-4 text-gold" />
-                                                    {item.label}
-                                                </span>
-                                                <span className="text-gold font-display">{item.score}점</span>
+                                    <div className="p-6 bg-card/60 backdrop-blur-md rounded-2xl border border-gold/20 min-h-[300px]">
+                                        {isAnalyzing ? (
+                                            <div className="flex flex-col items-center justify-center py-12 gap-4">
+                                                <Loader2 className="w-10 h-10 animate-spin text-gold" />
+                                                <p className="text-sm text-muted-foreground animate-pulse">AI 전문가가 손바닥의 운명을 해석하고 있습니다...</p>
                                             </div>
-                                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                                {item.desc}
-                                            </p>
-                                        </div>
-                                    ))}
-
-                                    <div className="flex gap-3 pt-6">
-                                        <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('palm-result-content', 'aura-palm-reading')}>
-                                            <Download className="w-4 h-4 mr-2" /> 저장
-                                        </Button>
-                                        <Button variant="outline" className="flex-1" onClick={() => shareResult('AI 손금 분석 결과', '제 손안에 담긴 운명의 지도를 확인해보세요!')}>
-                                            <Share2 className="w-4 h-4 mr-2" /> 공유
-                                        </Button>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Sparkles className="w-5 h-5 text-gold" />
+                                                    <h4 className="font-bold text-lg text-gold">AI 마스터의 통찰</h4>
+                                                </div>
+                                                <p className="whitespace-pre-wrap leading-relaxed text-foreground/90">
+                                                    {aiReading || '분석 결과를 불러올 수 없습니다.'}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
+
+                                    {!isAnalyzing && aiReading && (
+                                        <div className="space-y-3 pt-6">
+                                            <div className="flex gap-3">
+                                                <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('palm-result-content', 'aura-palm-reading')}>
+                                                    <Download className="w-4 h-4 mr-2" /> 저장
+                                                </Button>
+                                                <Button variant="outline" className="flex-1" onClick={() => shareResult('AI 손금 분석 결과', '제 손안에 담긴 운명의 지도를 확인해보세요!')}>
+                                                    <Share2 className="w-4 h-4 mr-2" /> 공유
+                                                </Button>
+                                            </div>
+                                            <Button
+                                                className="w-full bg-mystic-purple/20 hover:bg-mystic-purple/30 border border-mystic-purple/40 text-white"
+                                                onClick={handleShareToLounge}
+                                            >
+                                                <Share2 className="w-4 h-4 mr-2" /> 라운지에 공유하여 자랑하기
+                                            </Button>
+                                        </div>
+                                    )}
 
                                     <Button
                                         variant="ghost"
@@ -224,6 +277,7 @@ export const PalmReading = () => {
                                             setHasPaid(false);
                                             setStep('intro');
                                             setSelectedImage(null);
+                                            setAiReading('');
                                         }}
                                     >
                                         <RefreshCw className="w-4 h-4 mr-2" />
