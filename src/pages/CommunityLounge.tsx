@@ -429,7 +429,7 @@ const CommunityLounge = () => {
                 {activeTab === 'lounge' && (
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-gold hover:bg-gold/90 shadow-lg shadow-gold/20 flex items-center justify-center transition-all hover:scale-110 z-50 text-background"
+                        className="fixed bottom-24 right-6 w-14 h-14 rounded-full bg-gold hover:bg-gold/90 shadow-lg shadow-gold/20 flex items-center justify-center transition-all hover:scale-110 z-50 text-background"
                     >
                         <Edit3 className="w-6 h-6" />
                     </button>

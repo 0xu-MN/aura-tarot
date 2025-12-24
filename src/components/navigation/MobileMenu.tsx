@@ -1,12 +1,16 @@
-import { X, User, Settings, BookOpen, Users, MessageSquare, LogOut } from 'lucide-react';
+import { User, Settings, BookOpen, Users, MessageSquare, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { cn } from '@/lib/utils';
 import { clearAuthPreferences } from '@/lib/authStorage';
-import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 
 interface MobileMenuProps {
     isOpen: boolean;
@@ -34,7 +38,6 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     };
 
     const handleNavigation = (path: string) => {
-        // Check if it's lounge and not in dev mode
         navigate(path);
         onClose();
     };
@@ -73,35 +76,25 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     ];
 
     return (
-        <>
-            {/* Backdrop */}
-            <div
-                className={cn(
-                    'fixed inset-0 bg-background/80 backdrop-blur-sm z-40 transition-opacity duration-300',
-                    isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                )}
-                onClick={onClose}
-            />
-
-            {/* Menu Drawer */}
-            <div
-                className={cn(
-                    'fixed top-0 right-0 h-full w-96 max-w-[85vw] bg-card border-l border-gold/20 shadow-2xl z-50',
-                    'transform transition-transform duration-300 ease-in-out',
-                    isOpen ? 'translate-x-0' : 'translate-x-full'
-                )}
+        <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <SheetContent
+                side="right"
+                className="w-full max-w-[85vw] sm:w-96 p-0 border-l border-gold/20 bg-card"
             >
                 <div className="flex flex-col h-full">
+                    <SheetHeader className="sr-only">
+                        <SheetTitle>메뉴</SheetTitle>
+                    </SheetHeader>
+
                     {/* Header - 로그인 상태에 따라 다르게 표시 */}
                     <div className="p-6 border-b border-gold/10">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="font-display text-xl text-gold">메뉴</h2>
-                            <button
-                                onClick={onClose}
-                                className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
+                            {/* Sheet usually has its own close button, but we can keep custom one or rely on Sheet's. 
+                                Shadcn SheetContent includes a close button by default. 
+                                We'll hide the default one via CSS if we want our own, or just remove our own.
+                                The default close button is absolute positioned. 
+                            */}
                         </div>
 
                         {user ? (
@@ -118,11 +111,7 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                                     <p className="text-xs text-muted-foreground truncate">{user.name}</p>
                                 </div>
                             </div>
-                        ) : (
-                            <p className="text-muted-foreground text-center py-4">
-                                로그인 후 이용가능합니다
-                            </p>
-                        )}
+                        ) : null}
                     </div>
 
                     {/* Main - 로그인 시 메뉴 목록, 비로그인 시 안내 문구 */}
@@ -177,7 +166,7 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                         )}
                     </div>
                 </div>
-            </div>
-        </>
+            </SheetContent>
+        </Sheet>
     );
 };

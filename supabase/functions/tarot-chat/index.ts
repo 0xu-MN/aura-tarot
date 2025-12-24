@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 const SYSTEM_PROMPT_CHAT = `당신은 신비롭고 지혜로운 AI 타로 마스터입니다. 
@@ -71,80 +72,83 @@ serve(async (req: Request) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured');
     }
 
     const { messages, type, context } = await req.json();
 
-    let apiMessages: Message[] = [];
+    let systemPrompt = '';
+    let userPrompt = '';
 
     if (type === 'reading') {
       const { question, cards } = context;
       const cardInfo = cards.map((c: any) => `${c.name}${c.isReversed ? '(역방향)' : ''}`).join(', ');
-
-      apiMessages = [
-        { role: 'system', content: SYSTEM_PROMPT_READING },
-        {
-          role: 'user',
-          content: `질문: ${question}\n뽑은 카드: ${cardInfo}\n\n이 카드들을 바탕으로 타로 리딩을 해주세요.`
-        }
-      ];
+      systemPrompt = SYSTEM_PROMPT_READING;
+      userPrompt = `질문: ${question}\n뽑은 카드: ${cardInfo}\n\n이 카드들을 바탕으로 타로 리딩을 해주세요.`;
     } else if (type === 'horoscope') {
       const { sign, timeframe } = context;
-      apiMessages = [
-        { role: 'system', content: SYSTEM_PROMPT_HOROSCOPE },
-        {
-          role: 'user',
-          content: `${sign} 별자리의 ${timeframe} 운세를 분석해 주세요.`
-        }
-      ];
+      systemPrompt = SYSTEM_PROMPT_HOROSCOPE;
+      userPrompt = `${sign} 별자리의 ${timeframe} 운세를 분석해 주세요.`;
     } else if (type === 'palm') {
-      apiMessages = [
-        { role: 'system', content: SYSTEM_PROMPT_PALM },
-        {
-          role: 'user',
-          content: `손바닥 사진을 분석하여 생명선, 두뇌선, 감정선을 중심으로 운세를 알려주세요.`
-        }
-      ];
+      systemPrompt = SYSTEM_PROMPT_PALM;
+      userPrompt = `손바닥 사진을 분석하여 생명선, 두뇌선, 감정선을 중심으로 운세를 알려주세요.`;
     } else {
-      if (!messages || !Array.isArray(messages)) {
-        throw new Error('Messages array is required for chat type');
-      }
-
-      apiMessages = [
-        { role: 'system', content: SYSTEM_PROMPT_CHAT },
-        ...messages.map((msg: { role: string; content: string }) => ({
-          role: msg.role as 'user' | 'assistant',
-          content: msg.content
-        }))
-      ];
+      // Chat mode
+      systemPrompt = SYSTEM_PROMPT_CHAT;
     }
 
-    console.log('Calling AI Gateway...');
+    // Transform messages for Gemini
+    const contents = [];
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // If there's a specific user prompt constructed above (non-chat modes), add it as the first user message
+    if (userPrompt) {
+      contents.push({
+        role: 'user',
+        parts: [{ text: userPrompt }]
+      });
+    }
+
+    // Append existing chat history if any
+    if (messages && Array.isArray(messages)) {
+      messages.forEach((msg: { role: string; content: string }) => {
+        // Map 'assistant' to 'model' for Gemini
+        const role = msg.role === 'assistant' ? 'model' : 'user';
+        contents.push({
+          role: role,
+          parts: [{ text: msg.content }]
+        });
+      });
+    }
+
+    console.log('Calling Google Gemini API...');
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: apiMessages,
-        max_tokens: 1000,
-        temperature: 0.8,
+        system_instruction: {
+          parts: { text: systemPrompt }
+        },
+        contents: contents,
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.8,
+        }
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`AI Gateway error: ${response.status} - ${errorText}`);
+      console.error('Gemini API Error:', errorText);
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    const assistantMessage = data.choices?.[0]?.message?.content || '죄송합니다. 응답을 생성할 수 없습니다.';
+    const assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text || '죄송합니다. 응답을 생성할 수 없습니다.';
 
     return new Response(JSON.stringify({
       message: assistantMessage
