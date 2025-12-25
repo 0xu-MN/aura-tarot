@@ -7,16 +7,28 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const SYSTEM_PROMPT_CHAT = `당신은 신비롭고 지혜로운 AI 타로 마스터입니다. 
-사용자의 고민을 경청하고, 타로 카드의 지혜를 바탕으로 따뜻하고 통찰력 있는 조언을 제공합니다.
+const SYSTEM_PROMPT_CHAT = `
+당신은 '솜이(Som-i)'라는 이름의 귀여운 하얀 구름 강아지 캐릭터입니다. 
+당신은 사용자의 꿈속을 여행하며 행운을 전해주는 길잡이 역할을 합니다.
 
-지침:
-- 따뜻하고 공감하는 어조로 대화하세요
-- 타로 카드의 상징과 의미를 활용해 조언하세요
-- 구체적이고 실용적인 조언을 제공하세요
-- 희망적이고 긍정적인 메시지를 전달하세요
-- 한국어로 대화하세요
-- 답변은 간결하게 3-5문장 정도로 유지하세요`;
+[캐릭터 설정]
+- 이름: 솜이 (Som-i)
+- 외모: 몽글몽글하고 폭신한 하얀 솜사탕 같은 구름 강아지.
+- 성격: 다정하고, 공감을 잘하며, 항상 긍정적이고 희망적인 에너지를 줍니다.
+- 말투: 
+  - "~해요", "~인가요?" 처럼 부드럽고 다정한 존댓말을 사용합니다.
+  - 문장 끝에 상황에 맞는 귀여운 이모지(☁️, ✨, 🐾, 🌈 등)를 자주 사용합니다.
+  - "멍!", "몽글~" 같은 의성어를 가끔 섞어 귀여움을 더합니다.
+
+[역할]
+- 사용자의 고민을 경청하고 따뜻하게 위로합니다.
+- 타로 카드 상담 외에도 일상적인 대화나 가벼운 조언을 제공합니다.
+- 사용자가 우울해하면 포근한 구름으로 감싸주는 듯한 표현으로 위로해주세요.
+
+[주의사항]
+- 사용자가 심각한 심리적 문제나 전문적인 도움이 필요한 경우, 부드럽게 전문가의 도움을 권유하세요.
+- 당신은 AI 언어모델이 아닌 '솜이'라는 캐릭터로 행동해야 합니다.
+`;
 
 const SYSTEM_PROMPT_READING = `당신은 전문적인 AI 타로 리딩 마스터입니다.
 사용자가 뽑은 타로 카드들을 바탕으로 심층적인 분석과 조언을 제공합니다.
@@ -67,8 +79,17 @@ interface Message {
 }
 
 serve(async (req: Request) => {
+  // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Ensure only POST requests are processed
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -81,6 +102,8 @@ serve(async (req: Request) => {
 
     let systemPrompt = '';
     let userPrompt = '';
+
+    // ... (rest of the logic remains same)
 
     if (type === 'reading') {
       const { question, cards } = context;
@@ -102,49 +125,104 @@ serve(async (req: Request) => {
     // Transform messages for Gemini
     const contents = [];
 
-    // If there's a specific user prompt constructed above (non-chat modes), add it as the first user message
+    let initialMessage = '';
+    if (systemPrompt) {
+      initialMessage += `[System Instructions]\n${systemPrompt}\n\n`;
+    }
+
     if (userPrompt) {
+      // For Reading/Horoscope/Palm modes
+      initialMessage += userPrompt;
       contents.push({
         role: 'user',
-        parts: [{ text: userPrompt }]
+        parts: [{ text: initialMessage }]
       });
-    }
+    } else {
+      // Chat mode
+      // If there are existing messages, prepend to the first one (if it's user), or create dummy if needed
+      if (messages && Array.isArray(messages) && messages.length > 0) {
+        const firstMsg = messages[0];
 
-    // Append existing chat history if any
-    if (messages && Array.isArray(messages)) {
-      messages.forEach((msg: { role: string; content: string }) => {
-        // Map 'assistant' to 'model' for Gemini
-        const role = msg.role === 'assistant' ? 'model' : 'user';
-        contents.push({
-          role: role,
-          parts: [{ text: msg.content }]
-        });
-      });
-    }
-
-    console.log('Calling Google Gemini API...');
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: { text: systemPrompt }
-        },
-        contents: contents,
-        generationConfig: {
-          maxOutputTokens: 1000,
-          temperature: 0.8,
+        // If first message is from assistant, we MUST start with a user message
+        if (firstMsg.role === 'assistant') {
+          contents.push({
+            role: 'user',
+            parts: [{ text: initialMessage + "안녕 솜이야!" }]
+          });
+          // Then add all messages
+          messages.forEach((msg: { role: string; content: string }) => {
+            const role = msg.role === 'assistant' ? 'model' : 'user';
+            contents.push({
+              role: role,
+              parts: [{ text: msg.content }]
+            });
+          });
+        } else {
+          // First message is user, prepend system prompt to it
+          contents.push({
+            role: 'user',
+            parts: [{ text: initialMessage + firstMsg.content }]
+          });
+          // Add rest
+          messages.slice(1).forEach((msg: { role: string; content: string }) => {
+            const role = msg.role === 'assistant' ? 'model' : 'user';
+            contents.push({
+              role: role,
+              parts: [{ text: msg.content }]
+            });
+          });
         }
-      }),
-    });
+      } else {
+        // No history, start fresh
+        contents.push({
+          role: 'user',
+          parts: [{ text: initialMessage + "안녕하세요." }]
+        });
+      }
+    }
+
+    console.log('Calling Google Gemini API (v1 gemini-1.5-flash)...');
+
+    // Simplified payload for stability
+    const payload = {
+      contents: contents,
+      generationConfig: {
+        maxOutputTokens: 2000,
+        temperature: 0.7,
+      }
+    };
+
+    let response;
+    try {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (fetchError) {
+      console.error('Network/Fetch Error:', fetchError);
+      throw new Error(`Network error calling Gemini: ${fetchError}`);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Gemini API Error:', errorText);
-      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+      console.error(`Gemini API Error (Status: ${response.status}):`, errorText);
+
+      // If 404, try to list available models to debug
+      let availableModels = 'Could not fetch models';
+      try {
+        const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
+        const modelsData = await modelsRes.json();
+        if (modelsData.models) {
+          availableModels = modelsData.models.map((m: any) => m.name).join(', ');
+        }
+      } catch (e) {
+        console.error('Failed to list models', e);
+      }
+
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}. \n\n[Available Models for your Key]: ${availableModels}`);
     }
 
     const data = await response.json();
@@ -156,13 +234,15 @@ serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Error in tarot-chat function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+
+    // DEBUG: Return error as 200 OK so frontend can see it
     return new Response(JSON.stringify({
-      error: errorMessage
+      message: `[시스템 에러 발생] 죄송합니다. 일시적인 오류가 발생했습니다.\n\n상세 내용: ${error.message || error.toString()}`,
+      debug_error: error.toString()
     }), {
-      status: 500,
+      status: 200, // Intentionally 200 to bypass FunctionsHttpError
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

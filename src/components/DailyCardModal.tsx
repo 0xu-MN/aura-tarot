@@ -18,6 +18,7 @@ import { TAROT_CARDS, TarotCardData } from "@/lib/tarot-data";
 
 const MAX_FREE_DRAWS = 3;
 const DAILY_DRAW_KEY = 'daily_card_draws';
+const DAILY_PAID_KEY = 'daily_card_paid';
 
 interface DailyCardModalProps {
   isOpen: boolean;
@@ -49,6 +50,24 @@ const incrementDailyDrawCount = () => {
   localStorage.setItem(DAILY_DRAW_KEY, JSON.stringify({
     date: getTodayKey(),
     count: currentCount + 1
+  }));
+};
+
+const isDailyPaid = (): boolean => {
+  try {
+    const stored = localStorage.getItem(DAILY_PAID_KEY);
+    if (!stored) return false;
+    const data = JSON.parse(stored);
+    return data.date === getTodayKey() && data.paid === true;
+  } catch {
+    return false;
+  }
+};
+
+const setDailyPaid = () => {
+  localStorage.setItem(DAILY_PAID_KEY, JSON.stringify({
+    date: getTodayKey(),
+    paid: true
   }));
 };
 
@@ -107,6 +126,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
     setIsAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke('tarot-chat', {
+        method: 'POST',
         body: {
           type: 'reading',
           context: {
@@ -133,7 +153,8 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
   const handleCardSelect = async () => {
     // Check if user has exceeded free draws
     const currentDraws = getDailyDrawCount();
-    if (currentDraws >= MAX_FREE_DRAWS) {
+    // Only block if limit exceeded AND not paid for today
+    if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
       setShowPaymentModal(true);
       return;
     }
@@ -179,30 +200,26 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
     }
   };
 
-  const handleShareToLounge = async () => {
-    setIsSaving(true);
-    const imageData = await captureResultAsDataURL('daily-reading-result');
-    if (imageData) {
-      // Navigate to lounge and pass image data in state
-      navigate('/lounge', {
-        state: {
-          autoOpenCreate: true,
-          attachedImage: imageData,
-          initialTitle: `오늘 나의 ${selectedCard?.koreanName} 카드 결과`,
-          initialContent: `오늘 저는 "${selectedCard?.koreanName}" 카드를 뽑았습니다.\n\n해석: ${aiReading.substring(0, 100)}...`
+  const handleConsultSom = () => {
+    if (!selectedCard) return;
+    navigate('/chatbot', {
+      state: {
+        consultation: {
+          card: selectedCard,
+          reading: aiReading,
+          question: question,
+          isReversed: isReversed
         }
-      });
-      onClose();
-    } else {
-      toast.error('라운지 공유에 실패했습니다');
-    }
-    setIsSaving(false);
+      }
+    });
+    onClose();
   };
 
   const handleDrawAgain = () => {
     // Check if user has exceeded free draws
     const currentDraws = getDailyDrawCount();
-    if (currentDraws >= MAX_FREE_DRAWS) {
+    // Only block if limit exceeded AND not paid for today
+    if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
       setShowPaymentModal(true);
       return;
     }
@@ -212,6 +229,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
 
   const handlePaymentSuccess = () => {
     // After payment, allow unlimited draws for today
+    setDailyPaid(); // Persist paid status
     setShowPaymentModal(false);
     // Show draw again modal
     setShowDrawAgainModal(true);
@@ -227,8 +245,8 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-lg h-[80vh] bg-card rounded-3xl border border-gold/30 shadow-2xl animate-scale-in flex flex-col overflow-hidden">
+      {/* Modal - Use dvh for mobile browser compatibility */}
+      <div className="relative w-full max-w-lg h-[90dvh] bg-card rounded-3xl border border-gold/30 shadow-2xl animate-scale-in flex flex-col overflow-hidden">
         {/* New Plasma & Dry Ice Effects Background */}
         {(phase === "select" || phase === "reading") && (
           <div className="absolute inset-0 z-0 overflow-hidden">
@@ -252,7 +270,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
         </button>
 
         {/* Scrollable Content Container */}
-        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden relative z-10">
+        <div className="flex-1 overflow-y-auto relative z-10 scrollbar-thin scrollbar-thumb-gold/30 scrollbar-track-transparent">
           <div id="daily-reading-result" className="p-6 md:p-8 min-h-full flex flex-col">
             {/* Question Display (Always visible if exists) */}
             {question && phase !== "shuffle" && (
@@ -312,7 +330,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
 
             {/* Reading Phase */}
             {phase === "reading" && selectedCard && (
-              <div className={cn("text-center pb-8", showCard && "animate-fade-in")}>
+              <div className={cn("flex flex-col items-center w-full", showCard && "animate-fade-in")}>
                 {/* Spirit reveal mist effect */}
                 <CardRevealMist isActive={showCard} />
 
@@ -329,48 +347,53 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
                   />
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center gap-2">
-                    <h3 className="font-display text-2xl text-gold">{selectedCard.koreanName}</h3>
+                <div className="space-y-6 w-full max-w-sm mx-auto z-20 relative">
+                  <div className="text-center space-y-2 mb-6">
+                    <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-purple-200 to-amber-200 animate-pulse">
+                      {selectedCard.koreanName}
+                    </h2>
+                    <p className="text-white/60 font-medium text-lg">
+                      {selectedCard.name}
+                    </p>
                     {isReversed && (
-                      <span className="px-2 py-0.5 text-xs bg-mystic-purple/30 text-mystic-purple rounded-full">
+                      <span className="inline-block px-3 py-1 bg-red-500/20 text-red-200 text-sm rounded-full border border-red-500/30">
                         역방향
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">{selectedCard.name}</p>
 
-                  <div className="bg-background/40 backdrop-blur-md rounded-xl p-5 mt-6 text-left border border-gold/10 shadow-sm">
-                    <h4 className="text-sm font-medium text-gold mb-3 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" /> 리딩 결과
-                    </h4>
+                  <div className="p-6 rounded-2xl bg-black/40 border border-purple-500/20 backdrop-blur-md shadow-inner max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
+                    <div className="flex items-center gap-2 mb-4 text-purple-300 border-b border-purple-500/20 pb-2 sticky top-0 bg-black/40 backdrop-blur-md z-10 w-full">
+                      <Sparkles className="w-5 h-5" />
+                      <span className="font-bold">리딩 결과</span>
+                    </div>
                     {isAnalyzing ? (
-                      <div className="flex flex-col items-center justify-center py-6 gap-3">
-                        <Loader2 className="w-6 h-6 animate-spin text-gold" />
-                        <p className="text-xs text-muted-foreground animate-pulse">AI 마스터가 운명을 읽고 있습니다...</p>
+                      <div className="flex flex-col items-center justify-center py-8 gap-4">
+                        <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+                        <p className="text-sm text-purple-200/80 animate-pulse">AI 마스터가 운명을 읽고 있습니다...</p>
                       </div>
                     ) : (
-                      <p className="text-foreground leading-relaxed whitespace-pre-line text-sm opacity-90">
+                      <p className="text-gray-100 leading-relaxed text-left whitespace-pre-wrap break-words text-base font-light tracking-wide">
                         {aiReading}
                       </p>
                     )}
                   </div>
 
                   {!isAnalyzing && aiReading && (
-                    <div className="flex flex-col gap-3 mt-8 no-capture">
+                    <div className="flex flex-col gap-3 mt-4 no-capture">
                       <Button
                         variant="gold"
                         className="w-full bg-gold/10 hover:bg-gold/20 text-gold border-gold/30"
-                        onClick={handleShareToLounge}
-                        disabled={isSaving}
+                        onClick={handleConsultSom}
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
-                        라운지에 공유하기
+                        솜이에게 더 물어보기
                       </Button>
+
                       <div className="flex gap-3">
                         <Button
                           variant="outline"
-                          className="flex-1 bg-background/50 backdrop-blur-sm border-gold/20 hover:bg-gold/10"
+                          className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/20 h-10 text-sm font-medium backdrop-blur-sm"
                           onClick={handleSave}
                           disabled={isSaving}
                         >
@@ -379,7 +402,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
                         </Button>
                         <Button
                           variant="outline"
-                          className="flex-1 bg-background/50 backdrop-blur-sm border-gold/20 hover:bg-gold/10"
+                          className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/20 h-10 text-sm font-medium backdrop-blur-sm"
                           onClick={handleShare}
                         >
                           <Share2 className="w-4 h-4 mr-2" />

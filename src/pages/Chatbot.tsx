@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Send, Sparkles, Loader2, History } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,7 +31,7 @@ const Chatbot = () => {
         {
             id: '1',
             role: 'assistant',
-            content: '안녕하세요! AI 타로 마스터입니다. 어떤 고민이나 궁금한 점이 있으신가요? 편하게 말씀해 주세요.',
+            content: '안녕하세요! 당신의 꿈속을 여행하는 행운의 길잡이, 솜이입니다. 오늘 당신의 마음엔 어떤 별이 뜨고 있나요? ☁️✨',
             timestamp: new Date(),
         },
     ]);
@@ -37,6 +39,33 @@ const Chatbot = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const location = useLocation();
+
+    // Check for consultation context on mount
+    useEffect(() => {
+        const state = location.state as { consultation?: { card: any, reading: string, question?: string, isReversed: boolean } };
+
+        if (state?.consultation && messages.length === 1) { // Only if valid state and initial chat
+            const { card, reading, question, isReversed } = state.consultation;
+            const contextMessage = `방금 뽑은 카드는 '${card.koreanName}'(${card.name})이고, ${isReversed ? '역방향' : '정방향'}이 나왔어.
+질문은 "${question || '오늘의 운세'}"였고, 
+리딩 결과는 다음과 같았어:
+"${reading}"
+
+이 결과에 대해 좀 더 자세히 이야기해줄래?`;
+
+            sendMessage(contextMessage);
+
+            // Clear state to prevent re-triggering on refresh (optional but good practice)
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]); // Dependency on location.state
+
+    // Scroll to bottom on messages change
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -46,15 +75,15 @@ const Chatbot = () => {
         scrollToBottom();
     }, [messages, isLoading]);
 
+
     // Check for goodbye keywords
     useEffect(() => {
         if (messages.length > 2) {
             const lastMessage = messages[messages.length - 1];
             const goodbyeKeywords = ['종료', '그만', '끝낼게', '수고했어', '고마워', '안녕'];
 
-            // Only trigger if user says goodbye and it matches exact phrases or strong intent
+            // Only trigger if user says goodbye and matched keywords
             if (lastMessage.role === 'user' && goodbyeKeywords.some(keyword => lastMessage.content.includes(keyword))) {
-                // Option: Prompt user or auto-end. For now, we'll show a toast suggesting to end.
                 toast({
                     title: "대화를 종료하시겠습니까?",
                     description: "우측 상단의 종료 버튼을 눌러 대화를 저장하고 새 상담을 시작할 수 있습니다.",
@@ -94,7 +123,7 @@ const Chatbot = () => {
             {
                 id: Date.now().toString(),
                 role: 'assistant',
-                content: '새로운 상담을 시작합니다. 무엇이 궁금하신가요?',
+                content: '안녕하세요! 당신의 꿈속을 여행하는 행운의 길잡이, 솜이입니다. 오늘 당신의 마음엔 어떤 별이 뜨고 있나요? ☁️✨',
                 timestamp: new Date(),
             },
         ]);
@@ -126,7 +155,6 @@ const Chatbot = () => {
         setIsLoading(true);
 
         try {
-            // Prepare message history for API (exclude system messages, only user and assistant)
             const messageHistory = [...messages, userMessage]
                 .filter(msg => msg.role === 'user' || msg.role === 'assistant')
                 .map(msg => ({
@@ -135,6 +163,7 @@ const Chatbot = () => {
                 }));
 
             const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                method: 'POST',
                 body: { messages: messageHistory }
             });
 
@@ -179,7 +208,7 @@ const Chatbot = () => {
                     <div className="flex items-center gap-2">
                         <Sparkles className="w-6 h-6 text-gold" />
                         <h1 className="font-display text-2xl text-gold-gradient">
-                            밤톨이한테 물어봐!
+                            솜이한테 물어봐!
                         </h1>
                     </div>
                     <div className="flex gap-2">
@@ -198,15 +227,24 @@ const Chatbot = () => {
                         {messages.map((message) => (
                             <div
                                 key={message.id}
-                                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'
+                                className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'
                                     }`}
                             >
+                                {message.role === 'assistant' && (
+                                    <Avatar className="w-10 h-10 border border-gold/20 flex-shrink-0 mt-1">
+                                        <AvatarImage src="/som-i.jpg" alt="솜이" className="object-cover" />
+                                        <AvatarFallback>Som</AvatarFallback>
+                                    </Avatar>
+                                )}
                                 <div
                                     className={`max-w-[80%] md:max-w-[60%] rounded-2xl px-4 py-3 ${message.role === 'user'
                                         ? 'bg-gold text-background'
                                         : 'bg-card border border-gold/20'
                                         }`}
                                 >
+                                    {message.role === 'assistant' && (
+                                        <p className="text-xs text-gold mb-1 font-bold">솜이 ☁️</p>
+                                    )}
                                     <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>
                                     <span className="text-xs opacity-70 mt-1 block">
                                         {message.timestamp.toLocaleTimeString('ko-KR', {
@@ -218,7 +256,11 @@ const Chatbot = () => {
                             </div>
                         ))}
                         {isLoading && (
-                            <div className="flex justify-start">
+                            <div className="flex justify-start gap-3">
+                                <Avatar className="w-10 h-10 border border-gold/20 flex-shrink-0 mt-1">
+                                    <AvatarImage src="/som-i.jpg" alt="솜이" className="object-cover" />
+                                    <AvatarFallback>Som</AvatarFallback>
+                                </Avatar>
                                 <div className="bg-card border border-gold/20 rounded-2xl px-4 py-3">
                                     <div className="flex items-center gap-2">
                                         <Loader2 className="w-4 h-4 animate-spin text-gold" />
