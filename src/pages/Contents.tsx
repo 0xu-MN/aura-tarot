@@ -45,34 +45,39 @@ const Contents = () => {
                             category: "운세",
                             icon: "✨",
                             link: "/home",
+                            image: "/thumbnails/daily-fortune.png"
                         },
                         {
                             title: "연애운 타로",
                             description: "연애, 썸, 짝사랑에 대한 깊은 통찰을 제공합니다",
                             category: "연애운",
                             icon: "💕",
-                            link: "/contents/love"
+                            link: "/contents/love",
+                            image: "/thumbnails/love-tarot.png"
                         },
                         {
                             title: "재회 확률",
                             description: "그 사람의 속마음과 재회 가능성을 알아보세요",
                             category: "연애운",
                             icon: "🌙",
-                            link: "/contents/reunion"
+                            link: "/contents/reunion",
+                            image: "/thumbnails/reunion-tarot.png"
                         },
                         {
                             title: "커플 궁합",
                             description: "두 사람의 궁합을 타로로 점쳐보세요",
                             category: "궁합",
                             icon: "👩‍❤️‍👨",
-                            link: "/contents/compatibility"
+                            link: "/contents/compatibility",
+                            image: "/thumbnails/compatibility-tarot.png"
                         },
                         {
                             title: "2026 신년운세",
                             description: "새해 12개월의 운세를 상세히 풀이해드립니다",
                             category: "신년",
                             icon: "📅",
-                            link: "/contents/yearly"
+                            link: "/contents/yearly",
+                            image: "/thumbnails/yearly-fortune.png"
                         },
                         {
                             title: "금전운",
@@ -86,7 +91,8 @@ const Contents = () => {
                             description: "오늘의 운세부터 2025년 총운까지 별자리로 확인하세요",
                             category: "운세",
                             icon: "🔮",
-                            link: "/contents/horoscope"
+                            link: "/contents/horoscope",
+                            image: "/thumbnails/horoscope.png"
                         },
                         {
                             title: "손금 분석",
@@ -123,8 +129,16 @@ const Contents = () => {
                                 }
                             }}
                         >
-                            <div className="aspect-video bg-gradient-to-br from-gold/20 to-mystic-purple/20 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-500">
-                                {item.icon}
+                            <div className="aspect-video bg-gradient-to-br from-gold/20 to-mystic-purple/20 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-500 relative overflow-hidden">
+                                {item.image ? (
+                                    <img
+                                        src={item.image}
+                                        alt={item.title}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    item.icon
+                                )}
                             </div>
                             <div className="p-4">
                                 <span className="text-xs text-gold font-medium">{item.category}</span>

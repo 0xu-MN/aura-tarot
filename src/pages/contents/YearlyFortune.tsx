@@ -100,7 +100,7 @@ export const YearlyFortune = () => {
                 body: {
                     type: 'reading',
                     context: {
-                        question: `${name}님의 2025년 신년 운세는 어떤가요? (사계절 중심)`,
+                        question: `${name}님의 2026년 신년 운세는 어떤가요? (사계절 중심)`,
                         cards: cards.map(c => ({
                             name: c.card.name,
                             isReversed: c.isReversed
@@ -147,8 +147,8 @@ export const YearlyFortune = () => {
                     state: {
                         autoOpenCreate: true,
                         attachedImage: dataUrl,
-                        initialTitle: `${name}님의 2025년 AI 신년운세 결과`,
-                        initialContent: `오늘 본 2025년 AI 신년운세 결과입니다. #타로 #신년운세 #2025`
+                        initialTitle: `${name}님의 2026년 AI 신년운세 결과`,
+                        initialContent: `오늘 본 2026년 AI 신년운세 결과입니다. #타로 #신년운세 #2026`
                     }
                 });
             }
@@ -169,7 +169,7 @@ export const YearlyFortune = () => {
                         <span>신년 종합 운세</span>
                     </div>
                     <h1 className="font-display text-3xl md:text-4xl text-gold-gradient mb-2">
-                        2025년 운명의 흐름
+                        2026년 운명의 흐름
                     </h1>
                 </div>
 
@@ -213,7 +213,7 @@ export const YearlyFortune = () => {
                             <Lock className="w-10 h-10 text-gold" />
                         </div>
                         <div>
-                            <h2 className="font-display text-2xl text-foreground mb-4">2025년 정밀 총운</h2>
+                            <h2 className="font-display text-2xl text-foreground mb-4">2026년 정밀 총운</h2>
                             <p className="text-muted-foreground">
                                 분기별 핵심 키워드와 조언, 그리고<br />
                                 행운을 가져다줄 '올해의 카드'를 확인하세요.
@@ -234,7 +234,7 @@ export const YearlyFortune = () => {
                     <div className="w-full animate-fade-in">
                         <SpreadLayout
                             cardCount={4}
-                            instruction="나의 2025년을 상상하며 4장의 카드를 골라주세요"
+                            instruction="나의 2026년을 상상하며 4장의 카드를 골라주세요"
                             onSpreadComplete={handleSpreadComplete}
                         />
                     </div>
@@ -270,7 +270,7 @@ export const YearlyFortune = () => {
                             <div className="bg-card/40 backdrop-blur-md rounded-2xl p-6 border border-gold/20 animate-fade-in">
                                 <h3 className="font-display text-xl text-gold-gradient mb-6 flex items-center gap-2">
                                     <Sparkles className="w-5 h-5" />
-                                    {name}님의 2025년 운세 리포트
+                                    {name}님의 2026년 운세 리포트
                                 </h3>
 
                                 <div id="yearly-result-content" className="space-y-6 text-foreground/90 leading-relaxed text-sm md:text-base">
@@ -294,7 +294,7 @@ export const YearlyFortune = () => {
                                                 <Button variant="outline" className="flex-1" onClick={() => saveResultAsImage('yearly-result-content', 'aura-yearly-fortune')}>
                                                     <Download className="w-4 h-4 mr-2" /> 저장
                                                 </Button>
-                                                <Button variant="outline" className="flex-1" onClick={() => shareResult('신년 총운 결과', `${name}님의 2025년 운세 결과를 확인해보세요!`)}>
+                                                <Button variant="outline" className="flex-1" onClick={() => shareResult('신년 총운 결과', `${name}님의 2026년 운세 결과를 확인해보세요!`)}>
                                                     <Share2 className="w-4 h-4 mr-2" /> 공유
                                                 </Button>
                                             </div>

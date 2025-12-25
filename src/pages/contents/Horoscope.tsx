@@ -30,7 +30,7 @@ const TIMEFRAMES = [
     { id: 'daily', label: '오늘의 운세', price: 0 },
     { id: 'weekly', label: '주간 운세', price: 1 },
     { id: 'monthly', label: '월간 운세', price: 1 },
-    { id: 'yearly', label: '2025년 총운', price: 1 },
+    { id: 'yearly', label: '2026년 총운', price: 1 },
 ];
 
 export const Horoscope = () => {
