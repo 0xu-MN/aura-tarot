@@ -2,9 +2,127 @@ import { AppLayout } from '@/layouts/AppLayout';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+
+interface ContentItem {
+    title: string;
+    description: string;
+    categories: string[];
+    displayCategory: string;
+    icon: string;
+    link?: string;
+    image?: string;
+    imageClass?: string;
+}
 
 const Contents = () => {
     const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeCategory, setActiveCategory] = useState('전체');
+
+    const categories = ['전체', '연애운', '궁합', '재회확률', '신년운세', '별자리 운세', '직업운', '재물운'];
+
+    const contentItems: ContentItem[] = [
+        {
+            title: "오늘의 운세",
+            description: "하루를 시작하는 특별한 메시지를 받아보세요",
+            categories: ["운세", "신년운세"], // 신년운세에도 포함시켜줌 (넓은 의미)
+            displayCategory: "운세",
+            icon: "✨",
+            link: "/home",
+            image: "/thumbnails/daily-fortune.png"
+        },
+        {
+            title: "연애운 타로",
+            description: "연애, 썸, 짝사랑에 대한 깊은 통찰을 제공합니다",
+            categories: ["연애운"],
+            displayCategory: "연애운",
+            icon: "💕",
+            link: "/contents/love",
+            image: "/thumbnails/love-tarot.png"
+        },
+        {
+            title: "재회 확률",
+            description: "그 사람의 속마음과 재회 가능성을 알아보세요",
+            categories: ["연애운", "재회확률"],
+            displayCategory: "연애운",
+            icon: "🌙",
+            link: "/contents/reunion",
+            image: "/thumbnails/reunion-tarot.png"
+        },
+        {
+            title: "커플 궁합",
+            description: "두 사람의 궁합을 타로로 점쳐보세요",
+            categories: ["연애운", "궁합"],
+            displayCategory: "궁합",
+            icon: "👩‍❤️‍👨",
+            link: "/contents/compatibility",
+            image: "/thumbnails/compatibility-tarot.png"
+        },
+        {
+            title: "2026 신년운세",
+            description: "새해 12개월의 운세를 상세히 풀이해드립니다",
+            categories: ["신년운세"],
+            displayCategory: "신년",
+            icon: "📅",
+            link: "/contents/yearly",
+            image: "/thumbnails/yearly-fortune.png"
+        },
+        {
+            title: "금전운",
+            description: "재물을 끌어당기는 흐름과 조언을 확인하세요",
+            categories: ["재물운", "직업운"],
+            displayCategory: "재물운",
+            icon: "💰",
+            link: "/contents/money",
+            image: "/thumbnails/money-luck.jpg"
+        },
+        {
+            title: "별자리 운세",
+            description: "오늘의 운세부터 2025년 총운까지 별자리로 확인하세요",
+            categories: ["별자리 운세", "신년운세"],
+            displayCategory: "운세",
+            icon: "🔮",
+            link: "/contents/horoscope",
+            image: "/thumbnails/horoscope.png"
+        },
+        {
+            title: "손금 분석",
+            description: "손바닥 사진으로 알아보는 나의 운명선",
+            categories: ["운세", "관상/손금", "직업운", "재물운"], // 관련된 곳에 넓게 포함
+            displayCategory: "관상/손금",
+            icon: "✋",
+            link: "/contents/palm",
+            image: "/thumbnails/palm-reading.jpg"
+        },
+        {
+            title: "꿈 해몽",
+            description: "어젯밤 꿈의 의미를 AI가 해석해드려요",
+            categories: ["해몽", "운세"],
+            displayCategory: "해몽",
+            icon: "⭐",
+            // No link yet, shows alert
+        },
+        {
+            title: "1:1 전문가 타로 상담",
+            description: "검증된 타로 마스터와 1:1로 깊이 있는 상담을 나눠보세요",
+            categories: ["전문가 상담", "연애운", "궁합", "재회확률", "직업운", "재물운"], // 모든 고민 해결 가능
+            displayCategory: "전문가 상담",
+            icon: "💬"
+            // No link, specific alert
+        },
+    ];
+
+    const filteredItems = contentItems.filter(item => {
+        // Filter by category
+        const matchesCategory = activeCategory === '전체' || item.categories.includes(activeCategory);
+
+        // Filter by search query
+        const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+        return matchesCategory && matchesSearch;
+    });
 
     return (
         <AppLayout>
@@ -20,15 +138,21 @@ const Contents = () => {
                         type="text"
                         placeholder="컨텐츠 검색..."
                         className="pl-10 bg-card/50"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
 
                 {/* Category Tabs */}
-                <div className="flex gap-2 overflow-x-auto mb-6 pb-2">
-                    {['전체', '연애운', '궁합', '재회확률', '신년운세', '별자리 운세', '직업운', '재물운'].map((category) => (
+                <div className="flex gap-2 overflow-x-auto mb-6 pb-2 scrollbar-hide">
+                    {categories.map((category) => (
                         <button
                             key={category}
-                            className="px-4 py-2 rounded-lg bg-card border border-gold/30 text-sm whitespace-nowrap hover:bg-gold/10 transition-colors"
+                            onClick={() => setActiveCategory(category)}
+                            className={`px-4 py-2 rounded-lg border text-sm whitespace-nowrap transition-colors ${activeCategory === category
+                                ? 'bg-gold/20 border-gold text-gold font-medium'
+                                : 'bg-card border-gold/30 text-muted-foreground hover:bg-gold/10 hover:text-foreground'
+                                }`}
                         >
                             {category}
                         </button>
@@ -37,85 +161,7 @@ const Contents = () => {
 
                 {/* Content Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {/* Define content data directly here for now to ensure consistency */}
-                    {[
-                        {
-                            title: "오늘의 운세",
-                            description: "하루를 시작하는 특별한 메시지를 받아보세요",
-                            category: "운세",
-                            icon: "✨",
-                            link: "/home",
-                            image: "/thumbnails/daily-fortune.png"
-                        },
-                        {
-                            title: "연애운 타로",
-                            description: "연애, 썸, 짝사랑에 대한 깊은 통찰을 제공합니다",
-                            category: "연애운",
-                            icon: "💕",
-                            link: "/contents/love",
-                            image: "/thumbnails/love-tarot.png"
-                        },
-                        {
-                            title: "재회 확률",
-                            description: "그 사람의 속마음과 재회 가능성을 알아보세요",
-                            category: "연애운",
-                            icon: "🌙",
-                            link: "/contents/reunion",
-                            image: "/thumbnails/reunion-tarot.png"
-                        },
-                        {
-                            title: "커플 궁합",
-                            description: "두 사람의 궁합을 타로로 점쳐보세요",
-                            category: "궁합",
-                            icon: "👩‍❤️‍👨",
-                            link: "/contents/compatibility",
-                            image: "/thumbnails/compatibility-tarot.png"
-                        },
-                        {
-                            title: "2026 신년운세",
-                            description: "새해 12개월의 운세를 상세히 풀이해드립니다",
-                            category: "신년",
-                            icon: "📅",
-                            link: "/contents/yearly",
-                            image: "/thumbnails/yearly-fortune.png"
-                        },
-                        {
-                            title: "금전운",
-                            description: "재물을 끌어당기는 흐름과 조언을 확인하세요",
-                            category: "재물운",
-                            icon: "💰",
-                            link: "/contents/money"
-                        },
-                        {
-                            title: "별자리 운세",
-                            description: "오늘의 운세부터 2025년 총운까지 별자리로 확인하세요",
-                            category: "운세",
-                            icon: "🔮",
-                            link: "/contents/horoscope",
-                            image: "/thumbnails/horoscope.png"
-                        },
-                        {
-                            title: "손금 분석",
-                            description: "손바닥 사진으로 알아보는 나의 운명선",
-                            category: "관상/손금",
-                            icon: "✋",
-                            link: "/contents/palm"
-                        },
-                        {
-                            title: "꿈 해몽",
-                            description: "어젯밤 꿈의 의미를 AI가 해석해드려요",
-                            category: "해몽",
-                            icon: "⭐",
-                            // No link yet, shows alert
-                        },
-                        {
-                            title: "1:1 전문가 타로 상담",
-                            description: "검증된 타로 마스터와 1:1로 깊이 있는 상담을 나눠보세요",
-                            category: "전문가 상담",
-                            icon: "💬"
-                            // No link, specific alert
-                        },
-                    ].map((item, index) => (
+                    {filteredItems.map((item, index) => (
                         <div
                             key={index}
                             className="bg-card rounded-2xl border border-gold/20 overflow-hidden hover:border-gold/50 transition-all duration-300 hover:scale-105 cursor-pointer group"
@@ -134,14 +180,14 @@ const Contents = () => {
                                     <img
                                         src={item.image}
                                         alt={item.title}
-                                        className="w-full h-full object-cover"
+                                        className={`w-full h-full ${item.imageClass || 'object-cover'}`}
                                     />
                                 ) : (
                                     item.icon
                                 )}
                             </div>
                             <div className="p-4">
-                                <span className="text-xs text-gold font-medium">{item.category}</span>
+                                <span className="text-xs text-gold font-medium">{item.displayCategory}</span>
                                 <h3 className="font-display text-lg mt-1 mb-2 group-hover:text-gold transition-colors">
                                     {item.title}
                                 </h3>
