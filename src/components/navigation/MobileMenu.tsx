@@ -15,9 +15,10 @@ import {
 interface MobileMenuProps {
     isOpen: boolean;
     onClose: () => void;
+    onLoginClick?: () => void;
 }
 
-export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
+export const MobileMenu = ({ isOpen, onClose, onLoginClick }: MobileMenuProps) => {
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
     const [isDeveloperMode, setIsDeveloperMode] = useState(false);
@@ -40,6 +41,13 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     const handleNavigation = (path: string) => {
         navigate(path);
         onClose();
+    };
+
+    const handleLoginClick = () => {
+        onClose(); // Close the mobile menu first
+        if (onLoginClick) {
+            onLoginClick(); // Call parent's login handler
+        }
     };
 
     const menuItems = [
@@ -159,7 +167,7 @@ export const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                             <Button
                                 variant="gold"
                                 className="w-full"
-                                onClick={() => handleNavigation('/')}
+                                onClick={handleLoginClick}
                             >
                                 로그인
                             </Button>

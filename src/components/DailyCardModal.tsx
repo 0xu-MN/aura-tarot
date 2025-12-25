@@ -383,7 +383,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
                     <div className="flex flex-col gap-3 mt-4 no-capture">
                       <Button
                         variant="gold"
-                        className="w-full bg-gold/10 hover:bg-gold/20 text-gold border-gold/30"
+                        className="w-full bg-gold/20 hover:bg-gold/30 text-gold border-gold/50 shadow-lg shadow-gold/20 font-bold"
                         onClick={handleConsultSom}
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
