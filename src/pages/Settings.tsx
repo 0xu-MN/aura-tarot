@@ -28,10 +28,14 @@ const Settings = () => {
                 {/* Profile Section */}
                 <div className="bg-card rounded-2xl border border-gold/20 p-6 mb-6">
                     <div className="flex items-center gap-4 mb-4">
-                        <Avatar className="w-16 h-16">
-                            <AvatarFallback className="bg-gold/20 text-gold text-xl">
-                                {userProfile?.nickname?.charAt(0) || 'U'}
-                            </AvatarFallback>
+                        <Avatar className="w-16 h-16 border border-gold/20">
+                            {userProfile?.avatar_url ? (
+                                <img src={userProfile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <AvatarFallback className="bg-gold/20 text-gold text-xl">
+                                    {userProfile?.nickname?.charAt(0) || 'U'}
+                                </AvatarFallback>
+                            )}
                         </Avatar>
                         <div className="flex-1">
                             <h2 className="font-display text-xl text-gold">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, Check, AlertCircle } from 'lucide-react';
+import { X, Upload, Check, AlertCircle, Dice5 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,7 @@ interface ProfileEditModalProps {
 export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => {
     const { user, userProfile, refreshProfile } = useAuth();
     const [nickname, setNickname] = useState('');
+    const [avatarUrl, setAvatarUrl] = useState('');
     const [nicknameChecking, setNicknameChecking] = useState(false);
     const [nicknameAvailable, setNicknameAvailable] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(false);
@@ -26,6 +27,7 @@ export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => 
     useEffect(() => {
         if (isOpen && userProfile) {
             setNickname(userProfile.nickname || '');
+            setAvatarUrl(userProfile.avatar_url || '');
             checkNicknameEditPermission();
         }
     }, [isOpen, userProfile]);
@@ -67,6 +69,12 @@ export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => 
         return () => clearTimeout(timer);
     }, [nickname, userProfile?.nickname]);
 
+    const handleRandomAvatar = () => {
+        const seed = Math.random().toString(36).substring(7);
+        const randomAvatarUrl = `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`;
+        setAvatarUrl(randomAvatarUrl);
+    };
+
     const handleSave = async () => {
         if (!user) return;
 
@@ -93,6 +101,10 @@ export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => 
             // Update nickname if changed
             if (nickname !== userProfile?.nickname) {
                 updates.nickname = nickname;
+            }
+
+            if (avatarUrl !== userProfile?.avatar_url) {
+                updates.avatar_url = avatarUrl;
             }
 
             if (Object.keys(updates).length > 0) {
@@ -144,15 +156,25 @@ export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => 
                 <div className="space-y-6">
                     {/* Profile Picture */}
                     <div className="flex flex-col items-center gap-4">
-                        <Avatar className="w-24 h-24">
-                            <AvatarFallback className="bg-gold/20 text-gold font-display text-3xl">
-                                {nickname?.charAt(0) || 'U'}
-                            </AvatarFallback>
+                        <Avatar className="w-24 h-24 border-2 border-gold/20">
+                            {avatarUrl ? (
+                                <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <AvatarFallback className="bg-gold/20 text-gold font-display text-3xl">
+                                    {nickname?.charAt(0) || 'U'}
+                                </AvatarFallback>
+                            )}
                         </Avatar>
-                        <Button variant="outline" size="sm" disabled>
-                            <Upload className="w-4 h-4 mr-2" />
-                            사진 업로드 (준비 중)
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={handleRandomAvatar} className="border-gold/30 hover:bg-gold/10">
+                                <Dice5 className="w-4 h-4 mr-2" />
+                                랜덤 생성
+                            </Button>
+                            <Button variant="outline" size="sm" disabled className="opacity-50 cursor-not-allowed">
+                                <Upload className="w-4 h-4 mr-2" />
+                                업로드
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Nickname */}
@@ -220,7 +242,7 @@ export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => 
                             variant="gold"
                             className="flex-1"
                             onClick={handleSave}
-                            disabled={loading || !canEditNickname || (nickname !== userProfile?.nickname && nicknameAvailable !== true)}
+                            disabled={loading || !canEditNickname || (nickname === userProfile?.nickname && avatarUrl === userProfile?.avatar_url)}
                         >
                             {loading ? '저장 중...' : '저장'}
                         </Button>

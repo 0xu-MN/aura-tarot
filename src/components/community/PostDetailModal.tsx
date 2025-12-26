@@ -34,6 +34,7 @@ interface Comment {
     id: string;
     profiles: {
         nickname: string;
+        avatar_url?: string;
     };
     content: string;
     created_at: string;
@@ -80,8 +81,8 @@ export const PostDetailModal = ({ isOpen, onClose, post, onDelete, onCommentChan
             const userIds = Array.from(new Set(commentsData.map(c => c.user_id)));
             const { data: profilesData, error: profilesError } = await supabase
                 .from('profiles')
-                .select('user_id, nickname')
-                .in('user_id', userIds);
+                .select('user_id, nickname, avatar_url')
+                .in('user_id', userIds) as any;
 
             if (profilesError) throw profilesError;
 
@@ -369,10 +370,14 @@ export const PostDetailModal = ({ isOpen, onClose, post, onDelete, onCommentChan
                                 {comments.map((comment) => {
                                     return (
                                         <div key={comment.id} className="flex gap-3">
-                                            <Avatar className="w-8 h-8">
-                                                <AvatarFallback className="bg-muted text-sm">
-                                                    {(comment.profiles?.nickname || '익')[0]}
-                                                </AvatarFallback>
+                                            <Avatar className="w-10 h-10 border border-gold/20">
+                                                {comment.profiles?.avatar_url ? (
+                                                    <img src={comment.profiles.avatar_url} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                                                ) : (
+                                                    <AvatarFallback className="bg-gold/10 text-gold font-display">
+                                                        {(comment.profiles?.nickname || '익')[0]}
+                                                    </AvatarFallback>
+                                                )}
                                             </Avatar>
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-1">

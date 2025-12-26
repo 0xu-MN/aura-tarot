@@ -88,8 +88,8 @@ const CommunityLounge = () => {
             const userIds = Array.from(new Set(postsData.map(p => p.user_id)));
             const { data: profilesData, error: profilesError } = await supabase
                 .from('profiles')
-                .select('user_id, nickname')
-                .in('user_id', userIds);
+                .select('user_id, nickname, avatar_url')
+                .in('user_id', userIds) as any;
 
             if (profilesError) throw profilesError;
 
@@ -350,9 +350,13 @@ const CommunityLounge = () => {
                         title="내 활동"
                     >
                         <Avatar className="w-10 h-10 border border-gold/30">
-                            <AvatarFallback className="bg-gold/10 text-gold text-xs">
-                                {user?.nickname?.[0] || '나'}
-                            </AvatarFallback>
+                            {userProfile?.avatar_url ? (
+                                <img src={userProfile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <AvatarFallback className="bg-gold/10 text-gold text-xs">
+                                    {userProfile?.nickname?.[0] || '나'}
+                                </AvatarFallback>
+                            )}
                         </Avatar>
                     </button>
                 </div>
@@ -415,9 +419,13 @@ const CommunityLounge = () => {
                                             {/* Left: Profile Information */}
                                             <div className="flex-shrink-0">
                                                 <Avatar className="w-12 h-12 border border-gold/20">
-                                                    <AvatarFallback className="bg-gold/10 text-gold font-bold">
-                                                        {(post.profiles?.nickname || '익')[0]}
-                                                    </AvatarFallback>
+                                                    {post.profiles?.avatar_url ? (
+                                                        <img src={post.profiles.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <AvatarFallback className="bg-gold/10 text-gold font-bold">
+                                                            {(post.profiles?.nickname || '익')[0]}
+                                                        </AvatarFallback>
+                                                    )}
                                                 </Avatar>
                                             </div>
 

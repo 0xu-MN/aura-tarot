@@ -12,6 +12,7 @@ export interface User {
 export interface UserProfile extends User {
   daily_draws_remaining: number;
   total_draws: number;
+  avatar_url?: string;
 }
 
 export const INTEREST_CATEGORIES = [
