@@ -343,22 +343,7 @@ const CommunityLounge = () => {
                         {!isPremium && <Lock className="w-5 h-5" />}
                     </button>
 
-                    {/* My Profile Trigger */}
-                    <button
-                        onClick={() => setShowActivityModal(true)}
-                        className="absolute right-0 p-2 hover:bg-gold/10 rounded-full transition-colors"
-                        title="내 활동"
-                    >
-                        <Avatar className="w-10 h-10 border border-gold/30">
-                            {userProfile?.avatar_url ? (
-                                <img src={userProfile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                                <AvatarFallback className="bg-gold/10 text-gold text-xs">
-                                    {userProfile?.nickname?.[0] || '나'}
-                                </AvatarFallback>
-                            )}
-                        </Avatar>
-                    </button>
+
                 </div>
 
                 {/* Lounge Content */}
@@ -574,13 +559,35 @@ const CommunityLounge = () => {
 
 
                 {/* Floating Write Button (Lounge only) */}
+                {/* Floating Action Buttons (Lounge only) */}
                 {activeTab === 'lounge' && (
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="fixed bottom-24 right-6 w-14 h-14 rounded-full bg-gold hover:bg-gold/90 shadow-lg shadow-gold/20 flex items-center justify-center transition-all hover:scale-110 z-50 text-background"
-                    >
-                        <Edit3 className="w-6 h-6" />
-                    </button>
+                    <div className="fixed bottom-24 right-6 flex flex-col items-center gap-4 z-50">
+                        {/* My Activity Button */}
+                        <button
+                            onClick={() => setShowActivityModal(true)}
+                            className="w-14 h-14 rounded-full bg-card border border-gold/30 shadow-lg flex items-center justify-center transition-all hover:scale-110 hover:border-gold overflow-hidden"
+                            title="내 활동"
+                        >
+                            <Avatar className="w-full h-full">
+                                {userProfile?.avatar_url ? (
+                                    <img src={userProfile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <AvatarFallback className="bg-gold/10 text-gold text-xs">
+                                        {userProfile?.nickname?.[0] || '나'}
+                                    </AvatarFallback>
+                                )}
+                            </Avatar>
+                        </button>
+
+                        {/* Write Post Button */}
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="w-14 h-14 rounded-full bg-gold hover:bg-gold/90 shadow-lg shadow-gold/20 flex items-center justify-center transition-all hover:scale-110 text-background"
+                            title="글쓰기"
+                        >
+                            <Edit3 className="w-6 h-6" />
+                        </button>
+                    </div>
                 )}
 
                 {/* Modals */}
