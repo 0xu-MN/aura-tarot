@@ -2,16 +2,22 @@ import { AppLayout } from '@/layouts/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, User, Heart, TrendingUp, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ProfileEditModal } from '@/components/ProfileEditModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const Settings = () => {
     const { user, userProfile, signOut } = useAuth();
     const [showProfileEdit, setShowProfileEdit] = useState(false);
+    const [imgError, setImgError] = useState(false);
+
+    // Reset error state when avatar changes
+    useEffect(() => {
+        setImgError(false);
+    }, [userProfile?.avatar_url]);
 
     const handleLogout = async () => {
         await signOut();
@@ -29,8 +35,15 @@ const Settings = () => {
                 <div className="bg-card rounded-2xl border border-gold/20 p-6 mb-6">
                     <div className="flex items-center gap-4 mb-4">
                         <Avatar className="w-16 h-16 border border-gold/20">
-                            {userProfile?.avatar_url ? (
-                                <img src={userProfile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                            {userProfile?.avatar_url && !imgError ? (
+                                <img
+                                    key={userProfile.avatar_url}
+                                    src={userProfile.avatar_url}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover"
+                                    onError={() => setImgError(true)}
+                                    referrerPolicy="no-referrer"
+                                />
                             ) : (
                                 <AvatarFallback className="bg-gold/20 text-gold text-xl">
                                     {userProfile?.nickname?.charAt(0) || 'U'}

@@ -3,7 +3,7 @@ import { X, Upload, Check, AlertCircle, Dice5 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -73,6 +73,42 @@ export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => 
         const seed = Math.random().toString(36).substring(7);
         const randomAvatarUrl = `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`;
         setAvatarUrl(randomAvatarUrl);
+    };
+
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            if (!event.target.files || event.target.files.length === 0) {
+                return;
+            }
+            const file = event.target.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `avatar_${Math.random().toString(36).substring(7)}_${Date.now()}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+
+            setLoading(true);
+
+            // 1. Upload image
+            const { error: uploadError } = await supabase.storage
+                .from('lounge') // Using existing 'lounge' bucket
+                .upload(filePath, file);
+
+            if (uploadError) {
+                throw uploadError;
+            }
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('lounge')
+                .getPublicUrl(filePath);
+
+            setAvatarUrl(publicUrl);
+            toast.success('이미지가 업로드되었습니다. 저장 버튼을 눌러 적용해주세요.');
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            toast.error('이미지 업로드 실패');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSave = async () => {
@@ -170,10 +206,26 @@ export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => 
                                 <Dice5 className="w-4 h-4 mr-2" />
                                 랜덤 생성
                             </Button>
-                            <Button variant="outline" size="sm" disabled className="opacity-50 cursor-not-allowed">
-                                <Upload className="w-4 h-4 mr-2" />
-                                업로드
-                            </Button>
+                            <div className="relative">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-gold/30 hover:bg-gold/10 cursor-pointer"
+                                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                                    disabled={loading}
+                                >
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    업로드
+                                </Button>
+                                <input
+                                    type="file"
+                                    id="avatar-upload"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    disabled={loading}
+                                />
+                            </div>
                         </div>
                     </div>
 

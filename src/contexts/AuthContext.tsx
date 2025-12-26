@@ -131,6 +131,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 ...userData,
                 daily_draws_remaining: Math.max(0, dailyLimit - drawsToday),
                 total_draws: 0,
+                avatar_url: (data as any).avatar_url,
             };
 
             setUser(userData);
