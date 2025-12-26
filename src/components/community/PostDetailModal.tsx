@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Heart, MessageCircle, Share2, Send } from 'lucide-react';
+import { X, Heart, MessageCircle, Share2, Send, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,12 +7,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PostDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     post: {
         id: string;
+        user_id: string;
         author: string;
         avatar: string;
         type: string;
@@ -24,6 +26,7 @@ interface PostDetailModalProps {
         timestamp: string;
         category?: string;
     };
+    onDelete?: () => void;
 }
 
 interface Comment {
@@ -35,7 +38,8 @@ interface Comment {
     created_at: string;
 }
 
-export const PostDetailModal = ({ isOpen, onClose, post }: PostDetailModalProps) => {
+export const PostDetailModal = ({ isOpen, onClose, post, onDelete }: PostDetailModalProps) => {
+    const { user } = useAuth();
     const [comment, setComment] = useState('');
     const [comments, setComments] = useState<Comment[]>([]);
     const [liked, setLiked] = useState(false);
@@ -173,13 +177,32 @@ export const PostDetailModal = ({ isOpen, onClose, post }: PostDetailModalProps)
 
             {/* Modal */}
             <div className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden bg-card rounded-3xl border border-gold/30 shadow-2xl animate-scale-in">
-                {/* Close button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    <X className="w-5 h-5" />
-                </button>
+                {/* Header Actions */}
+                <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                    {/* Delete button (Only for author) */}
+                    {onDelete && (
+                        <button
+                            onClick={() => {
+                                if (window.confirm('정말 이 게시글을 영구적으로 삭제하시겠습니까?\n삭제된 글은 복구할 수 없습니다.')) {
+                                    onDelete();
+                                    onClose();
+                                }
+                            }}
+                            className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-red-500/30 transition-colors border-2 border-red-500"
+                            title="게시글 영구 삭제"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                        </button>
+                    )}
+
+                    {/* Close button */}
+                    <button
+                        onClick={onClose}
+                        className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
                 <div className="flex flex-col h-full max-h-[90vh]">
                     {/* Post Content */}

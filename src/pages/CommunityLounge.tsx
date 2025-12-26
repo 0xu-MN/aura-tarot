@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AppLayout } from '@/layouts/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { Lock, MessageSquare, Eye, Heart, Edit3, Share2, MessageCircle } from 'lucide-react';
+import { Lock, MessageSquare, Eye, Heart, Edit3, Share2, MessageCircle, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -110,6 +110,7 @@ const CommunityLounge = () => {
     const handlePostClick = (post: any) => {
         setSelectedPost({
             ...post,
+            user_id: post.user_id, // CRITICAL: needed for delete button authorization
             author: post.profiles?.nickname || '익명',
             avatar: (post.profiles?.nickname || '익')[0],
             time: new Date(post.created_at).toLocaleDateString(),
@@ -117,29 +118,102 @@ const CommunityLounge = () => {
         });
     };
 
+    const handleDeletePost = async (e: React.MouseEvent, postId: string) => {
+        e.stopPropagation();
+
+        if (!window.confirm('정말 이 게시글을 영구적으로 삭제하시겠습니까?\n삭제된 글은 복구할 수 없습니다.')) return;
+
+        try {
+            const { error } = await supabase
+                .from('community_posts')
+                .delete()
+                .eq('id', postId);
+
+            if (error) throw error;
+
+            toast.success('게시글이 삭제되었습니다.');
+            setPosts(posts.filter(p => p.id !== postId));
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            toast.error('게시글 삭제에 실패했습니다.');
+        }
+    };
+
+    const handleDetailDelete = async (postId: string) => {
+        try {
+            // Check authentication
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
+                toast.error('로그인이 필요합니다.');
+                return;
+            }
+
+            // Get post to verify ownership
+            const { data: post, error: fetchError } = await supabase
+                .from('community_posts')
+                .select('user_id')
+                .eq('id', postId)
+                .single();
+
+            if (fetchError) throw fetchError;
+
+            // Verify ownership
+            if (post.user_id !== session.user.id) {
+                toast.error('본인이 작성한 게시글만 삭제할 수 있습니다.');
+                return;
+            }
+
+            // Delete post
+            const { error } = await supabase
+                .from('community_posts')
+                .delete()
+                .eq('id', postId);
+
+            if (error) throw error;
+
+            toast.success('게시글이 삭제되었습니다.');
+            setPosts(posts.filter(p => p.id !== postId));
+            setSelectedPost(null);
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            toast.error('게시글 삭제에 실패했습니다.');
+        }
+    };
+
     const uploadImage = async (file: File | string) => {
         try {
             let blob: Blob;
             let fileName: string;
+            let fileExt = 'png';
 
             if (typeof file === 'string' && file.startsWith('data:image')) {
                 const res = await fetch(file);
                 blob = await res.blob();
-                fileName = `tarot_${Date.now()}.png`;
+                fileName = `tarot_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
             } else if (file instanceof File) {
                 blob = file;
-                fileName = `${Date.now()}_${file.name}`;
+                const nameParts = file.name.split('.');
+                if (nameParts.length > 1) {
+                    fileExt = nameParts.pop() || 'png';
+                }
+                fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
             } else {
                 return typeof file === 'string' ? file : null;
             }
 
             const { data, error } = await supabase.storage
                 .from('lounge')
-                .upload(fileName, blob);
+                .upload(fileName, blob, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
 
             if (error) {
-                console.warn('Storage upload failed (bucket might not exist):', error);
-                return typeof file === 'string' ? file : null;
+                // If bucket not found error, might inform user
+                if (error.message.includes('Bucket not found')) {
+                    toast.error('이미지 저장소(lounge)가 존재하지 않습니다. 관리자에게 문의하세요.');
+                }
+                throw error;
             }
 
             const { data: { publicUrl } } = supabase.storage
@@ -149,23 +223,36 @@ const CommunityLounge = () => {
             return publicUrl;
         } catch (error) {
             console.error('Error uploading image:', error);
-            return typeof file === 'string' ? file : null;
+            // Don't silence the error, let the caller handle it or return null if non-critical
+            // But for post creation, we probably want to know.
+            return null;
         }
     };
 
     const handleCreatePost = async (newPostData: any) => {
         setIsLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Not authenticated');
+            // 1. Check strict authentication
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+            if (sessionError || !session?.user) {
+                console.error("Auth Error:", sessionError);
+                throw new Error('로그인이 필요합니다. 다시 로그인해주세요.');
+            }
+
+            const currentUser = session.user;
 
             let imageUrl = null;
             if (newPostData.images && newPostData.images.length > 0) {
                 imageUrl = await uploadImage(newPostData.images[0]);
+
+                if (!imageUrl) {
+                    throw new Error('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+                }
             }
 
             const { error } = await supabase.from('community_posts').insert({
-                user_id: user.id,
+                user_id: currentUser.id,
                 title: newPostData.title,
                 content: newPostData.content,
                 category: newPostData.type || 'random',
@@ -282,54 +369,75 @@ const CommunityLounge = () => {
                                     <div
                                         key={post.id}
                                         onClick={() => handlePostClick(post)}
-                                        className="bg-card rounded-2xl border border-gold/10 p-5 hover:border-gold/30 transition-all cursor-pointer group"
+                                        className="bg-card rounded-2xl border border-gold/10 p-5 hover:border-gold/30 transition-all cursor-pointer group relative"
                                     >
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <Avatar className="w-10 h-10 border border-gold/20">
-                                                <AvatarFallback className="bg-gold/10 text-gold">
-                                                    {(post.profiles?.nickname || '익')[0]}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1">
+                                        {/* Delete Button (Only for author) */}
+                                        {user?.id === post.user_id && (
+                                            <button
+                                                onClick={(e) => handleDeletePost(e, post.id)}
+                                                className="absolute top-4 right-4 text-muted-foreground hover:text-red-500 z-10 p-1 transition-colors"
+                                                title="게시글 영구 삭제"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                        <div className="flex gap-4">
+                                            {/* Left: Profile Information */}
+                                            <div className="flex-shrink-0">
+                                                <Avatar className="w-12 h-12 border border-gold/20">
+                                                    <AvatarFallback className="bg-gold/10 text-gold font-bold">
+                                                        {(post.profiles?.nickname || '익')[0]}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                            </div>
+
+                                            {/* Middle: Content */}
+                                            <div className="flex-1 min-w-0 flex flex-col gap-2">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-white group-hover:text-gold transition-colors">
+                                                    <span className="font-bold text-white group-hover:text-gold transition-colors text-base">
                                                         {post.profiles?.nickname || '익명'}
                                                     </span>
                                                     <span className="text-xs text-muted-foreground">
                                                         {new Date(post.created_at).toLocaleDateString()}
                                                     </span>
+                                                    <span className="text-xs text-gold/70 px-2 py-0.5 rounded-full bg-gold/5 border border-gold/10">
+                                                        {CATEGORIES.find(c => c.id === post.category)?.label || '아무거나'}
+                                                    </span>
                                                 </div>
-                                                <div className="flex items-center gap-1 text-muted-foreground text-xs">
-                                                    <span>{CATEGORIES.find(c => c.id === post.category)?.label || '아무거나'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        <div className="flex gap-4">
-                                            <div className="flex-1">
-                                                <h3 className="text-lg font-bold text-white mb-2 line-clamp-1">{post.title}</h3>
-                                                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{post.content}</p>
+                                                {/* Title Box */}
+                                                <div className="text-white font-bold text-lg px-1">
+                                                    {post.title}
+                                                </div>
+
+                                                {/* Content Box */}
+                                                <div className="text-muted-foreground text-sm line-clamp-3 min-h-[20px] px-1">
+                                                    {post.content}
+                                                </div>
+
+                                                {/* Stats */}
+                                                <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Heart className="w-3.5 h-3.5" />
+                                                        <span>{post.likes_count || 0}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <MessageCircle className="w-3.5 h-3.5" />
+                                                        <span>{post.comments_count || 0}</span>
+                                                    </div>
+                                                </div>
                                             </div>
+
+                                            {/* Right: Image */}
                                             {post.tarot_image_url && (
-                                                <div className="w-20 h-20 rounded-xl bg-gold/5 flex-shrink-0 flex items-center justify-center border border-gold/10 overflow-hidden">
-                                                    <img src={post.tarot_image_url} alt="Tarot" className="w-full h-full object-cover" />
+                                                <div className="w-32 h-32 rounded-xl bg-gold/5 flex-shrink-0 border border-gold/10 overflow-hidden">
+                                                    <img
+                                                        src={post.tarot_image_url}
+                                                        alt="Tarot"
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    />
                                                 </div>
                                             )}
-                                        </div>
-
-                                        <div className="flex items-center gap-4 pt-4 border-t border-gold/5 text-sm text-muted-foreground">
-                                            <div className="flex items-center gap-1.5">
-                                                <Heart className="w-4 h-4" />
-                                                <span>{post.likes_count || 0}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <MessageCircle className="w-4 h-4" />
-                                                <span>{post.comments_count || 0}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 ml-auto">
-                                                <Share2 className="w-4 h-4" />
-                                                <span>공유하기</span>
-                                            </div>
                                         </div>
                                     </div>
                                 ))
@@ -451,6 +559,7 @@ const CommunityLounge = () => {
                         isOpen={!!selectedPost}
                         onClose={() => setSelectedPost(null)}
                         post={selectedPost}
+                        onDelete={() => selectedPost && handleDetailDelete(selectedPost.id)}
                     />
                 )}
                 <UpgradeModal

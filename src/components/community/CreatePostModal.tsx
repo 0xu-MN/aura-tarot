@@ -35,11 +35,22 @@ export const CreatePostModal = ({ isOpen, onClose, onSubmit, initialImages = [],
 
     useEffect(() => {
         if (isOpen) {
+            // Only initialize if we're opening fresh (checking if empty or if explicit initial data differs)
+            // But easier: The parent passes initial data. We should trust it initially.
+            // Problem: initialImages = [] is a new reference every render if undefined passed.
+            // Fix: We can use a ref to track if we've initialized for this open session, OR
+            // simply relax the dependency. But removing dependency might miss updates.
+            // Better Fix: Don't use default prop in destructuring if we depend on it, or memoize it in parent.
+            // Since we can't easily change parent without touching more files, let's fix logic here.
+
+            // If we assume this effect is mainly for RESET on open:
             setImages(initialImages);
             setImagePreviews(initialImages);
             setPostType(initialType);
         }
-    }, [isOpen, initialImages, initialType]);
+    }, [isOpen]);
+    // Removed initialImages and initialType from dependency array to prevent reset on parent rerender
+    // CAUTION: This means dynamic updates to initialImages while open won't reflect. This is usually desired behavior for a modal (init on open).
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -51,6 +62,7 @@ export const CreatePostModal = ({ isOpen, onClose, onSubmit, initialImages = [],
 
         // Create preview URLs
         const newPreviews = files.map(file => URL.createObjectURL(file));
+
         setImages(prev => [...prev, ...files]);
         setImagePreviews(prev => [...prev, ...newPreviews]);
     };
