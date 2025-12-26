@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Heart, MessageCircle, Share2, Send, Trash2 } from 'lucide-react';
+import { X, Heart, MessageCircle, Bookmark, Send, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,12 +47,14 @@ export const PostDetailModal = ({ isOpen, onClose, post, onDelete, onCommentChan
     const [comments, setComments] = useState<Comment[]>([]);
     const [liked, setLiked] = useState(false);
     const [initialLiked, setInitialLiked] = useState(false);
+    const [scrapped, setScrapped] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (isOpen && post.id) {
             fetchComments();
             checkIfLiked();
+            checkIfScrapped();
         }
     }, [isOpen, post.id]);
 
@@ -138,6 +140,49 @@ export const PostDetailModal = ({ isOpen, onClose, post, onDelete, onCommentChan
             }
         } catch (error) {
             console.error('Error toggling like:', error);
+        }
+    };
+
+    const checkIfScrapped = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data } = await supabase
+            .from('post_scraps' as any)
+            .select('id')
+            .eq('post_id', post.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        setScrapped(!!data);
+    };
+
+    const handleToggleScrap = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                toast.error('로그인이 필요합니다.');
+                return;
+            }
+
+            if (scrapped) {
+                await supabase
+                    .from('post_scraps' as any)
+                    .delete()
+                    .eq('post_id', post.id)
+                    .eq('user_id', user.id);
+                setScrapped(false);
+                toast.success('스크랩이 취소되었습니다.');
+            } else {
+                await supabase
+                    .from('post_scraps' as any)
+                    .insert({ post_id: post.id, user_id: user.id });
+                setScrapped(true);
+                toast.success('게시글을 스크랩했습니다.');
+            }
+        } catch (error) {
+            console.error('Error toggling scrap:', error);
+            toast.error('오류가 발생했습니다.');
         }
     };
 
@@ -302,9 +347,13 @@ export const PostDetailModal = ({ isOpen, onClose, post, onDelete, onCommentChan
                                 <MessageCircle className="w-5 h-5" />
                                 <span>{comments.length}</span>
                             </button>
-                            <button className="flex items-center gap-2 text-muted-foreground hover:text-gold transition-colors ml-auto">
-                                <Share2 className="w-5 h-5" />
-                                <span>공유</span>
+                            <button
+                                onClick={handleToggleScrap}
+                                className={`flex items-center gap-2 transition-colors ml-auto ${scrapped ? 'text-gold' : 'text-muted-foreground hover:text-gold'
+                                    }`}
+                            >
+                                <Bookmark className={`w-5 h-5 ${scrapped ? 'fill-current' : ''}`} />
+                                <span>스크랩</span>
                             </button>
                         </div>
 

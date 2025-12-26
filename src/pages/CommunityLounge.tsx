@@ -12,6 +12,7 @@ import { CreatePostModal } from '@/components/community/CreatePostModal';
 import { PostDetailModal } from '@/components/community/PostDetailModal';
 import { UpgradeModal } from '@/components/lounge/UpgradeModal';
 import { PremiumChat } from '@/components/lounge/PremiumChat';
+import { MyActivityModal } from '@/components/community/MyActivityModal';
 
 const CATEGORIES = [
     { id: 'all', label: '전체' },
@@ -31,6 +32,7 @@ const CommunityLounge = () => {
     const location = useLocation();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showActivityModal, setShowActivityModal] = useState(false);
     const [selectedPost, setSelectedPost] = useState<any>(null);
     const [currentChatRoom, setCurrentChatRoom] = useState<string | null>(null);
     const [initialPostData, setInitialPostData] = useState<{
@@ -319,7 +321,7 @@ const CommunityLounge = () => {
         <AppLayout>
             <div className="container mx-auto px-4 py-8 max-w-4xl min-h-screen">
                 {/* Lounge | Premium Header */}
-                <div className="flex justify-center items-center gap-6 mb-8 border-b border-gold/10 pb-4">
+                <div className="relative flex justify-center items-center gap-6 mb-8 border-b border-gold/10 pb-4">
                     <button
                         onClick={() => setActiveTab('lounge')}
                         className={cn(
@@ -339,6 +341,19 @@ const CommunityLounge = () => {
                     >
                         Premium
                         {!isPremium && <Lock className="w-5 h-5" />}
+                    </button>
+
+                    {/* My Profile Trigger */}
+                    <button
+                        onClick={() => setShowActivityModal(true)}
+                        className="absolute right-0 p-2 hover:bg-gold/10 rounded-full transition-colors"
+                        title="내 활동"
+                    >
+                        <Avatar className="w-10 h-10 border border-gold/30">
+                            <AvatarFallback className="bg-gold/10 text-gold text-xs">
+                                {user?.nickname?.[0] || '나'}
+                            </AvatarFallback>
+                        </Avatar>
                     </button>
                 </div>
 
@@ -583,6 +598,10 @@ const CommunityLounge = () => {
                 <UpgradeModal
                     isOpen={showUpgradeModal}
                     onClose={() => setShowUpgradeModal(false)}
+                />
+                <MyActivityModal
+                    isOpen={showActivityModal}
+                    onClose={() => setShowActivityModal(false)}
                 />
             </div>
         </AppLayout>
