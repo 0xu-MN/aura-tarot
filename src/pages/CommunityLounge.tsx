@@ -300,6 +300,21 @@ const CommunityLounge = () => {
 
     const isPremium = false; // Reverted premium check to mock state
 
+    const handleCommentUpdate = (postId: string, newCount: number) => {
+        setPosts(prevPosts =>
+            prevPosts.map(post =>
+                post.id === postId
+                    ? { ...post, comments_count: newCount }
+                    : post
+            )
+        );
+
+        // Also update selectedPost if it matches
+        if (selectedPost && selectedPost.id === postId) {
+            setSelectedPost(prev => prev ? { ...prev, comments_count: newCount } : null);
+        }
+    };
+
     return (
         <AppLayout>
             <div className="container mx-auto px-4 py-8 max-w-4xl min-h-screen">
@@ -533,6 +548,8 @@ const CommunityLounge = () => {
                     </div>
                 )}
 
+
+
                 {/* Floating Write Button (Lounge only) */}
                 {activeTab === 'lounge' && (
                     <button
@@ -560,6 +577,7 @@ const CommunityLounge = () => {
                         onClose={() => setSelectedPost(null)}
                         post={selectedPost}
                         onDelete={() => selectedPost && handleDetailDelete(selectedPost.id)}
+                        onCommentChange={handleCommentUpdate}
                     />
                 )}
                 <UpgradeModal

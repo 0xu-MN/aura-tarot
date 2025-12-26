@@ -27,6 +27,7 @@ interface PostDetailModalProps {
         category?: string;
     };
     onDelete?: () => void;
+    onCommentChange?: (postId: string, newCount: number) => void;
 }
 
 interface Comment {
@@ -36,10 +37,12 @@ interface Comment {
     };
     content: string;
     created_at: string;
+    user_id: string;
 }
 
-export const PostDetailModal = ({ isOpen, onClose, post, onDelete }: PostDetailModalProps) => {
-    const { user } = useAuth();
+export const PostDetailModal = ({ isOpen, onClose, post, onDelete, onCommentChange }: PostDetailModalProps) => {
+    const { user, session } = useAuth();
+    const currentUserId = session?.user?.id;
     const [comment, setComment] = useState('');
     const [comments, setComments] = useState<Comment[]>([]);
     const [liked, setLiked] = useState(false);
@@ -65,6 +68,9 @@ export const PostDetailModal = ({ isOpen, onClose, post, onDelete }: PostDetailM
             if (commentsError) throw commentsError;
             if (!commentsData || commentsData.length === 0) {
                 setComments([]);
+                if (onCommentChange) {
+                    onCommentChange(post.id, 0);
+                }
                 return;
             }
 
@@ -84,6 +90,9 @@ export const PostDetailModal = ({ isOpen, onClose, post, onDelete }: PostDetailM
             }));
 
             setComments(mergedComments);
+            if (onCommentChange) {
+                onCommentChange(post.id, mergedComments.length);
+            }
         } catch (error) {
             console.error('Error fetching comments:', error);
         }
@@ -132,7 +141,44 @@ export const PostDetailModal = ({ isOpen, onClose, post, onDelete }: PostDetailM
         }
     };
 
-    const handleSubmitComment = async (e: React.SyntheticEvent) => {
+    const handleDeleteComment = async (commentId: string, commentUserId: string) => {
+        if (!currentUserId) {
+            console.error('User not logged in');
+            return;
+        }
+
+        if (currentUserId !== commentUserId) {
+            console.warn('User ID mismatch');
+            toast.error('본인이 작성한 댓글만 삭제할 수 있습니다.');
+            return;
+        }
+
+        if (!window.confirm('정말 이 댓글을 삭제하시겠습니까?')) return;
+
+        try {
+            const { error } = await supabase
+                .from('post_comments')
+                .delete()
+                .eq('id', commentId);
+
+            if (error) {
+                console.error('Supabase delete error:', error);
+                throw error;
+            }
+
+            toast.success('댓글이 삭제되었습니다.');
+            const newComments = comments.filter(c => c.id !== commentId);
+            setComments(newComments);
+            if (onCommentChange) {
+                onCommentChange(post.id, newComments.length);
+            }
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            toast.error('댓글 삭제에 실패했습니다.');
+        }
+    };
+
+    const handleSubmitComment = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!comment.trim()) return;
 
@@ -271,26 +317,37 @@ export const PostDetailModal = ({ isOpen, onClose, post, onDelete }: PostDetailM
                             </h3>
 
                             <div className="space-y-4">
-                                {comments.map((comment) => (
-                                    <div key={comment.id} className="flex gap-3">
-                                        <Avatar className="w-8 h-8">
-                                            <AvatarFallback className="bg-muted text-sm">
-                                                {(comment.profiles?.nickname || '익')[0]}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <p className="text-sm font-medium">{comment.profiles?.nickname || '익명'}</p>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {new Date(comment.created_at).toLocaleDateString()}
-                                                </span>
+                                {comments.map((comment) => {
+                                    return (
+                                        <div key={comment.id} className="flex gap-3">
+                                            <Avatar className="w-8 h-8">
+                                                <AvatarFallback className="bg-muted text-sm">
+                                                    {(comment.profiles?.nickname || '익')[0]}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="text-sm font-medium">{comment.profiles?.nickname || '익명'}</p>
+                                                    <span className="text-xs text-muted-foreground mr-2">
+                                                        {new Date(comment.created_at).toLocaleDateString()}
+                                                    </span>
+                                                    {currentUserId === comment.user_id && (
+                                                        <button
+                                                            onClick={() => handleDeleteComment(comment.id, comment.user_id)}
+                                                            className="text-muted-foreground hover:text-red-500 transition-colors"
+                                                            title="댓글 삭제"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-foreground">
+                                                    {comment.content}
+                                                </p>
                                             </div>
-                                            <p className="text-sm text-foreground">
-                                                {comment.content}
-                                            </p>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     </ScrollArea>
@@ -322,7 +379,7 @@ export const PostDetailModal = ({ isOpen, onClose, post, onDelete }: PostDetailM
                         </form>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
