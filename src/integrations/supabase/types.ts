@@ -38,6 +38,102 @@ export type Database = {
         }
         Relationships: []
       }
+      private_chat_rooms: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_participants: {
+        Row: {
+          id: string
+          room_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          room_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          room_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_participants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "private_chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      private_messages: {
+        Row: {
+          id: string
+          room_id: string
+          sender_id: string
+          content: string
+          is_read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          room_id: string
+          sender_id: string
+          content: string
+          is_read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          room_id?: string
+          sender_id?: string
+          content?: string
+          is_read?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "private_chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "private_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       community_posts: {
         Row: {
           category: string
@@ -221,6 +317,7 @@ export type Database = {
     }
     Functions: {
       get_today_readings_count: { Args: { p_user_id: string }; Returns: number }
+      create_new_chat_room: { Args: { other_user_id: string }; Returns: string }
     }
     Enums: {
       interest_category:

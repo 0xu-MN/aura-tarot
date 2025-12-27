@@ -1,14 +1,14 @@
-import { AppLayout } from "@/layouts/AppLayout";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, ArrowLeft, Loader2 } from "lucide-react";
+import { Send, ArrowLeft, Loader2, MoreVertical, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { GalaxyBackground } from '@/components/ui/GalaxyBackground';
 
 interface Message {
     id: string;
@@ -37,6 +37,7 @@ const ChatRoom = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [sending, setSending] = useState(false);
 
+    // Get the OTHER user (assuming 1:1 chat)
     const otherUser = participants.find(p => p.user_id !== user?.id)?.profiles;
 
     const scrollToBottom = () => {
@@ -65,7 +66,6 @@ const ChatRoom = () => {
                     .eq('room_id', roomId);
 
                 if (partError) throw partError;
-                // Cast to any to bypass type check for now until generic types updated
                 setParticipants(partData as any);
 
                 // 2. Fetch messages
@@ -129,7 +129,7 @@ const ChatRoom = () => {
             if (error) throw error;
             setNewMessage("");
 
-            // Update room's updated_at timestamp
+            // Update room's updated_at timestamp (optional, good for sorting list)
             await supabase
                 .from('private_chat_rooms')
                 .update({ updated_at: new Date().toISOString() })
@@ -145,47 +145,71 @@ const ChatRoom = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-background">
+            <div className="flex items-center justify-center min-h-screen bg-black">
                 <Loader2 className="w-8 h-8 animate-spin text-gold" />
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-screen bg-background">
-            {/* Header */}
-            <header className="flex items-center gap-4 px-4 py-3 border-b border-gold/20 bg-card/80 backdrop-blur-md sticky top-0 z-10">
-                <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hover:bg-gold/10">
-                    <ArrowLeft className="w-5 h-5" />
-                </Button>
+        <div className="relative flex flex-col h-screen bg-black overflow-hidden">
+            {/* Background */}
+            <div className="absolute inset-0 z-0">
+                <GalaxyBackground className="w-full h-full opacity-30" />
+            </div>
 
+            {/* Header */}
+            <header className="relative z-10 flex items-center justify-between px-4 py-3 border-b border-gold/20 bg-black/60 backdrop-blur-md">
                 <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10 border border-gold/30">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hover:bg-gold/10 text-white hover:text-gold -ml-2">
+                        <ArrowLeft className="w-5 h-5" />
+                    </Button>
+
+                    <Avatar className="w-10 h-10 border border-gold/50 shadow-[0_0_10px_rgba(255,215,0,0.2)]">
                         <AvatarImage src={otherUser?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-gold/10 text-gold text-xs">
+                        <AvatarFallback className="bg-gold/10 text-gold text-xs font-bold">
                             {otherUser?.nickname?.[0] || '?'}
                         </AvatarFallback>
                     </Avatar>
+
                     <div className="flex flex-col">
-                        <span className="font-bold text-foreground">{otherUser?.nickname || '알 수 없는 사용자'}</span>
-                        <span className="text-xs text-muted-foreground">online</span>
+                        <span className="font-bold text-white text-base tracking-wide flex items-center gap-1">
+                            {otherUser?.nickname || '알 수 없는 사용자'}
+                            {/* Protection Icon (Just for show, makes it look safer/premium) */}
+                            {/* <Shield className="w-3 h-3 text-gold/50" /> */}
+                        </span>
+                        <span className="text-[10px] text-green-400 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                            Online
+                        </span>
                     </div>
                 </div>
+
+                <Button variant="ghost" size="icon" className="text-white/50 hover:text-gold">
+                    <MoreVertical className="w-5 h-5" />
+                </Button>
             </header>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="relative z-10 flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
                 {messages.map((msg) => {
                     const isMyMessage = msg.sender_id === user?.id;
+                    const timeString = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
                     return (
-                        <div key={msg.id} className={cn("flex", isMyMessage ? "justify-end" : "justify-start")}>
-                            <div className={cn(
-                                "max-w-[70%] px-4 py-2 rounded-2xl text-sm break-words",
-                                isMyMessage
-                                    ? "bg-gold text-white rounded-br-none"
-                                    : "bg-card border border-gold/20 text-foreground rounded-bl-none"
-                            )}>
-                                {msg.content}
+                        <div key={msg.id} className={cn("flex w-full", isMyMessage ? "justify-end" : "justify-start")}>
+                            <div className={cn("flex flex-col max-w-[75%]", isMyMessage ? "items-end" : "items-start")}>
+                                <div className={cn(
+                                    "px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed break-words shadow-sm",
+                                    isMyMessage
+                                        ? "bg-gradient-to-br from-gold to-yellow-600 text-white rounded-br-none shadow-[0_2px_10px_rgba(255,215,0,0.2)]"
+                                        : "bg-white/10 border border-white/10 text-gray-100 rounded-bl-none backdrop-blur-sm"
+                                )}>
+                                    {msg.content}
+                                </div>
+                                <span className="text-[10px] text-gray-500 mt-1 px-1">
+                                    {timeString}
+                                </span>
                             </div>
                         </div>
                     );
@@ -194,17 +218,28 @@ const ChatRoom = () => {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-card border-t border-gold/20 pb-safe">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <Input
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="메시지를 입력하세요..."
-                        className="bg-background border-gold/30 focus:border-gold"
-                        disabled={sending}
-                    />
-                    <Button type="submit" variant="gold" size="icon" disabled={sending || !newMessage.trim()}>
-                        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            <div className="relative z-10 p-4 bg-black/80 border-t border-gold/20 pb-safe backdrop-blur-lg">
+                <form onSubmit={handleSendMessage} className="flex gap-2 items-end max-w-4xl mx-auto">
+                    <div className="relative flex-1">
+                        <Input
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="메시지를 입력하세요..."
+                            className="bg-white/5 border-gold/20 focus:border-gold/60 text-white placeholder:text-gray-500 pl-4 py-6 rounded-full transition-all focus:bg-white/10"
+                            disabled={sending}
+                        />
+                    </div>
+                    <Button
+                        type="submit"
+                        className={cn(
+                            "rounded-full w-12 h-12 flex-shrink-0 transition-all duration-300 shadow-[0_0_15px_rgba(255,215,0,0.1)]",
+                            newMessage.trim()
+                                ? "bg-gold hover:bg-yellow-500 text-black scale-100 rotate-0"
+                                : "bg-white/5 text-gray-500 scale-95 rotate-12 cursor-not-allowed"
+                        )}
+                        disabled={sending || !newMessage.trim()}
+                    >
+                        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-0.5" />}
                     </Button>
                 </form>
             </div>

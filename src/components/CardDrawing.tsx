@@ -158,6 +158,12 @@ export const CardDrawing = () => {
                     )}
                 </Button>
 
+                {userProfile && (
+                    <p className="text-xs text-center text-muted-foreground mt-2">
+                        오늘의 무료 카드 뽑기: {userProfile.daily_draws_remaining}/3 남음
+                    </p>
+                )}
+
                 {!user && (
                     <p className="text-xs text-center text-muted-foreground mt-3">
                         💡 개발자 모드: 질문 입력 후 바로 카드를 뽑을 수 있습니다

@@ -389,10 +389,10 @@ const CommunityLounge = () => {
                                 }}
                             >
                                 <div className="max-w-4xl mx-auto relative z-10">
-                                    <h2 className="relative text-3xl md:text-4xl font-display font-bold text-white mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+                                    <h2 className="relative text-2xl md:text-4xl font-display font-bold text-white mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
                                         타로로 연결된 우리들의 공간
                                     </h2>
-                                    <p className="relative text-gray-300 text-lg leading-loose font-light whitespace-pre-line drop-shadow-md">
+                                    <p className="relative text-gray-300 text-base md:text-lg leading-loose font-light whitespace-pre-line drop-shadow-md">
                                         오늘의 한 장, 자유롭게 공유해요.{'\n'}
                                         서로 응원하며 즐겨보세요 ✨
                                     </p>
@@ -448,7 +448,7 @@ const CommunityLounge = () => {
                                                 <Trash2 className="w-5 h-5" />
                                             </button>
                                         )}
-                                        <div className="flex gap-4">
+                                        <div className="flex gap-3 md:gap-4">
                                             {/* Left: Profile Information */}
                                             <div
                                                 className="flex-shrink-0 z-10"
@@ -456,14 +456,14 @@ const CommunityLounge = () => {
                                                     e.stopPropagation();
                                                     if (post.profiles) {
                                                         setSelectedUserProfile({
-                                                            id: post.profiles.user_id,
-                                                            nickname: post.profiles.nickname,
-                                                            avatar_url: post.profiles.avatar_url
+                                                            id: post.user_id,
+                                                            nickname: post.profiles?.nickname || '익명',
+                                                            avatar_url: post.profiles?.avatar_url
                                                         });
                                                     }
                                                 }}
                                             >
-                                                <Avatar className="w-12 h-12 border border-gold/20 hover:border-gold cursor-pointer transition-colors">
+                                                <Avatar className="w-10 h-10 md:w-12 md:h-12 border border-gold/20 hover:border-gold cursor-pointer transition-colors">
                                                     {post.profiles?.avatar_url ? (
                                                         <img src={post.profiles.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                                                     ) : (
@@ -475,49 +475,49 @@ const CommunityLounge = () => {
                                             </div>
 
                                             {/* Middle: Content */}
-                                            <div className="flex-1 min-w-0 flex flex-col gap-2">
-                                                <div className="flex items-center gap-2">
+                                            <div className="flex-1 min-w-0 flex flex-col gap-1 md:gap-2">
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     <span
-                                                        className="font-bold text-white group-hover:text-gold transition-colors text-base cursor-pointer z-10 hover:underline"
+                                                        className="font-bold text-white group-hover:text-gold transition-colors text-sm md:text-base cursor-pointer z-10 hover:underline whitespace-nowrap"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             if (post.profiles) {
                                                                 setSelectedUserProfile({
-                                                                    id: post.profiles.user_id,
-                                                                    nickname: post.profiles.nickname,
-                                                                    avatar_url: post.profiles.avatar_url
+                                                                    id: post.user_id,
+                                                                    nickname: post.profiles?.nickname || '익명',
+                                                                    avatar_url: post.profiles?.avatar_url
                                                                 });
                                                             }
                                                         }}
                                                     >
                                                         {post.profiles?.nickname || '익명'}
                                                     </span>
-                                                    <span className="text-xs text-muted-foreground">
+                                                    <span className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
                                                         {new Date(post.created_at).toLocaleDateString()}
                                                     </span>
-                                                    <span className="text-xs text-gold/70 px-2 py-0.5 rounded-full bg-gold/5 border border-gold/10">
+                                                    <span className="text-[10px] md:text-xs text-gold/70 px-2 py-0.5 rounded-full bg-gold/5 border border-gold/10 whitespace-nowrap">
                                                         {CATEGORIES.find(c => c.id === post.category)?.label || '아무거나'}
                                                     </span>
                                                 </div>
 
                                                 {/* Title Box */}
-                                                <div className="text-white font-bold text-lg px-1">
+                                                <div className="text-white font-bold text-base md:text-lg px-1 break-keep leading-tight">
                                                     {post.title}
                                                 </div>
 
                                                 {/* Content Box */}
-                                                <div className="text-muted-foreground text-sm line-clamp-3 min-h-[20px] px-1">
+                                                <div className="text-muted-foreground text-xs md:text-sm line-clamp-2 md:line-clamp-3 min-h-[1.5em] px-1 break-words leading-relaxed">
                                                     {post.content}
                                                 </div>
 
                                                 {/* Stats */}
-                                                <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Heart className="w-3.5 h-3.5" />
+                                                <div className="flex items-center gap-3 md:gap-4 mt-1 text-xs text-muted-foreground">
+                                                    <div className="flex items-center gap-1">
+                                                        <Heart className="w-3 h-3 md:w-3.5 md:h-3.5" />
                                                         <span>{post.likes_count || 0}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <MessageCircle className="w-3.5 h-3.5" />
+                                                    <div className="flex items-center gap-1">
+                                                        <MessageCircle className="w-3 h-3 md:w-3.5 md:h-3.5" />
                                                         <span>{post.comments_count || 0}</span>
                                                     </div>
                                                 </div>
@@ -525,7 +525,7 @@ const CommunityLounge = () => {
 
                                             {/* Right: Image */}
                                             {post.tarot_image_url && (
-                                                <div className="w-32 h-32 rounded-xl bg-gold/5 flex-shrink-0 border border-gold/10 overflow-hidden">
+                                                <div className="w-20 h-20 md:w-32 md:h-32 rounded-lg md:rounded-xl bg-gold/5 flex-shrink-0 border border-gold/10 overflow-hidden self-start mt-1">
                                                     <img
                                                         src={post.tarot_image_url}
                                                         alt="Tarot"
