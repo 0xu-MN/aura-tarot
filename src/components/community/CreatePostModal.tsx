@@ -17,12 +17,10 @@ interface CreatePostModalProps {
 }
 
 const POST_TYPES = [
-    { value: 'all', label: '전체' },
-    { value: 'love', label: '연애고민' },
-    { value: 'story', label: '썰소' },
-    { value: 'invest', label: '투자' },
-    { value: 'random', label: '아무거나' },
     { value: 'tarot', label: '타로공유' },
+    { value: 'story', label: '일상' },
+    { value: 'love', label: '고민상담' },
+    { value: 'random', label: '아무거나' },
 ];
 
 export const CreatePostModal = ({ isOpen, onClose, onSubmit, initialImages = [], initialType = 'random' }: CreatePostModalProps) => {

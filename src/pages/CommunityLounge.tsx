@@ -17,11 +17,13 @@ import { MyActivityModal } from '@/components/community/MyActivityModal';
 const CATEGORIES = [
     { id: 'all', label: '전체' },
     { id: 'tarot', label: '타로공유' },
-    { id: 'love', label: '연애고민' },
-    { id: 'story', label: '썰소' },
-    { id: 'invest', label: '투자' },
+    { id: 'story', label: '일상' },
+    { id: 'love', label: '고민상담' },
     { id: 'random', label: '아무거나' },
 ];
+
+import { UserProfileModal } from "@/components/community/UserProfileModal";
+import { GalaxyBackground } from '@/components/ui/GalaxyBackground';
 
 const CommunityLounge = () => {
     const { user, userProfile } = useAuth();
@@ -41,6 +43,7 @@ const CommunityLounge = () => {
         content: string;
         type: string;
     } | null>(null);
+    const [selectedUserProfile, setSelectedUserProfile] = useState<{ id: string, nickname: string, avatar_url?: string | null } | null>(null);
     const [posts, setPosts] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -349,10 +352,18 @@ const CommunityLounge = () => {
                 {/* Lounge Content */}
                 {activeTab === 'lounge' && (
                     <div className="space-y-6">
-                        {/* Title Section */}
-                        <div className="text-center mb-10">
-                            <h2 className="text-4xl font-display text-white mb-4">상위 1% 대화는 다르니까</h2>
-                            <p className="text-muted-foreground">부동산, 재테크, 핫플레이스 등 다양한 정보 교류와 데이트까지 가능해요</p>
+                        {/* Title Section (Welcome Banner) */}
+                        {/* Title Section (Welcome Banner) */}
+                        <div className="relative mb-10 text-center">
+                            <GalaxyBackground className="rounded-3xl overflow-hidden py-20 px-6">
+                                <h2 className="relative text-3xl md:text-4xl font-display font-bold text-white mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+                                    타로로 연결된 우리들의 공간
+                                </h2>
+                                <p className="relative text-gray-300 text-lg leading-loose font-light whitespace-pre-line drop-shadow-md">
+                                    오늘의 한 장, 자유롭게 공유해요.{'\n'}
+                                    서로 응원하며 즐겨보세요 ✨
+                                </p>
+                            </GalaxyBackground>
                         </div>
 
                         {/* Category Selector */}
@@ -402,8 +413,20 @@ const CommunityLounge = () => {
                                         )}
                                         <div className="flex gap-4">
                                             {/* Left: Profile Information */}
-                                            <div className="flex-shrink-0">
-                                                <Avatar className="w-12 h-12 border border-gold/20">
+                                            <div
+                                                className="flex-shrink-0 z-10"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (post.profiles) {
+                                                        setSelectedUserProfile({
+                                                            id: post.profiles.user_id,
+                                                            nickname: post.profiles.nickname,
+                                                            avatar_url: post.profiles.avatar_url
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                <Avatar className="w-12 h-12 border border-gold/20 hover:border-gold cursor-pointer transition-colors">
                                                     {post.profiles?.avatar_url ? (
                                                         <img src={post.profiles.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                                                     ) : (
@@ -417,7 +440,19 @@ const CommunityLounge = () => {
                                             {/* Middle: Content */}
                                             <div className="flex-1 min-w-0 flex flex-col gap-2">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-white group-hover:text-gold transition-colors text-base">
+                                                    <span
+                                                        className="font-bold text-white group-hover:text-gold transition-colors text-base cursor-pointer z-10 hover:underline"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (post.profiles) {
+                                                                setSelectedUserProfile({
+                                                                    id: post.profiles.user_id,
+                                                                    nickname: post.profiles.nickname,
+                                                                    avatar_url: post.profiles.avatar_url
+                                                                });
+                                                            }
+                                                        }}
+                                                    >
                                                         {post.profiles?.nickname || '익명'}
                                                     </span>
                                                     <span className="text-xs text-muted-foreground">
@@ -601,15 +636,17 @@ const CommunityLounge = () => {
                     initialImages={initialPostData?.images}
                     initialType={initialPostData?.type || 'random'}
                 />
+
                 {selectedPost && (
                     <PostDetailModal
                         isOpen={!!selectedPost}
                         onClose={() => setSelectedPost(null)}
                         post={selectedPost}
-                        onDelete={() => selectedPost && handleDetailDelete(selectedPost.id)}
                         onCommentChange={handleCommentUpdate}
+                        onDelete={() => handleDetailDelete(selectedPost.id)}
                     />
                 )}
+
                 <UpgradeModal
                     isOpen={showUpgradeModal}
                     onClose={() => setShowUpgradeModal(false)}
@@ -617,6 +654,12 @@ const CommunityLounge = () => {
                 <MyActivityModal
                     isOpen={showActivityModal}
                     onClose={() => setShowActivityModal(false)}
+                />
+
+                <UserProfileModal
+                    isOpen={!!selectedUserProfile}
+                    onClose={() => setSelectedUserProfile(null)}
+                    targetUser={selectedUserProfile}
                 />
             </div>
         </AppLayout>
