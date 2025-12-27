@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { clearAuthPreferences } from '@/lib/authStorage';
 import { useState, useEffect } from 'react';
+import { INTEREST_CATEGORIES } from '@/types/user';
 import {
     Sheet,
     SheetContent,
@@ -19,7 +20,7 @@ interface MobileMenuProps {
 }
 
 export const MobileMenu = ({ isOpen, onClose, onLoginClick }: MobileMenuProps) => {
-    const { user, signOut } = useAuth();
+    const { user, userProfile, signOut } = useAuth();
     const navigate = useNavigate();
     const [isDeveloperMode, setIsDeveloperMode] = useState(false);
 
@@ -100,17 +101,43 @@ export const MobileMenu = ({ isOpen, onClose, onLoginClick }: MobileMenuProps) =
                         </div>
 
                         {user ? (
-                            <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-gold/10 to-mystic-purple/10 border border-gold/20">
-                                <Avatar className="w-12 h-12">
-                                    <AvatarFallback className="bg-gold/20 text-gold font-display text-lg">
-                                        {user.nickname?.charAt(0) || 'U'}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-display text-lg font-medium truncate">
-                                        {user.nickname}님
-                                    </p>
-                                    <p className="text-xs text-muted-foreground truncate">{user.name}</p>
+                            <div
+                                className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900/50 to-gray-800/50 border border-gold/20 p-5 cursor-pointer transition-all hover:border-gold/50 hover:shadow-lg hover:shadow-gold/5"
+                                onClick={() => handleNavigation('/settings')}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="w-14 h-14 border-2 border-gold/20 group-hover:border-gold/50 transition-colors">
+                                        <AvatarFallback className="bg-gold/20 text-gold font-display text-xl">
+                                            {user.nickname?.charAt(0) || 'U'}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="font-display text-lg text-gold group-hover:text-gold-light transition-colors truncate pr-2">
+                                                {user.nickname}
+                                            </h2>
+                                            <Settings className="w-4 h-4 text-muted-foreground group-hover:text-gold transition-colors" />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                            {user.email || '사용자'}
+                                        </p>
+
+                                        {/* Interests Badges */}
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {userProfile?.interests?.slice(0, 3).map((interestId) => {
+                                                const category = INTEREST_CATEGORIES.find(c => c.id === interestId);
+                                                if (!category) return null;
+                                                return (
+                                                    <span
+                                                        key={interestId}
+                                                        className="px-2 py-0.5 rounded-full bg-gold/10 text-gold text-[10px] border border-gold/20"
+                                                    >
+                                                        {category.label}
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ) : null}

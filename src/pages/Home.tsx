@@ -24,6 +24,9 @@ const Home = () => {
                                 안녕하세요, {userProfile?.nickname || '방문자'}님
                             </h1>
                         </div>
+                        <p className="text-muted-foreground mb-4">
+                            당신의 운명을 점쳐보세요
+                        </p>
                         {userProfile && (
                             <p className="text-muted-foreground">
                                 오늘의 무료 카드 뽑기: {userProfile.daily_draws_remaining}/3 남음

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { ProfileEditModal } from '@/components/ProfileEditModal';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { INTEREST_CATEGORIES } from '@/types/user';
 
 const Settings = () => {
     const { user, userProfile, signOut } = useAuth();
@@ -22,6 +23,7 @@ const Settings = () => {
 
     const handleLogout = async () => {
         await signOut();
+        localStorage.removeItem('dev_mode'); // Clear developer mode on logout
         window.location.href = '/';
     };
 
@@ -55,9 +57,24 @@ const Settings = () => {
                             <h2 className="font-display text-xl text-gold">
                                 {userProfile?.nickname || '사용자'}
                             </h2>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-muted-foreground mb-2">
                                 @{userProfile?.username}
                             </p>
+                            {/* Interests */}
+                            <div className="flex flex-wrap gap-1.5">
+                                {userProfile?.interests?.map((interestId) => {
+                                    const category = INTEREST_CATEGORIES.find(c => c.id === interestId);
+                                    if (!category) return null;
+                                    return (
+                                        <span
+                                            key={interestId}
+                                            className="px-2 py-0.5 rounded-full bg-gold/10 text-gold text-xs border border-gold/20"
+                                        >
+                                            {category.label}
+                                        </span>
+                                    );
+                                })}
+                            </div>
                         </div>
                         <Button variant="outline" size="sm" onClick={() => setShowProfileEdit(true)}>
                             <User className="w-4 h-4" />
@@ -108,34 +125,7 @@ const Settings = () => {
                     </div>
                 </div>
 
-                {/* Interests */}
-                <div className="bg-card rounded-2xl border border-gold/20 p-6 mb-6">
-                    <h3 className="font-display text-lg mb-4 flex items-center gap-2">
-                        <Heart className="w-5 h-5 text-gold" />
-                        관심 분야
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                        {userProfile?.interests?.map((interest) => (
-                            <span
-                                key={interest}
-                                className="px-3 py-1.5 rounded-full bg-gold/20 text-gold text-sm"
-                            >
-                                {interest === 'love' && '연애운'}
-                                {interest === 'compatibility' && '궁합'}
-                                {interest === 'reunion' && '재회확률'}
-                                {interest === 'yearly' && '연간운세'}
-                                {interest === 'zodiac' && '별자리 운세'}
-                                {interest === 'career' && '직업운'}
-                                {interest === 'money' && '재물운'}
-                                {interest === 'health' && '건강운'}
-                            </span>
-                        ))}
-                    </div>
 
-                    <Button variant="outline" size="sm" className="mt-4">
-                        관심분야 수정
-                    </Button>
-                </div>
 
                 {/* App Preferences */}
                 <div className="bg-card rounded-2xl border border-gold/20 p-6 mb-6">

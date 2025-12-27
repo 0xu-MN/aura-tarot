@@ -169,15 +169,7 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
                             {loading ? '로그인 중...' : '로그인'}
                         </Button>
 
-                        {/* Developer Mode Button */}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full text-xs opacity-50 hover:opacity-100"
-                            onClick={handleDevMode}
-                        >
-                            🔧 개발자 모드 (DB 없이 테스트)
-                        </Button>
+
                     </form>
 
                     <div className="mt-6 text-center">
