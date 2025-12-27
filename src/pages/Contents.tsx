@@ -20,7 +20,7 @@ const Contents = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('전체');
 
-    const categories = ['전체', '연애운', '궁합', '재회확률', '신년운세', '별자리 운세', '직업운', '재물운'];
+    const categories = ['전체', '연애운', '궁합', '재회확률', '신년운세', '별자리 운세', '직업운', '재물운', '학생/수험생'];
 
     const contentItems: ContentItem[] = [
         {
@@ -31,6 +31,14 @@ const Contents = () => {
             icon: "✨",
             link: "/home",
             image: "/thumbnails/daily-fortune.png"
+        },
+        {
+            title: "오늘도 수고한 너에게",
+            description: "공부하느라 지친 수험생을 위한 하루 한 장 응원 타로",
+            categories: ["학생/수험생", "운세"],
+            displayCategory: "학생/수험생",
+            icon: "🎓",
+            link: "/tarot/student"
         },
         {
             title: "연애운 타로",

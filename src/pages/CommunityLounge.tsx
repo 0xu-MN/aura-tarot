@@ -282,24 +282,45 @@ const CommunityLounge = () => {
     const premiumLounges = [
         {
             id: 1,
-            name: '자산가 리그',
+            name: '자산가 라운지',
             description: '부동산, 재테크, 핫플레이스 등 다양한 정보 교류와 데이트까지 가능해요',
             icon: '💰',
             members: 1234
         },
         {
             id: 2,
-            name: '연애 마스터 리그',
+            name: '연애 마스터 라운지',
             description: '연애 고민 상담부터 썸 타는 법까지',
             icon: '💕',
             members: 892
         },
         {
             id: 3,
-            name: 'CEO 리그',
+            name: 'CEO 라운지',
             description: '비즈니스 네트워킹과 인사이트 공유',
             icon: '👔',
-            members: 567
+            members: 456
+        },
+        {
+            id: 4,
+            name: '대학생 라운지',
+            description: '캠퍼스 라이프, 진로 고민, 풋풋한 연애 이야기',
+            icon: '🎓',
+            members: 2341
+        },
+        {
+            id: 5,
+            name: '대학원생 라운지',
+            description: '논문, 연구실 생활, 학업의 고충을 함께 나누는 공간',
+            icon: '📚',
+            members: 512
+        },
+        {
+            id: 6,
+            name: '수험생 라운지',
+            description: '합격 기원! 수험 정보 공유와 서로를 위한 응원',
+            icon: '✏️',
+            members: 3421
         }
     ];
 
@@ -324,7 +345,7 @@ const CommunityLounge = () => {
         <AppLayout>
             <div className="container mx-auto px-4 py-8 max-w-4xl min-h-screen">
                 {/* Lounge | Premium Header */}
-                <div className="relative flex justify-center items-center gap-6 mb-8 border-b border-gold/10 pb-4">
+                <div className="relative flex justify-center items-center gap-6 border-b border-gold/10 pb-4">
                     <button
                         onClick={() => setActiveTab('lounge')}
                         className={cn(
@@ -336,7 +357,13 @@ const CommunityLounge = () => {
                     </button>
                     <div className="h-8 w-px bg-gold/20" />
                     <button
-                        onClick={() => setActiveTab('premium')}
+                        onClick={() => {
+                            if (!isDeveloperMode) {
+                                toast.info('프리미엄 라운지는 현재 준비 중입니다.\n정식 오픈을 기다려주세요! 🚀');
+                                return;
+                            }
+                            setActiveTab('premium');
+                        }}
                         className={cn(
                             "text-3xl font-display transition-all duration-300 flex items-center gap-2",
                             activeTab === 'premium' ? "text-gold scale-105" : "text-muted-foreground hover:text-foreground opacity-50"
@@ -351,23 +378,33 @@ const CommunityLounge = () => {
 
                 {/* Lounge Content */}
                 {activeTab === 'lounge' && (
-                    <div className="space-y-6">
-                        {/* Title Section (Welcome Banner) */}
-                        {/* Title Section (Welcome Banner) */}
-                        <div className="relative mb-10 text-center">
-                            <GalaxyBackground className="rounded-3xl overflow-hidden py-20 px-6">
-                                <h2 className="relative text-3xl md:text-4xl font-display font-bold text-white mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
-                                    타로로 연결된 우리들의 공간
-                                </h2>
-                                <p className="relative text-gray-300 text-lg leading-loose font-light whitespace-pre-line drop-shadow-md">
-                                    오늘의 한 장, 자유롭게 공유해요.{'\n'}
-                                    서로 응원하며 즐겨보세요 ✨
-                                </p>
+                    <div>
+                        {/* Title Section (Welcome Banner) - Full Width */}
+                        <div className="relative w-screen left-[calc(-50vw+50%)] text-center">
+                            <GalaxyBackground
+                                className="py-20 px-6 w-full"
+                                style={{
+                                    maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+                                    WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)'
+                                }}
+                            >
+                                <div className="max-w-4xl mx-auto relative z-10">
+                                    <h2 className="relative text-3xl md:text-4xl font-display font-bold text-white mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+                                        타로로 연결된 우리들의 공간
+                                    </h2>
+                                    <p className="relative text-gray-300 text-lg leading-loose font-light whitespace-pre-line drop-shadow-md">
+                                        오늘의 한 장, 자유롭게 공유해요.{'\n'}
+                                        서로 응원하며 즐겨보세요 ✨
+                                    </p>
+                                </div>
                             </GalaxyBackground>
+
+                            {/* Separator - Full Width */}
+                            <div className="w-full h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent absolute bottom-0 left-0" />
                         </div>
 
                         {/* Category Selector */}
-                        <div className="flex overflow-x-auto gap-2 pb-4 scrollbar-hide">
+                        <div className="flex overflow-x-auto gap-2 py-6 scrollbar-hide">
                             {CATEGORIES.map((category) => (
                                 <button
                                     key={category.id}

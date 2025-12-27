@@ -52,12 +52,6 @@ export const MobileMenu = ({ isOpen, onClose, onLoginClick }: MobileMenuProps) =
 
     const menuItems = [
         {
-            icon: User,
-            label: '프로필',
-            path: '/settings',
-            description: '내 정보 관리',
-        },
-        {
             icon: BookOpen,
             label: '콘텐츠',
             path: '/contents',
@@ -70,16 +64,16 @@ export const MobileMenu = ({ isOpen, onClose, onLoginClick }: MobileMenuProps) =
             description: '소통 공간',
         },
         {
-            icon: Users,
-            label: '그룹/모임',
-            path: '/groups',
-            description: '관심사별 모임',
-        },
-        {
             icon: MessageSquare,
             label: '메시지',
             path: '/messages',
             description: '1:1 대화',
+        },
+        {
+            icon: Settings,
+            label: '설정',
+            path: '/settings',
+            description: '내 정보 관리',
         },
     ];
 

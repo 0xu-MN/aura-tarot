@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ProfileEditModal } from '@/components/ProfileEditModal';
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 const Settings = () => {
     const { user, userProfile, signOut } = useAuth();
@@ -167,6 +168,31 @@ const Settings = () => {
                     <LogOut className="w-4 h-4" />
                     로그아웃
                 </Button>
+
+                {/* Developer Mode Toggle (Hidden) */}
+                <div
+                    className="mt-8 text-center"
+                    onClick={() => {
+                        const currentCount = parseInt(sessionStorage.getItem('dev_click_count') || '0');
+                        if (currentCount + 1 >= 10) {
+                            const isDev = localStorage.getItem('dev_mode') === 'true';
+                            if (isDev) {
+                                localStorage.removeItem('dev_mode');
+                                toast.info('개발자 모드가 비활성화되었습니다.');
+                            } else {
+                                localStorage.setItem('dev_mode', 'true');
+                                toast.success('개발자 모드가 활성화되었습니다! 🛠️');
+                            }
+                            sessionStorage.removeItem('dev_click_count');
+                        } else {
+                            sessionStorage.setItem('dev_click_count', (currentCount + 1).toString());
+                        }
+                    }}
+                >
+                    <span className="text-xs text-muted-foreground/30 cursor-default select-none transition-colors hover:text-muted-foreground/50">
+                        Version 1.0.0
+                    </span>
+                </div>
 
                 {/* Profile Edit Modal */}
                 <ProfileEditModal

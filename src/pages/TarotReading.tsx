@@ -5,6 +5,7 @@ import { ReunionTarot } from './contents/ReunionTarot';
 import { YearlyFortune } from './contents/YearlyFortune';
 import { Horoscope } from './contents/Horoscope';
 import { PalmReading } from './contents/PalmReading';
+import { StudentSupportTarot } from './contents/StudentSupportTarot';
 
 const TarotReading = () => {
     const { type } = useParams();
@@ -23,6 +24,8 @@ const TarotReading = () => {
             return <Horoscope />;
         case 'palm':
             return <PalmReading />;
+        case 'student':
+            return <StudentSupportTarot />;
         default:
             return <Navigate to="/contents" replace />;
     }
