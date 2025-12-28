@@ -98,20 +98,19 @@ export const SpreadLayout = ({
                                     key={i}
                                     onClick={() => handleCardClick(i)}
                                     className={cn(
-                                        "absolute top-1/2 w-20 h-32 md:w-24 md:h-40 rounded-lg bg-card border border-gold/30 shadow-xl cursor-pointer transition-all duration-300 origin-bottom",
-                                        "hover:z-30 hover:scale-110 hover:border-gold hover:shadow-gold/20",
+                                        "absolute top-1/2 w-20 h-32 md:w-24 md:h-40 rounded-lg bg-card border border-gold/30 shadow-xl cursor-pointer transition-all duration-300 origin-bottom group",
+                                        "hover:!z-50 hover:shadow-gold/40 border-gold/50",
                                         isSelected ? "opacity-0 pointer-events-none" : "block"
                                     )}
                                     style={{
                                         left: leftPos,
                                         zIndex: i,
+                                        // Ensure rotation is preserved
                                         transform: `translate(-50%, -50%) rotate(${rotation}deg) translateY(${yOffset}px)`,
-                                        // We use a data attribute or just inline styles. 
-                                        // To handle hover 'push up', we can't easily rely on Tailwind 'hover:-translate-y' conflicting with this translate.
-                                        // But we can use a child element for the image that handles the hover lift.
                                     }}
                                 >
-                                    <div className="w-full h-full transition-transform duration-300 hover:-translate-y-8">
+                                    {/* Child handles the lift motion relative to the rotated parent */}
+                                    <div className="w-full h-full transition-transform duration-200 ease-out group-hover:-translate-y-14">
                                         <img src={tarotBack} alt="" className="w-full h-full object-cover rounded-lg" />
                                     </div>
                                 </div>

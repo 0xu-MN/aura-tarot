@@ -20,7 +20,7 @@ const Contents = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('전체');
 
-    const categories = ['전체', '연애운', '궁합', '재회확률', '신년운세', '별자리 운세', '직업운', '재물운', '학생/수험생'];
+    const categories = ['전체', '연애운', '궁합', '재회확률', '신년운세', '별자리 운세', '직업운', '재물운', '학생/수험생', '직장인'];
 
     const contentItems: ContentItem[] = [
         {
@@ -41,12 +41,20 @@ const Contents = () => {
             link: "/tarot/student"
         },
         {
+            title: "오늘도 수고한 직장인에게",
+            description: "회사에서 힘든 하루였죠? 타로가 작은 위로와 내일 힘을 줄게요",
+            categories: ["직업운", "운세", "직장인"],
+            displayCategory: "직장인",
+            icon: "💼",
+            link: "/contents/work"
+        },
+        {
             title: "연애운 타로",
             description: "연애, 썸, 짝사랑에 대한 깊은 통찰을 제공합니다",
             categories: ["연애운"],
             displayCategory: "연애운",
             icon: "💕",
-            link: "/contents/love",
+            link: "/tarot/love",
             image: "/thumbnails/love-tarot.png"
         },
         {
@@ -55,7 +63,7 @@ const Contents = () => {
             categories: ["연애운", "재회확률"],
             displayCategory: "연애운",
             icon: "🌙",
-            link: "/contents/reunion",
+            link: "/tarot/reunion",
             image: "/thumbnails/reunion-tarot.png"
         },
         {
@@ -64,7 +72,7 @@ const Contents = () => {
             categories: ["연애운", "궁합"],
             displayCategory: "궁합",
             icon: "👩‍❤️‍👨",
-            link: "/contents/compatibility",
+            link: "/compatibility",
             image: "/thumbnails/compatibility-tarot.png"
         },
         {
@@ -73,7 +81,7 @@ const Contents = () => {
             categories: ["신년운세"],
             displayCategory: "신년",
             icon: "📅",
-            link: "/contents/yearly",
+            link: "/tarot/yearly",
             image: "/thumbnails/yearly-fortune.png"
         },
         {
@@ -82,7 +90,7 @@ const Contents = () => {
             categories: ["재물운", "직업운"],
             displayCategory: "재물운",
             icon: "💰",
-            link: "/contents/money",
+            link: "/tarot/money",
             image: "/thumbnails/money-luck.jpg"
         },
         {
@@ -91,7 +99,7 @@ const Contents = () => {
             categories: ["별자리 운세", "신년운세"],
             displayCategory: "운세",
             icon: "🔮",
-            link: "/contents/horoscope",
+            link: "/tarot/horoscope",
             image: "/thumbnails/horoscope.png"
         },
         {
@@ -100,7 +108,7 @@ const Contents = () => {
             categories: ["운세", "관상/손금", "직업운", "재물운"], // 관련된 곳에 넓게 포함
             displayCategory: "관상/손금",
             icon: "✋",
-            link: "/contents/palm",
+            link: "/tarot/palm",
             image: "/thumbnails/palm-reading.jpg"
         },
         {
