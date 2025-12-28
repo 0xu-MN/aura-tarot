@@ -97,7 +97,7 @@ const Contents = () => {
             categories: ["신년운세"],
             displayCategory: "신년",
             icon: "📅",
-            link: "/tarot/yearly",
+            link: "/tarot/new-year",
             image: "/thumbnails/yearly-fortune.png"
         },
         {

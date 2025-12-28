@@ -8,7 +8,6 @@ import Home from "./pages/Home";
 import Contents from "./pages/Contents";
 import TarotReading from "./pages/TarotReading";
 import Chatbot from "./pages/Chatbot";
-import CompatibilityReading from "./pages/CompatibilityReading";
 import Community from "./pages/Community";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -19,6 +18,10 @@ import { StudentSupportTarot } from './pages/contents/StudentSupportTarot';
 import { WorkLuck } from "./pages/contents/WorkLuck";
 import WeeklyFortune from "./pages/contents/WeeklyFortune";
 import MonthlyFortune from "./pages/contents/MonthlyFortune";
+import { LoveTarot } from "./pages/contents/LoveTarot";
+import { ReunionTarot } from "./pages/contents/ReunionTarot";
+import { NewYearTarot } from "./pages/contents/NewYearTarot";
+import { CompatibilityTarot } from "./pages/contents/CompatibilityTarot";
 
 const queryClient = new QueryClient();
 
@@ -35,10 +38,13 @@ const App = () => (
             <Route path="/contents/work" element={<WorkLuck />} />
             <Route path="/tarot/weekly" element={<WeeklyFortune />} />
             <Route path="/tarot/monthly" element={<MonthlyFortune />} />
+            <Route path="/tarot/love" element={<LoveTarot />} />
+            <Route path="/tarot/reunion" element={<ReunionTarot />} />
             <Route path="/tarot/:type" element={<TarotReading />} />
             <Route path="/tarot/student" element={<StudentSupportTarot />} />
             <Route path="/chatbot" element={<Chatbot />} />
-            <Route path="/compatibility" element={<CompatibilityReading />} />
+            <Route path="/tarot/new-year" element={<NewYearTarot />} />
+            <Route path="/compatibility" element={<CompatibilityTarot />} />
             <Route path="/groups" element={<Community />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/lounge" element={<CommunityLounge />} />

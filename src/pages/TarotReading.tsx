@@ -6,6 +6,7 @@ import { YearlyFortune } from './contents/YearlyFortune';
 import { Horoscope } from './contents/Horoscope';
 import { PalmReading } from './contents/PalmReading';
 import { StudentSupportTarot } from './contents/StudentSupportTarot';
+import { NewYearTarot } from './contents/NewYearTarot';
 
 const TarotReading = () => {
     const { type } = useParams();
@@ -26,6 +27,8 @@ const TarotReading = () => {
             return <PalmReading />;
         case 'student':
             return <StudentSupportTarot />;
+        case 'new-year':
+            return <NewYearTarot />;
         default:
             return <Navigate to="/contents" replace />;
     }

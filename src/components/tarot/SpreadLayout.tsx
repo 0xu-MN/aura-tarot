@@ -9,6 +9,7 @@ interface SpreadLayoutProps {
     onSpreadComplete: (selectedIndices: number[]) => void;
     instruction?: string;
     isRevealing?: boolean;
+    onProgress?: (count: number) => void;
 }
 
 export const SpreadLayout = ({
@@ -16,6 +17,7 @@ export const SpreadLayout = ({
     onSpreadComplete,
     instruction = "카드를 선택해주세요",
     isRevealing = false,
+    onProgress,
 }: SpreadLayoutProps) => {
     const [phase, setPhase] = useState<"shuffle" | "spread" | "complete">("shuffle");
     const [selectedCards, setSelectedCards] = useState<number[]>([]);
@@ -34,6 +36,7 @@ export const SpreadLayout = ({
 
         const newSelected = [...selectedCards, index];
         setSelectedCards(newSelected);
+        if (onProgress) onProgress(newSelected.length);
 
         // If all cards selected, finish
         if (newSelected.length === cardCount) {

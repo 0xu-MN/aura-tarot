@@ -104,3 +104,50 @@ export const getRandomCards = (count: number): { card: TarotCardData; isReversed
         isReversed: Math.random() > 0.7 // 30% chance of being reversed
     }));
 };
+
+// Weighted Random Selection
+export const getWeightedCards = (
+    count: number,
+    suitWeights: { [key in 'major' | 'cups' | 'pentacles' | 'swords' | 'wands']?: number }
+): { card: TarotCardData; isReversed: boolean }[] => {
+    // 1. Create a weighted pool
+    const weightedPool: TarotCardData[] = [];
+
+    TAROT_CARDS.forEach(card => {
+        let weight = 1; // Default weight
+
+        if (card.arcana === 'major') {
+            weight = suitWeights.major || 1;
+        } else if (card.suit && suitWeights[card.suit]) {
+            weight = suitWeights[card.suit]!;
+        }
+
+        // Add card to pool 'weight' times
+        // Note: For larger datasets, this expanding method is inefficient, 
+        // but for 78 cards it's perfectly fine and strictly random.
+        for (let i = 0; i < weight; i++) {
+            weightedPool.push(card);
+        }
+    });
+
+    // 2. Shuffle and pick unique cards
+    const selectedCards: { card: TarotCardData; isReversed: boolean }[] = [];
+    const seenNames = new Set<string>();
+
+    while (selectedCards.length < count) {
+        if (weightedPool.length === 0) break; // Should not happen
+
+        const randomIndex = Math.floor(Math.random() * weightedPool.length);
+        const card = weightedPool[randomIndex];
+
+        if (!seenNames.has(card.name)) {
+            seenNames.add(card.name);
+            selectedCards.push({
+                card,
+                isReversed: Math.random() > 0.7 // 30% chance reverse
+            });
+        }
+    }
+
+    return selectedCards;
+};
