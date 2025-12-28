@@ -344,8 +344,8 @@ const CommunityLounge = () => {
     return (
         <AppLayout>
             <div className="container mx-auto px-4 py-8 max-w-4xl min-h-screen">
-                {/* Lounge | Premium Header */}
-                <div className="relative flex justify-center items-center gap-6 border-b border-gold/10 pb-4">
+                {/* Lounge | Premium Header - Sticky */}
+                <div className="sticky top-16 z-40 bg-background/80 backdrop-blur-md flex justify-center items-center gap-6 border-b border-gold/10 py-4 mb-4 -mx-4 px-4 transition-all duration-300">
                     <button
                         onClick={() => setActiveTab('lounge')}
                         className={cn(
@@ -372,8 +372,6 @@ const CommunityLounge = () => {
                         Premium
                         {!isPremium && <Lock className="w-5 h-5" />}
                     </button>
-
-
                 </div>
 
                 {/* Lounge Content */}
@@ -389,10 +387,10 @@ const CommunityLounge = () => {
                                 }}
                             >
                                 <div className="max-w-4xl mx-auto relative z-10">
-                                    <h2 className="relative text-2xl md:text-4xl font-display font-bold text-white mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+                                    <h2 className="relative text-2xl md:text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-gold to-white mb-6 drop-shadow-[0_0_20px_rgba(212,175,55,0.3)]">
                                         타로로 연결된 우리들의 공간
                                     </h2>
-                                    <p className="relative text-gray-300 text-base md:text-lg leading-loose font-light whitespace-pre-line drop-shadow-md">
+                                    <p className="relative text-orange-50/90 text-base md:text-lg leading-loose font-light whitespace-pre-line drop-shadow-md">
                                         오늘의 한 장, 자유롭게 공유해요.{'\n'}
                                         서로 응원하며 즐겨보세요 ✨
                                     </p>
@@ -436,7 +434,7 @@ const CommunityLounge = () => {
                                     <div
                                         key={post.id}
                                         onClick={() => handlePostClick(post)}
-                                        className="bg-card rounded-2xl border border-gold/10 p-5 hover:border-gold/30 transition-all cursor-pointer group relative"
+                                        className="bg-black/60 rounded-2xl border border-gold/20 p-5 hover:border-gold/50 transition-all cursor-pointer group relative shadow-lg shadow-black/20"
                                     >
                                         {/* Delete Button (Only for author) */}
                                         {user?.id === post.user_id && (
@@ -463,7 +461,7 @@ const CommunityLounge = () => {
                                                     }
                                                 }}
                                             >
-                                                <Avatar className="w-10 h-10 md:w-12 md:h-12 border border-gold/20 hover:border-gold cursor-pointer transition-colors">
+                                                <Avatar className="w-10 h-10 md:w-12 md:h-12 border border-gold/30 hover:border-gold cursor-pointer transition-colors">
                                                     {post.profiles?.avatar_url ? (
                                                         <img src={post.profiles.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                                                     ) : (
@@ -478,7 +476,7 @@ const CommunityLounge = () => {
                                             <div className="flex-1 min-w-0 flex flex-col gap-1 md:gap-2">
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <span
-                                                        className="font-bold text-white group-hover:text-gold transition-colors text-sm md:text-base cursor-pointer z-10 hover:underline whitespace-nowrap"
+                                                        className="font-bold text-gold group-hover:text-white transition-colors text-sm md:text-base cursor-pointer z-10 hover:underline whitespace-nowrap"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             if (post.profiles) {
@@ -492,21 +490,21 @@ const CommunityLounge = () => {
                                                     >
                                                         {post.profiles?.nickname || '익명'}
                                                     </span>
-                                                    <span className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
+                                                    <span className="text-[10px] md:text-xs text-white/40 whitespace-nowrap">
                                                         {new Date(post.created_at).toLocaleDateString()}
                                                     </span>
-                                                    <span className="text-[10px] md:text-xs text-gold/70 px-2 py-0.5 rounded-full bg-gold/5 border border-gold/10 whitespace-nowrap">
+                                                    <span className="text-[10px] md:text-xs text-gold/90 px-2 py-0.5 rounded-full bg-gold/10 border border-gold/20 whitespace-nowrap font-medium">
                                                         {CATEGORIES.find(c => c.id === post.category)?.label || '아무거나'}
                                                     </span>
                                                 </div>
 
                                                 {/* Title Box */}
-                                                <div className="text-white font-bold text-base md:text-lg px-1 break-keep leading-tight">
+                                                <div className="text-[#FFF8E7] font-bold text-base md:text-lg px-1 break-keep leading-tight group-hover:text-white transition-colors">
                                                     {post.title}
                                                 </div>
 
                                                 {/* Content Box */}
-                                                <div className="text-muted-foreground text-xs md:text-sm line-clamp-2 md:line-clamp-3 min-h-[1.5em] px-1 break-words leading-relaxed">
+                                                <div className="text-gray-300 text-xs md:text-sm line-clamp-2 md:line-clamp-3 min-h-[1.5em] px-1 break-words leading-relaxed font-light">
                                                     {post.content}
                                                 </div>
 

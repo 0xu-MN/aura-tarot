@@ -159,12 +159,14 @@ const Contents = () => {
     return (
         <AppLayout>
             <div className="container mx-auto px-4 py-8">
-                <h1 className="font-display text-3xl md:text-4xl text-gold-gradient mb-2">
-                    Contents
-                </h1>
-                <p className="text-muted-foreground mb-8">
-                    당신의 운명을 점쳐보세요
-                </p>
+                <div className="text-center mb-8">
+                    <h1 className="font-display text-3xl md:text-4xl text-gold-gradient mb-2">
+                        Contents
+                    </h1>
+                    <p className="text-muted-foreground">
+                        당신의 운명을 점쳐보세요
+                    </p>
+                </div>
 
                 {/* Search */}
                 <div className="relative mb-8">
