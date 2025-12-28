@@ -344,6 +344,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
                     className="relative z-10"
                     isFlipped={showCard}
                     interactive={false}
+                    frontImage={selectedCard.image}
                   />
                 </div>
 

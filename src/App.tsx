@@ -16,7 +16,9 @@ import CommunityLounge from "./pages/CommunityLounge";
 import Messages from "./pages/Messages";
 import ChatRoom from "./pages/ChatRoom";
 import { StudentSupportTarot } from './pages/contents/StudentSupportTarot';
-import { WorkLuck } from './pages/contents/WorkLuck';
+import { WorkLuck } from "./pages/contents/WorkLuck";
+import WeeklyFortune from "./pages/contents/WeeklyFortune";
+import MonthlyFortune from "./pages/contents/MonthlyFortune";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/home" element={<Home />} />
             <Route path="/contents" element={<Contents />} />
             <Route path="/contents/work" element={<WorkLuck />} />
+            <Route path="/tarot/weekly" element={<WeeklyFortune />} />
+            <Route path="/tarot/monthly" element={<MonthlyFortune />} />
             <Route path="/tarot/:type" element={<TarotReading />} />
             <Route path="/tarot/student" element={<StudentSupportTarot />} />
             <Route path="/chatbot" element={<Chatbot />} />

@@ -20,7 +20,7 @@ const Contents = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('전체');
 
-    const categories = ['전체', '연애운', '궁합', '재회확률', '신년운세', '별자리 운세', '직업운', '재물운', '학생/수험생', '직장인'];
+    const categories = ['전체', '연애운', '궁합', '재회확률', '신년운세', '별자리 운세', '직업운', '재물운', '학생/수험생', '직장인', '주간', '월간'];
 
     const contentItems: ContentItem[] = [
         {
@@ -31,6 +31,22 @@ const Contents = () => {
             icon: "✨",
             link: "/home",
             image: "/thumbnails/daily-fortune.png"
+        },
+        {
+            title: "이번 달 나의 운세",
+            description: "Beta Free Open! 이번 달의 전체 흐름을 확인하세요",
+            categories: ["운세", "월간"],
+            displayCategory: "월간운세",
+            icon: "🌕",
+            link: "/tarot/monthly",
+        },
+        {
+            title: "이번 주 나의 운세",
+            description: "Beta Free Open! 이번 주 흐름을 미리 확인해보세요",
+            categories: ["운세", "주간"],
+            displayCategory: "주간운세",
+            icon: "📅",
+            link: "/tarot/weekly",
         },
         {
             title: "오늘도 수고한 너에게",

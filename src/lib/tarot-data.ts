@@ -4,28 +4,29 @@ export interface TarotCardData {
     arcana: 'major' | 'minor';
     suit?: 'cups' | 'pentacles' | 'swords' | 'wands';
     number: number;
+    image?: string;
 }
 
 export const TAROT_CARDS: TarotCardData[] = [
     // Major Arcana
-    { name: "The Fool", koreanName: "광대", arcana: "major", number: 0 },
-    { name: "The Magician", koreanName: "마법사", arcana: "major", number: 1 },
-    { name: "The High Priestess", koreanName: "고위 여사제", arcana: "major", number: 2 },
-    { name: "The Empress", koreanName: "여황제", arcana: "major", number: 3 },
-    { name: "The Emperor", koreanName: "황제", arcana: "major", number: 4 },
-    { name: "The Hierophant", koreanName: "교황", arcana: "major", number: 5 },
-    { name: "The Lovers", koreanName: "연인", arcana: "major", number: 6 },
-    { name: "The Chariot", koreanName: "전차", arcana: "major", number: 7 },
-    { name: "Strength", koreanName: "힘", arcana: "major", number: 8 },
-    { name: "The Hermit", koreanName: "은둔자", arcana: "major", number: 9 },
-    { name: "Wheel of Fortune", koreanName: "운명의 수레바퀴", arcana: "major", number: 10 },
-    { name: "Justice", koreanName: "정의", arcana: "major", number: 11 },
-    { name: "The Hanged Man", koreanName: "매달린 사람", arcana: "major", number: 12 },
-    { name: "Death", koreanName: "죽음", arcana: "major", number: 13 },
-    { name: "Temperance", koreanName: "절제", arcana: "major", number: 14 },
-    { name: "The Devil", koreanName: "악마", arcana: "major", number: 15 },
-    { name: "The Tower", koreanName: "탑", arcana: "major", number: 16 },
-    { name: "The Star", koreanName: "별", arcana: "major", number: 17 },
+    { name: "The Fool", koreanName: "광대", arcana: "major", number: 0, image: "/tarot-cards/major_00.png" },
+    { name: "The Magician", koreanName: "마법사", arcana: "major", number: 1, image: "/tarot-cards/major_01.png" },
+    { name: "The High Priestess", koreanName: "고위 여사제", arcana: "major", number: 2, image: "/tarot-cards/major_02.png" },
+    { name: "The Empress", koreanName: "여황제", arcana: "major", number: 3, image: "/tarot-cards/major_03.png" },
+    { name: "The Emperor", koreanName: "황제", arcana: "major", number: 4, image: "/tarot-cards/major_04.png" },
+    { name: "The Hierophant", koreanName: "교황", arcana: "major", number: 5, image: "/tarot-cards/major_05.png" },
+    { name: "The Lovers", koreanName: "연인", arcana: "major", number: 6, image: "/tarot-cards/major_06.png" },
+    { name: "The Chariot", koreanName: "전차", arcana: "major", number: 7, image: "/tarot-cards/major_07.png" },
+    { name: "Strength", koreanName: "힘", arcana: "major", number: 8, image: "/tarot-cards/major_08.png" },
+    { name: "The Hermit", koreanName: "은둔자", arcana: "major", number: 9, image: "/tarot-cards/major_09.png" },
+    { name: "Wheel of Fortune", koreanName: "운명의 수레바퀴", arcana: "major", number: 10, image: "/tarot-cards/major_10.png" },
+    { name: "Justice", koreanName: "정의", arcana: "major", number: 11, image: "/tarot-cards/major_11.png" },
+    { name: "The Hanged Man", koreanName: "매달린 사람", arcana: "major", number: 12, image: "/tarot-cards/major_12.png" },
+    { name: "Death", koreanName: "죽음", arcana: "major", number: 13, image: "/tarot-cards/major_13.png" },
+    { name: "Temperance", koreanName: "절제", arcana: "major", number: 14, image: "/tarot-cards/major_14.png" },
+    { name: "The Devil", koreanName: "악마", arcana: "major", number: 15, image: "/tarot-cards/major_15.png" },
+    { name: "The Tower", koreanName: "탑", arcana: "major", number: 16, image: "/tarot-cards/major_16.png" },
+    { name: "The Star", koreanName: "별", arcana: "major", number: 17, image: "/tarot-cards/major_17.png" },
     { name: "The Moon", koreanName: "달", arcana: "major", number: 18 },
     { name: "The Sun", koreanName: "태양", arcana: "major", number: 19 },
     { name: "Judgement", koreanName: "심판", arcana: "major", number: 20 },
