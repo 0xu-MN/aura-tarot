@@ -63,6 +63,15 @@ export const NewYearTarot = () => {
             const state = saved.readingState;
             // Only restore state if it has the new 'selectedThemeId' property (Version Check)
             if (state.selectedThemeId) {
+                // If the user already finished the reading (result step), we force a reset 
+                // so they can start fresh when they come back.
+                if (state.step === 'result') {
+                    premiumStore.resetFeature(FEATURE_ID);
+                    // Keep payment status if paid
+                    if (saved.hasPaid) setHasPaid(true);
+                    return;
+                }
+
                 if (state.step) setStep(state.step);
                 if (state.drawnCards) setDrawnCards(state.drawnCards);
                 if (state.revealedCards) setRevealedCards(state.revealedCards);
