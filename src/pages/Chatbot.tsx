@@ -112,10 +112,28 @@ const Chatbot = () => {
                 title: "상담 기록 저장 완료",
                 description: "나의 상담 내역에 저장되었습니다.",
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save chat:', error);
+            toast({
+                title: "저장 실패",
+                description: "상담 기록을 저장하지 못했습니다. 다시 시도해주세요. (" + (error.message || "Unknown error") + ")",
+                variant: 'destructive'
+            });
         }
     };
+
+    // Warn user before leaving if chat is active (simple navigation protection)
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (messages.length > 2) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [messages]);
 
     const handleEndChat = async () => {
         await saveChatSession();
@@ -257,8 +275,13 @@ const Chatbot = () => {
                         <Button variant="ghost" size="icon" onClick={() => setShowHistory(true)} className="text-muted-foreground hover:text-gold">
                             <History className="w-5 h-5" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={handleEndChat} className="text-muted-foreground hover:text-destructive">
-                            상담 종료
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleEndChat}
+                            className="bg-white/5 border-gold/30 text-gold hover:bg-gold/10 hover:text-gold hover:border-gold/50 transition-all font-medium"
+                        >
+                            상담 종료/저장
                         </Button>
                     </div>
                 </div>
