@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { RegisterModal } from '@/components/auth/RegisterModal';
 import { useNavigate } from "react-router-dom"; // Added useNavigate
+import weeklyThumb from '@/assets/weekly-thumb.jpg';
 import { UserProfileModal } from "@/components/community/UserProfileModal"; // Added UserProfileModal
 import { BetaBanner } from '@/components/beta/BetaBanner'; // Added BetaBanner
 import { CardDrawing } from '@/components/CardDrawing';
@@ -51,8 +52,14 @@ const Home = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10 w-full animate-fade-in mt-8">
                         {/* Weekly Fortune */}
                         <div className="relative group cursor-pointer overflow-hidden rounded-2xl border border-white/10 h-32" onClick={() => window.location.href = '/tarot/weekly'}>
-                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/80 to-purple-900/80 group-hover:scale-105 transition-transform duration-700" />
-                            <div className="absolute inset-0 bg-[url('/assets/stars.svg')] opacity-30" />
+                            <div className="absolute inset-0">
+                                <img
+                                    src={weeklyThumb}
+                                    alt="Weekly Horoscope"
+                                    className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
+                            </div>
                             <div className="relative z-10 p-5 flex flex-col justify-between h-full">
                                 <div className="flex justify-between items-start">
                                     <span className="inline-block px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-gold font-bold">
