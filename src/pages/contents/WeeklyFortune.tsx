@@ -175,10 +175,10 @@ export default function WeeklyFortune() {
                 <div className="w-10" />
             </div>
 
-            <div className="pt-24 px-4 max-w-md mx-auto h-full flex flex-col relative z-10">
+            <div className="pt-24 px-4 w-full max-w-7xl mx-auto h-full flex flex-col relative z-10">
 
                 {step === "intro" && (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center animate-fade-in min-h-[60vh]">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center animate-fade-in min-h-[60vh] max-w-md mx-auto w-full">
                         <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-gold/20 to-purple-500/20 flex items-center justify-center mb-8 border border-white/10 shadow-[0_0_40px_rgba(218,165,32,0.15)] animate-pulse-slow">
                             <Calendar className="w-10 h-10 text-gold" />
                         </div>
@@ -205,21 +205,23 @@ export default function WeeklyFortune() {
                 )}
 
                 {step === "spread" && (
-                    <div className="flex-1 flex flex-col justify-center animate-fade-in py-10">
+                    <div className="flex-1 flex flex-col justify-center animate-fade-in py-10 w-full">
                         <div className="text-center mb-10">
                             <span className="text-gold text-sm font-medium tracking-wider">5 CARDS SPREAD</span>
                             <h3 className="text-xl text-white font-light mt-2">이번 주를 위한 5장의 카드</h3>
                         </div>
-                        <SpreadLayout
-                            cardCount={5}
-                            onSpreadComplete={handleSpreadComplete}
-                            instruction="신중하게 5장을 선택해주세요"
-                        />
+                        <div className="w-full max-w-5xl mx-auto">
+                            <SpreadLayout
+                                cardCount={5}
+                                onSpreadComplete={handleSpreadComplete}
+                                instruction="신중하게 5장을 선택해주세요"
+                            />
+                        </div>
                     </div>
                 )}
 
                 {step === "reading" && (
-                    <div className="animate-fade-in pb-10" id="result-capture">
+                    <div className="animate-fade-in pb-10 max-w-md mx-auto w-full" id="result-capture">
                         {/* 5 Cards Display Grid */}
                         {/* Layout: Top(Theme) - Middle(3 Flow) - Bottom(Advice) */}
                         <div className="flex flex-col gap-6 mb-8">
