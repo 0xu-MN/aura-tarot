@@ -6,6 +6,7 @@ import { useState } from 'react';
 import weeklyThumb from '@/assets/weekly-thumb.jpg';
 import monthlyThumb from '@/assets/monthly-thumb.jpg';
 import workThumb from '@/assets/work-thumb.jpg';
+import studentThumb from '@/assets/student-thumb.jpg';
 
 interface ContentItem {
     title: string;
@@ -62,7 +63,9 @@ const Contents = () => {
             categories: ["학생/수험생", "운세"],
             displayCategory: "학생/수험생",
             icon: "🎓",
-            link: "/tarot/student"
+            link: "/tarot/student",
+            image: studentThumb,
+            imageClass: "object-cover w-full h-full",
         },
         {
             title: "오늘도 수고한 직장인에게",
