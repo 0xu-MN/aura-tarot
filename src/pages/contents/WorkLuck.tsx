@@ -101,7 +101,7 @@ export const WorkLuck = () => {
 
     return (
         <AppLayout>
-            <div className="container mx-auto px-4 py-8 min-h-[80vh] flex flex-col items-center">
+            <div className="container px-4 py-8 min-h-[80vh] flex flex-col items-center w-full max-w-7xl mx-auto">
 
                 {/* Header */}
                 <div className="text-center mb-8">
@@ -165,7 +165,7 @@ export const WorkLuck = () => {
 
                 {/* Spread Step */}
                 {step === 'spread' && (
-                    <div className="w-full animate-fade-in">
+                    <div className="w-full max-w-5xl animate-fade-in">
                         <SpreadLayout
                             cardCount={1}
                             instruction="마음을 가라앉히고 한 장을 선택해주세요"
