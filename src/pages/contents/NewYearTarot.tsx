@@ -355,7 +355,7 @@ export const NewYearTarot = () => {
                                         <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground mb-3 font-medium bg-black/40 px-3 py-1 rounded-full border border-white/5">
                                             {getPositionLabel(i)}
                                         </div>
-                                        <div onClick={() => handleReveal(i)} className="cursor-pointer transition-transform duration-300 hover:scale-105 hover:-translate-y-2 w-full max-w-[120px]">
+                                        <div onClick={() => handleReveal(i)} className="cursor-pointer transition-transform duration-300 hover:scale-105 hover:-translate-y-2 w-full max-w-[120px] flex justify-center">
                                             <TarotCard
                                                 size="sm"
                                                 isFlipped={revealedCards.includes(i)}
