@@ -21,6 +21,20 @@ export const SpreadLayout = ({
 }: SpreadLayoutProps) => {
     const [phase, setPhase] = useState<"shuffle" | "spread" | "complete">("shuffle");
     const [selectedCards, setSelectedCards] = useState<number[]>([]);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        // Initial check
+        checkMobile();
+
+        // Listener
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     useEffect(() => {
         // Auto start shuffle phase
@@ -91,22 +105,39 @@ export const SpreadLayout = ({
                     <div className="relative w-full h-full flex items-center">
                         {[...Array(22)].map((_, i) => {
                             const isSelected = selectedCards.includes(i);
-                            // Calculate position: 0% to 100% across the container
-                            const leftPos = `${(i / 21) * 100}%`;
-                            const rotation = (i - 10.5) * 3;
-                            const yOffset = Math.abs(i - 10.5) * 3;
+
+                            // Desktop Layout (Standard Arc)
+                            let leftPos = `${(i / 21) * 100}%`;
+                            let rotation = (i - 10.5) * 3;
+                            let yOffset = Math.abs(i - 10.5) * 3;
+                            let topPos = '50%';
+
+                            // Mobile Layout (2 Rows)
+                            if (isMobile) {
+                                const isTopRow = i < 11;
+                                const rowIdx = isTopRow ? i : i - 11;
+                                // Distribute 11 cards across width (using slightly less edge margin)
+                                const spreadWidth = 90; // use 90% of width
+                                const startOffset = 5; // start at 5%
+
+                                leftPos = `${startOffset + (rowIdx / 10) * spreadWidth}%`;
+                                rotation = 0; // No rotation for cleaner look
+                                yOffset = 0; // No arc
+                                topPos = isTopRow ? '30%' : '70%'; // 2 rows
+                            }
 
                             return (
                                 <div
                                     key={i}
                                     onClick={() => handleCardClick(i)}
                                     className={cn(
-                                        "absolute top-1/2 w-20 h-32 md:w-24 md:h-40 rounded-lg bg-card border border-gold/30 shadow-xl cursor-pointer transition-all duration-300 origin-bottom group",
+                                        "absolute w-20 h-32 md:w-24 md:h-40 rounded-lg bg-card border border-gold/30 shadow-xl cursor-pointer transition-all duration-300 origin-bottom group",
                                         "hover:!z-50 hover:shadow-gold/40 border-gold/50",
                                         isSelected ? "opacity-0 pointer-events-none" : "block"
                                     )}
                                     style={{
                                         left: leftPos,
+                                        top: topPos,
                                         zIndex: i,
                                         // Ensure rotation is preserved
                                         transform: `translate(-50%, -50%) rotate(${rotation}deg) translateY(${yOffset}px)`,
