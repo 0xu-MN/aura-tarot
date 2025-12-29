@@ -536,7 +536,10 @@ const CommunityLounge = () => {
 
                 {/* Premium Tab */}
                 {activeTab === 'premium' && (
-                    <div className="space-y-4">
+                    <div className="space-y-4 relative min-h-[400px]">
+                        {/* BETA LOCK OVERLAY */}
+                        <BetaLockOverlay />
+
                         {currentChatRoom ? (
                             <PremiumChat
                                 roomName={currentChatRoom}
@@ -554,7 +557,7 @@ const CommunityLounge = () => {
                                                 setShowUpgradeModal(true);
                                             }
                                         }}
-                                        className="bg-card rounded-2xl border border-gold/20 p-6 hover:border-gold/40 transition-colors cursor-pointer group"
+                                        className="bg-card rounded-2xl border border-gold/20 p-6 hover:border-gold/40 transition-colors cursor-pointer group blur-sm pointer-events-none select-none"
                                     >
                                         <div className="flex items-start gap-4">
                                             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold/20 to-mystic-purple/20 flex items-center justify-center text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -599,7 +602,7 @@ const CommunityLounge = () => {
                                 ))}
 
                                 {!isPremium && !isDeveloperMode && (
-                                    <div className="bg-gradient-to-r from-gold/10 to-mystic-purple/10 rounded-2xl border border-gold/20 p-6 text-center">
+                                    <div className="bg-gradient-to-r from-gold/10 to-mystic-purple/10 rounded-2xl border border-gold/20 p-6 text-center blur-sm pointer-events-none select-none">
                                         <Lock className="w-12 h-12 mx-auto mb-4 text-gold" />
                                         <h3 className="font-display text-xl text-gold mb-2">
                                             프리미엄 멤버십이 필요합니다
