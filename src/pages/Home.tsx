@@ -1,22 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Added useEffect
 import { AppLayout } from '@/layouts/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { RegisterModal } from '@/components/auth/RegisterModal';
+import { useNavigate } from "react-router-dom"; // Added useNavigate
+import { UserProfileModal } from "@/components/community/UserProfileModal"; // Added UserProfileModal
+import { BetaBanner } from '@/components/beta/BetaBanner'; // Added BetaBanner
 import { CardDrawing } from '@/components/CardDrawing';
 import { RecommendedContent } from '@/components/RecommendedContent';
 import { Sparkles } from 'lucide-react';
 
 const Home = () => {
-    const { userProfile } = useAuth();
+    const navigate = useNavigate(); // Added navigate
+    const { user, userProfile } = useAuth(); // Added user
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showRegisterModal, setShowRegisterModal] = useState(false);
+    const [showProfileModal, setShowProfileModal] = useState(false); // Added showProfileModal
+    const [welcomeMessage, setWelcomeMessage] = useState(""); // Added welcomeMessage
+
+    useEffect(() => { // Added useEffect for welcome message
+        const hours = new Date().getHours();
+        if (hours < 12) setWelcomeMessage("좋은 아침입니다");
+        else if (hours < 18) setWelcomeMessage("나른한 오후네요");
+        else setWelcomeMessage("하루를 마무리할 시간입니다");
+    }, []);
 
     return (
         <>
-            <AppLayout>
-                <div className="container mx-auto px-4 py-8">
-                    {/* Welcome Section */}
+            <AppLayout showHeader={false}> {/* Changed AppLayout props */}
+                <BetaBanner /> {/* Added BetaBanner */}
+                <div className="container mx-auto px-4 pt-6 pb-20"> {/* Adjusted padding */}
+                    {/* Header Section */}
                     <div className="mb-8">
                         <div className="flex items-center gap-2 mb-2">
                             <Sparkles className="w-5 h-5 text-gold" />

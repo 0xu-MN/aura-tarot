@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
+import { BetaLockOverlay } from '@/components/beta/BetaLockOverlay';
 
 export function ReunionTarot() {
     const navigate = useNavigate();
@@ -35,12 +36,65 @@ export function ReunionTarot() {
     };
 
     const handleSpreadComplete = (indices: number[]) => {
-        setIsLoading(true);
-        // Weighted selection: High chance of Cups (Emotion) and Swords (Conflict/Reason)
-        const cards = getWeightedCards(4, { cups: 3, swords: 3, major: 1, wands: 1, pentacles: 1 });
+        // Generate 4 cards with weighting suitable for relationship/reunion (Cups, Major, Swords)
+        const cards = getWeightedCards(4, { cups: 4, major: 3, swords: 2, wands: 1, pentacles: 1 });
         setDrawnCards(cards);
         setStep('reading');
-        generateReading(cards);
+        fetchAiReading(cards);
+    };
+
+    const fetchAiReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
+        setIsLoading(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                body: {
+                    type: 'reading',
+                    context: {
+                        question: question,
+                        cards: cards.map((c, i) => ({
+                            position: ['나의 속마음', '상대의 속마음', '재회 방해 요소', '재회 가능성 및 조언'][i],
+                            name: c.card.name,
+                            isReversed: c.isReversed
+                        })),
+                        extraContext: "재회 타로입니다. 상대방의 속마음과 재회 가능성을 중점적으로, 희망적이면서도 현실적인 조언을 주세요. 재회 확률(0~100%)을 마지막에 포함해주세요."
+                    }
+                }
+            });
+
+            if (error) throw error;
+
+            const responseText = data.message || data.response || "";
+            setReading(responseText);
+
+            // Extract percentage roughly if AI returns it, or generate random weighted
+            // For now, let's just use a random weighted number for the gauge visual
+            const baseChance = 50;
+            const randomVar = Math.floor(Math.random() * 40); // 0-39
+            setReunionChance(baseChance + randomVar);
+
+            // Save to history
+            if (user) {
+                try {
+                    const { error: dbError } = await supabase.from('daily_readings').insert({
+                        user_id: user.id,
+                        question: question, // using question field
+                        card_name: cards[3].card.name, // Main outcome card
+                        interpretation: responseText,
+                        is_reversed: cards[3].isReversed,
+                        advice: '재회 타로 리딩'
+                    });
+                    if (dbError) throw dbError;
+                } catch (e) {
+                    console.error("Failed to save history:", e);
+                }
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('해석을 불러오는데 실패했습니다.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
@@ -149,6 +203,7 @@ CHANCE: [숫자]
     return (
         <AppLayout>
             <div className="min-h-screen bg-slate-900 text-slate-100 pb-20 relative overflow-hidden">
+                <BetaLockOverlay title="재회 타로" />
                 {/* Background Effects */}
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/30 via-slate-900 to-black pointer-events-none" />
 

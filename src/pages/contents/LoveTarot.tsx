@@ -10,15 +10,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
+import { BetaLockOverlay } from '@/components/beta/BetaLockOverlay';
 
 export function LoveTarot() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [step, setStep] = useState<'intro' | 'question' | 'spread' | 'reading'>('intro');
+    // ... hooks ...
+
+    // State definitions
     const [question, setQuestion] = useState('');
     const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [reading, setReading] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+
 
     const handleStart = () => {
         setStep('question');
@@ -45,34 +51,34 @@ export function LoveTarot() {
     const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
         try {
             const prompt = `
-당신은 로맨틱하고 감성적인 타로 리더 '로즈'입니다.
-사용자의 연애 고민에 대해 [과거-현재-미래] 3장으로 해석해주세요.
+                당신은 로맨틱하고 감성적인 타로 리더 '로즈'입니다.
+                사용자의 연애 고민에 대해 [과거-현재-미래] 3장으로 해석해주세요.
 
-질문: ${question}
+                질문: ${question}
 
-1. 과거: ${cards[0].card.koreanName} (${cards[0].isReversed ? '역방향' : '정방향'})
-2. 현재: ${cards[1].card.koreanName} (${cards[1].isReversed ? '역방향' : '정방향'})
-3. 미래: ${cards[2].card.koreanName} (${cards[2].isReversed ? '역방향' : '정방향'})
+                1. 과거: ${cards[0].card.koreanName} (${cards[0].isReversed ? '역방향' : '정방향'})
+                2. 현재: ${cards[1].card.koreanName} (${cards[1].isReversed ? '역방향' : '정방향'})
+                3. 미래: ${cards[2].card.koreanName} (${cards[2].isReversed ? '역방향' : '정방향'})
 
-요청사항:
-- 말투: 부드럽고 다정하게 (해요체), 이모지 많이 사용 🌹💖
-- 부정적인 카드가 나와도 "이 시련이 더 깊은 사랑을 위한 과정"처럼 긍정적으로 승화해주세요.
-- 상대방의 감정을 깊이 있게 묘사해주세요.
-- 300자 내외로 핵심만 임팩트 있게.
+                요청사항:
+                - 말투: 부드럽고 다정하게 (해요체), 이모지 많이 사용 🌹💖
+                - 부정적인 카드가 나와도 "이 시련이 더 깊은 사랑을 위한 과정"처럼 긍정적으로 승화해주세요.
+                - 상대방의 감정을 깊이 있게 묘사해주세요.
+                - 300자 내외로 핵심만 임팩트 있게.
 
-출력 형식:
-## 💖 과거의 흐름
-(해석)
+                출력 형식:
+                ## 💖 과거의 흐름
+                (해석)
 
-## 🌹 현재의 마음
-(해석)
+                ## 🌹 현재의 마음
+                (해석)
 
-## ✨ 우리의 미래
-(해석)
+                ## ✨ 우리의 미래
+                (해석)
 
-## 💌 로즈의 조언
-(한 마디 조언)
-`;
+                ## 💌 로즈의 조언
+                (한 마디 조언)
+                `;
             const { data, error } = await supabase.functions.invoke('tarot-chat', {
                 body: { messages: [{ role: 'user', content: prompt }] }
             });
@@ -135,7 +141,8 @@ export function LoveTarot() {
 
     return (
         <AppLayout>
-            <div className="min-h-screen bg-[#1a0b2e] text-pink-50 pb-20 relative overflow-hidden">
+            <BetaLockOverlay title="연애운 타로" />
+            <div className="container mx-auto px-4 py-8 max-w-lg min-h-screen bg-[#1a0b2e] text-pink-50 pb-20 relative overflow-hidden">
                 {/* Background Effects */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-pink-900/20 via-[#1a0b2e] to-black pointer-events-none" />
                 <div className="absolute top-0 left-0 w-full h-full bg-[url('/assets/stars.svg')] opacity-20 pointer-events-none" />

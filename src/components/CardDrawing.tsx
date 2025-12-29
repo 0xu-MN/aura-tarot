@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Sparkles, Lightbulb, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { IS_BETA_ACTIVE } from "@/lib/beta-config";
 
 const AI_SUGGESTED_QUESTIONS = [
     '오늘 나에게 필요한 조언은 무엇인가요?',
@@ -34,6 +35,8 @@ export const CardDrawing = () => {
         return shuffled.slice(0, 3);
     });
 
+
+
     const handleDrawCard = async () => {
         if (!question.trim()) {
             toast.error('질문을 입력해주세요', {
@@ -49,6 +52,15 @@ export const CardDrawing = () => {
 
         // If user is logged in and has exhausted free draws
         if (user && userProfile && userProfile.daily_draws_remaining <= 0) {
+
+            // STRICT BETA LIMIT CHECK
+            if (IS_BETA_ACTIVE) {
+                toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다. 내일 다시 이용해주세요! ✨', {
+                    duration: 3000,
+                });
+                return;
+            }
+
             // Check if this specific draw was already paid for? 
             // For now, simple trigger: if remaining is 0, show payment.
             setShowPaymentModal(true);

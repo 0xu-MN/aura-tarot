@@ -25,6 +25,8 @@ const THEMES = [
     { id: 'growth', label: '자기계발', icon: <BookOpen className="w-5 h-5" />, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
 ];
 
+import { BetaLockOverlay } from '@/components/beta/BetaLockOverlay';
+
 export const NewYearTarot = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState<'intro' | 'payment-check' | 'theme-selection' | 'spread' | 'result'>('intro');
@@ -235,8 +237,8 @@ export const NewYearTarot = () => {
 
     return (
         <AppLayout>
-            <div className="container mx-auto px-4 py-8 min-h-[80vh] flex flex-col items-center">
-
+            <div className="container mx-auto px-4 py-8 max-w-4xl relative min-h-[80vh] flex flex-col items-center">
+                <BetaLockOverlay title="2026 신년운세" />
                 {/* Header */}
                 <div className="text-center mb-8">
                     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${selectedTheme.bg} ${selectedTheme.color} ${selectedTheme.border} text-sm font-medium mb-3 transition-colors`}>

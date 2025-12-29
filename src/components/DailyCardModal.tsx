@@ -15,6 +15,7 @@ import { PaymentModal } from "./premium/PaymentModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { DrawAgainModal } from "./DrawAgainModal";
 import { TAROT_CARDS, TarotCardData } from "@/lib/tarot-data";
+import { IS_BETA_ACTIVE } from "@/lib/beta-config";
 
 const MAX_FREE_DRAWS = 3;
 const DAILY_DRAW_KEY = 'daily_card_draws';
@@ -150,13 +151,25 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
     }
   };
 
+
   const handleCardSelect = async () => {
     // Check if user has exceeded free draws
     const currentDraws = getDailyDrawCount();
-    // Only block if limit exceeded AND not paid for today
-    if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
-      setShowPaymentModal(true);
-      return;
+
+    // STRICT BETA LIMIT CHECK
+    if (IS_BETA_ACTIVE) {
+      if (currentDraws >= MAX_FREE_DRAWS) {
+        toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다. 내일 다시 이용해주세요! ✨', {
+          duration: 3000,
+        });
+        return;
+      }
+    } else {
+      // Only block if limit exceeded AND not paid for today (Normal Mode)
+      if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
+        setShowPaymentModal(true);
+        return;
+      }
     }
 
     const randomCard = TAROT_CARDS[Math.floor(Math.random() * TAROT_CARDS.length)];
@@ -218,10 +231,21 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
   const handleDrawAgain = () => {
     // Check if user has exceeded free draws
     const currentDraws = getDailyDrawCount();
-    // Only block if limit exceeded AND not paid for today
-    if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
-      setShowPaymentModal(true);
-      return;
+
+    // STRICT BETA LIMIT CHECK
+    if (IS_BETA_ACTIVE) {
+      if (currentDraws >= MAX_FREE_DRAWS) {
+        toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다. 내일 다시 이용해주세요! ✨', {
+          duration: 3000,
+        });
+        return;
+      }
+    } else {
+      // Only block if limit exceeded AND not paid for today
+      if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
+        setShowPaymentModal(true);
+        return;
+      }
     }
     // Show draw again modal to let user choose
     setShowDrawAgainModal(true);

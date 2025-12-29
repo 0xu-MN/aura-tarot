@@ -140,8 +140,47 @@ const Chatbot = () => {
         setShowHistory(false);
     };
 
+    const getTodayChatCount = () => {
+        try {
+            const date = new Date().toISOString().split('T')[0];
+            const stored = localStorage.getItem('chatbot_daily_usage');
+            if (!stored) return 0;
+            const data = JSON.parse(stored);
+            if (data.date !== date) return 0;
+            return data.count;
+        } catch {
+            return 0;
+        }
+    };
+
+    const incrementChatCount = () => {
+        const date = new Date().toISOString().split('T')[0];
+        const count = getTodayChatCount();
+        localStorage.setItem('chatbot_daily_usage', JSON.stringify({
+            date,
+            count: count + 1
+        }));
+    };
+
     const sendMessage = async (text: string) => {
         if (!text.trim() || isLoading) return;
+
+        // Check Daily Limit
+        const todayCount = getTodayChatCount();
+        const MAX_LIMIT = 5; // Enforce 5 times limit
+
+        // You might want to allow checking limit from beta-config, but hardcoding for now or importing
+        // import { MAX_CHATBOT_DAILY_LIMIT, IS_BETA_ACTIVE } from '@/lib/beta-config';
+        // Let's assume IS_BETA_ACTIVE is true if we are running this code
+
+        if (todayCount >= MAX_LIMIT) {
+            toast({
+                title: '일일 대화 한도 초과',
+                description: '베타 기간 동안 하루 5회 대화만 가능합니다. 내일 다시 이용해주세요! ✨',
+                variant: 'destructive',
+            });
+            return;
+        }
 
         const userMessage: Message = {
             id: Date.now().toString(),
@@ -153,6 +192,9 @@ const Chatbot = () => {
         setMessages((prev) => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
+
+        // Increment count immediately
+        incrementChatCount();
 
         try {
             const messageHistory = [...messages, userMessage]

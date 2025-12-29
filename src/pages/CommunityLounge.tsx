@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { BetaLockOverlay } from '@/components/beta/BetaLockOverlay';
 import { AppLayout } from '@/layouts/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { Lock, MessageSquare, Eye, Heart, Edit3, Share2, MessageCircle, X, Trash2 } from 'lucide-react';
@@ -201,7 +202,7 @@ const CommunityLounge = () => {
                 if (nameParts.length > 1) {
                     fileExt = nameParts.pop() || 'png';
                 }
-                fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt} `;
             } else {
                 return typeof file === 'string' ? file : null;
             }
@@ -357,13 +358,7 @@ const CommunityLounge = () => {
                     </button>
                     <div className="h-8 w-px bg-gold/20" />
                     <button
-                        onClick={() => {
-                            if (!isDeveloperMode) {
-                                toast.info('프리미엄 라운지는 현재 준비 중입니다.\n정식 오픈을 기다려주세요! 🚀');
-                                return;
-                            }
-                            setActiveTab('premium');
-                        }}
+                        onClick={() => setActiveTab('premium')}
                         className={cn(
                             "text-3xl font-display transition-all duration-300 flex items-center gap-2",
                             activeTab === 'premium' ? "text-gold scale-105" : "text-muted-foreground hover:text-foreground opacity-50"

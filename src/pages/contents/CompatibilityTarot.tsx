@@ -14,6 +14,8 @@ import { premiumStore } from '@/lib/premiumStore';
 import { getWeightedCards, TarotCardData } from '@/lib/tarot-data';
 import { supabase } from '@/integrations/supabase/client';
 
+import { BetaLockOverlay } from '@/components/beta/BetaLockOverlay';
+
 const FEATURE_ID = 'compatibility-tarot';
 
 export const CompatibilityTarot = () => {
@@ -179,7 +181,8 @@ export const CompatibilityTarot = () => {
 
     return (
         <AppLayout>
-            <div className="container mx-auto px-4 py-8 min-h-[80vh] flex flex-col items-center">
+            <BetaLockOverlay title="궁합 타로" />
+            <div className="container mx-auto px-4 py-8 max-w-lg min-h-screen relative">
 
                 {/* Header */}
                 <div className="text-center mb-8">
