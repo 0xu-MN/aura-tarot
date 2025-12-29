@@ -14,6 +14,7 @@ interface ContentItem {
     link?: string;
     image?: string;
     imageClass?: string;
+    bgClass?: string;
 }
 
 const Contents = () => {
@@ -48,7 +49,9 @@ const Contents = () => {
             displayCategory: "주간운세",
             icon: "📅",
             link: "/tarot/weekly",
-            image: weeklyThumb
+            image: weeklyThumb,
+            imageClass: "object-contain w-full h-full",
+            bgClass: "bg-[#0f1020]"
         },
         {
             title: "오늘도 수고한 너에게",
@@ -214,7 +217,7 @@ const Contents = () => {
                                 }
                             }}
                         >
-                            <div className="aspect-video bg-gradient-to-br from-gold/20 to-mystic-purple/20 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-500 relative overflow-hidden">
+                            <div className={`aspect-video flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-500 relative overflow-hidden ${item.bgClass || 'bg-gradient-to-br from-gold/20 to-mystic-purple/20'}`}>
                                 {item.image ? (
                                     <img
                                         src={item.image}
