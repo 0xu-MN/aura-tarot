@@ -16,6 +16,7 @@ export const StudentSupportTarot = () => {
     const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [isRevealed, setIsRevealed] = useState(false);
     const [aiReading, setAiReading] = useState('');
+    const [healingTip, setHealingTip] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     const question = "오늘 나를 응원하는 메시지는?";
@@ -40,8 +41,9 @@ export const StudentSupportTarot = () => {
                 1. [공감] "지친 마음이 느껴져요..." 같은 현재 마음 공감 (1문장)
                 2. [의미] 카드의 의미를 긍정적으로 해석 (부정적인 카드도 성장의 기회로 긍정 전환) (1문장)
                 3. [동기부여] 노력 인정과 앞으로의 응원 메시지 (2문장)
+                4. [TIP] 카드의 조언에 맞는 구체적인 행동 팁 (예: 미지근한 물 마시기, 좋아하는 노래 듣기 등) (1문장)
                 
-                총 3~4문장으로 짧고 따뜻하게 답변해주세요.
+                답변의 맨 마지막 줄에 반드시 "[TIP]" 이라는 태그를 붙이고 그 뒤에 팁 내용을 적어주세요.
             `;
 
             const { data, error } = await supabase.functions.invoke('tarot-chat', {
@@ -59,12 +61,22 @@ export const StudentSupportTarot = () => {
 
             if (error) throw error;
             if (data?.message) {
-                setAiReading(data.message);
+                const fullMessage = data.message;
+                // Parse Separator [TIP]
+                const parts = fullMessage.split('[TIP]');
+                if (parts.length > 1) {
+                    setAiReading(parts[0].trim());
+                    setHealingTip(parts[1].trim());
+                } else {
+                    setAiReading(fullMessage);
+                    setHealingTip("오늘 정말 수고 많았어요. 잠깐 스트레칭하고 물 한 잔 마시며 쉬어가세요.");
+                }
             }
         } catch (err) {
             console.error('Error fetching AI reading:', err);
             toast.error('AI 응원 메시지를 가져오는 중 오류가 발생했습니다.');
             setAiReading("오늘도 정말 수고 많았어요. 당신의 노력은 반드시 빛을 발할 거예요!");
+            setHealingTip("잠시 눈을 감고 1분만 명상을 해보세요.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -192,7 +204,7 @@ export const StudentSupportTarot = () => {
                                                 <span className="text-xl">🌿</span>
                                                 <div>
                                                     <p className="font-bold text-emerald-400 text-sm mb-1">오늘의 힐링 팁</p>
-                                                    <p className="text-sm text-emerald-100/80">오늘 정말 수고 많았어요. 잠깐 스트레칭하고 물 한 잔 마시며 쉬어가세요.</p>
+                                                    <p className="text-sm text-emerald-100/80">{healingTip || "오늘 정말 수고 많았어요. 잠깐 스트레칭하고 물 한 잔 마시며 쉬어가세요."}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -218,6 +230,7 @@ export const StudentSupportTarot = () => {
                                                 setDrawnCards([]);
                                                 setIsRevealed(false);
                                                 setAiReading('');
+                                                setHealingTip('');
                                             }}
                                         >
                                             처음으로 돌아가기

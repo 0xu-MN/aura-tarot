@@ -17,6 +17,7 @@ export const WorkLuck = () => {
     const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [isRevealed, setIsRevealed] = useState(false);
     const [aiReading, setAiReading] = useState('');
+    const [workMission, setWorkMission] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     const questions = [
@@ -54,8 +55,9 @@ export const WorkLuck = () => {
                    - '조언', '힘듦' 등 위로 질문이면: "오늘도 고생 많으셨어요" 같은 공감으로 시작
                 2. [해석] 카드의 핵심 의미를 질문에 맞춰 해석 (부정적인 카드도 긍정적/희망적으로 전환)
                 3. [조언] 실질적이고 구체적인 행동 가이드 또는 마인드셋 제안 (2문장)
+                4. [MISSION] 카드 운세에 맞는 '오늘의 퇴근 미션' (예: 맛있는 저녁 먹기, 일찍 잠들기, 친구에게 연락하기 등) (1문장)
                 
-                총 3~4문장 내외로 따뜻하고 명확하게(모호하지 않게) 답변해주세요. 평어(반말)가 아닌 부드러운 존댓말(해요체)을 사용하세요.
+                답변의 맨 마지막 줄에 반드시 "[MISSION]" 이라는 태그를 붙이고 그 뒤에 미션 내용을 적어주세요.
             `;
 
             const { data, error } = await supabase.functions.invoke('tarot-chat', {
@@ -73,13 +75,22 @@ export const WorkLuck = () => {
 
             if (error) throw error;
             if (data?.message) {
-                setAiReading(data.message);
+                const fullMessage = data.message;
+                const parts = fullMessage.split('[MISSION]');
+                if (parts.length > 1) {
+                    setAiReading(parts[0].trim());
+                    setWorkMission(parts[1].trim());
+                } else {
+                    setAiReading(fullMessage);
+                    setWorkMission("오늘은 야근 금지! 일찍 퇴근해서 좋아하는 것을 하며 푹 쉬세요.");
+                }
             }
         } catch (err) {
             console.error('Error fetching AI reading:', err);
             toast.error('AI 조언을 가져오는 중 오류가 발생했습니다.');
             // Fallback content
             setAiReading("오늘도 치열한 하루 보내느라 고생 많으셨어요. \n이 카드는 잠시 멈춤이 필요하다는 신호일 수 있어요. \n내일은 더 좋은 기운이 함께할 테니, 오늘은 걱정을 내려놓고 푹 쉬세요. \n당신의 능력은 이미 충분히 빛나고 있습니다.");
+            setWorkMission("좋아하는 음악을 들으며 퇴근길 산책하기");
         } finally {
             setIsAnalyzing(false);
         }
@@ -229,7 +240,7 @@ export const WorkLuck = () => {
                                                 <span className="text-xl">☕</span>
                                                 <div>
                                                     <p className="font-bold text-blue-400 text-sm mb-1">오늘의 퇴근 미션</p>
-                                                    <p className="text-sm text-blue-100/80">오늘은 야근 금지! 일찍 퇴근해서 좋아하는 것을 하며 푹 쉬세요.</p>
+                                                    <p className="text-sm text-blue-100/80">{workMission || "오늘은 야근 금지! 일찍 퇴근해서 좋아하는 것을 하며 푹 쉬세요."}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -255,6 +266,7 @@ export const WorkLuck = () => {
                                                 setDrawnCards([]);
                                                 setIsRevealed(false);
                                                 setAiReading('');
+                                                setWorkMission('');
                                                 setSelectedQuestion('');
                                             }}
                                         >
