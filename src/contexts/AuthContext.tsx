@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
        Fetch User Profile (SAFE)
     ========================= */
 
-    const fetchUserProfile = async (userId: string) => {
+    const fetchUserProfile = async (userId: string, retryCount = 0) => {
         try {
             const { data, error } = await supabase
                 .from('profiles')
@@ -99,8 +99,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
             if (error) throw error;
 
-            // 프로필 없는 경우 (에러 아님)
+            // 프로필 없는 경우 (트리거 지연 가능성 처리 - 최대 3회 재시도)
             if (!data) {
+                if (retryCount < 3) {
+                    console.log(`Profile not found, retrying... (${retryCount + 1}/3)`);
+                    setTimeout(() => {
+                        fetchUserProfile(userId, retryCount + 1);
+                    }, 500); // 0.5초 대기 후 재시도
+                    return;
+                }
+
+                // 재시도 후에도 없으면 로그아웃 처리
                 setUser(null);
                 setUserProfile(null);
                 return;
