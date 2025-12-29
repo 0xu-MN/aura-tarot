@@ -51,6 +51,7 @@ interface AuthContextType {
     session: Session | null;
     loading: boolean;
     signIn: (username: string, password: string) => Promise<{ error?: string }>;
+    signInWithGoogle: () => Promise<{ error?: string }>;
     signUp: (data: {
         username: string;
         password: string;
@@ -211,6 +212,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
+    const signInWithGoogle = async () => {
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    },
+                },
+            });
+
+            if (error) {
+                return { error: error.message };
+            }
+
+            return {};
+        } catch (err) {
+            console.error('signInWithGoogle error:', err);
+            return { error: '구글 로그인 중 오류가 발생했습니다.' };
+        }
+    };
+
     /* =========================
        Sign Up
     ========================= */
@@ -284,6 +309,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 session,
                 loading,
                 signIn,
+                signInWithGoogle,
                 signUp,
                 signOut,
                 refreshProfile,
