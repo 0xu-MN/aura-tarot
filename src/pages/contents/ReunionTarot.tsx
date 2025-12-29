@@ -299,10 +299,12 @@ CHANCE: [숫자]
                                 {drawnCards.map((card, idx) => (
                                     <div key={idx} className="flex flex-col items-center gap-2 animate-scale-in" style={{ animationDelay: `${idx * 0.15}s` }}>
                                         <div className={`w-full aspect-[2/3] rounded-lg border border-indigo-500/30 overflow-hidden shadow-lg ${card.isReversed ? 'rotate-180' : ''}`}>
-                                            <div className="w-full h-full bg-slate-800 flex items-center justify-center p-0.5 bg-[url('/assets/tarot-back.png')] bg-cover">
-                                                {/* Image fallback if needed, currently just name */}
-                                                <span className="text-[8px] text-white/50">{card.card.name}</span>
-                                            </div>
+                                            {/* Previously just name, now showing image */}
+                                            <img
+                                                src={card.card.image}
+                                                alt={card.card.name}
+                                                className="w-full h-full object-cover"
+                                            />
                                         </div>
                                         <span className="text-[9px] text-indigo-300/80 truncate w-full text-center">
                                             {idx === 0 ? '나' : idx === 1 ? '상대' : idx === 2 ? '장애물' : '결과'}

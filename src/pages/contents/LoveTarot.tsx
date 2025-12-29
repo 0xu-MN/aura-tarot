@@ -241,9 +241,11 @@ export function LoveTarot() {
                                             {idx === 0 ? 'PAST' : idx === 1 ? 'PRESENT' : 'FUTURE'}
                                         </span>
                                         <div className={`w-24 aspect-[2/3] rounded-lg border border-pink-500/30 overflow-hidden shadow-[0_0_15px_rgba(236,72,153,0.2)] ${card.isReversed ? 'rotate-180' : ''}`}>
-                                            <div className="w-full h-full bg-slate-800 flex items-center justify-center text-center p-1 bg-[url('/assets/tarot-back.png')] bg-cover">
-                                                <span className="text-[8px] text-white/50">{card.card.name}</span>
-                                            </div>
+                                            <img
+                                                src={card.card.image}
+                                                alt={card.card.name}
+                                                className="w-full h-full object-cover"
+                                            />
                                         </div>
                                         <span className="text-[10px] text-pink-200/80 truncate w-20">{card.card.koreanName}</span>
                                     </div>
