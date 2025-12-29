@@ -41,7 +41,7 @@ const Contents = () => {
         },
         {
             title: "이번 주 나의 운세",
-            description: "Beta Free Open! 이번 주 흐름을 미리 확인해보세요",
+            description: "이번 주 흐름을 미리 확인해보세요",
             categories: ["운세", "주간"],
             displayCategory: "주간운세",
             icon: "📅",
@@ -52,7 +52,7 @@ const Contents = () => {
         },
         {
             title: "이번 달 나의 운세",
-            description: "Beta Free Open! 이번 달의 전체 흐름을 확인하세요",
+            description: "이번 달의 전체 흐름을 확인하세요",
             categories: ["운세", "월간"],
             displayCategory: "월간운세",
             icon: "🌕",
