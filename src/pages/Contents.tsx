@@ -50,8 +50,7 @@ const Contents = () => {
             icon: "📅",
             link: "/tarot/weekly",
             image: weeklyThumb,
-            imageClass: "object-contain w-full h-full",
-            bgClass: "bg-[#0f1020]"
+            imageClass: "object-cover w-full h-full scale-110",
         },
         {
             title: "오늘도 수고한 너에게",
