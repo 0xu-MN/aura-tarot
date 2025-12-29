@@ -252,6 +252,7 @@ export const MoneyTarot = () => {
                                             size="lg"
                                             isFlipped={revealedCards.includes(i)}
                                             isReversed={drawnCards[i]?.isReversed}
+                                            frontImage={drawnCards[i]?.card.image}
                                             interactive={false}
                                         />
                                     </div>
