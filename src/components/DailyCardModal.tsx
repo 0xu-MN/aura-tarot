@@ -374,11 +374,11 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
 
                 <div className="space-y-6 w-full max-w-sm mx-auto z-20 relative">
                   <div className="text-center space-y-2 mb-6">
-                    <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-purple-200 to-amber-200 animate-pulse">
-                      {selectedCard.koreanName}
+                    <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-purple-200 to-amber-200 animate-pulse font-display">
+                      {selectedCard.name}
                     </h2>
                     <p className="text-white/60 font-medium text-lg">
-                      {selectedCard.name}
+                      {selectedCard.koreanName}
                     </p>
                     {isReversed && (
                       <span className="inline-block px-3 py-1 bg-red-500/20 text-red-200 text-sm rounded-full border border-red-500/30">

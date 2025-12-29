@@ -14,66 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
-      chat_messages: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          role: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          role: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          role?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      private_chat_rooms: {
-        Row: {
-          id: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       chat_participants: {
         Row: {
+          created_at: string
           id: string
           room_id: string
           user_id: string
-          created_at: string
         }
         Insert: {
+          created_at?: string
           id?: string
           room_id: string
           user_id: string
-          created_at?: string
         }
         Update: {
+          created_at?: string
           id?: string
           room_id?: string
           user_id?: string
-          created_at?: string
         }
         Relationships: [
           {
@@ -83,60 +41,35 @@ export type Database = {
             referencedRelation: "private_chat_rooms"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "chat_participants_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
         ]
       }
-      private_messages: {
+      chat_sessions: {
         Row: {
-          id: string
-          room_id: string
-          sender_id: string
-          content: string
-          is_read: boolean
           created_at: string
+          id: string
+          messages: Json
+          title: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          room_id: string
-          sender_id: string
-          content: string
-          is_read?: boolean
           created_at?: string
+          id?: string
+          messages: Json
+          title?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          room_id?: string
-          sender_id?: string
-          content?: string
-          is_read?: boolean
           created_at?: string
+          id?: string
+          messages?: Json
+          title?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "private_messages_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "private_chat_rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "private_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
       }
       community_posts: {
         Row: {
-          category: string
+          category: string | null
           comments_count: number | null
           content: string
           created_at: string
@@ -145,11 +78,10 @@ export type Database = {
           lounge_type: string | null
           tarot_image_url: string | null
           title: string
-          updated_at: string
           user_id: string
         }
         Insert: {
-          category?: string
+          category?: string | null
           comments_count?: number | null
           content: string
           created_at?: string
@@ -158,11 +90,10 @@ export type Database = {
           lounge_type?: string | null
           tarot_image_url?: string | null
           title: string
-          updated_at?: string
           user_id: string
         }
         Update: {
-          category?: string
+          category?: string | null
           comments_count?: number | null
           content?: string
           created_at?: string
@@ -171,52 +102,40 @@ export type Database = {
           lounge_type?: string | null
           tarot_image_url?: string | null
           title?: string
-          updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "community_posts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
+        Relationships: []
       }
       daily_readings: {
         Row: {
           advice: string | null
-          card_image: string | null
           card_name: string
-          created_at: string
+          created_at: string | null
           id: string
-          interpretation: string
+          interpretation: string | null
           is_reversed: boolean | null
           question: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           advice?: string | null
-          card_image?: string | null
           card_name: string
-          created_at?: string
+          created_at?: string | null
           id?: string
-          interpretation: string
+          interpretation?: string | null
           is_reversed?: boolean | null
           question: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           advice?: string | null
-          card_image?: string | null
           card_name?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
-          interpretation?: string
+          interpretation?: string | null
           is_reversed?: boolean | null
           question?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -255,6 +174,32 @@ export type Database = {
       post_likes: {
         Row: {
           created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_scraps: {
+        Row: {
+          created_at: string
           id: string
           post_id: string
           user_id: string
@@ -273,7 +218,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "post_likes_post_id_fkey"
+            foreignKeyName: "post_scraps_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "community_posts"
@@ -281,33 +226,92 @@ export type Database = {
           },
         ]
       }
-      profiles: {
+      private_chat_rooms: {
         Row: {
           created_at: string
           id: string
-          interests: Database["public"]["Enums"]["interest_category"][] | null
-          nickname: string
           updated_at: string
-          user_id: string
-          username: string
         }
         Insert: {
           created_at?: string
           id?: string
-          interests?: Database["public"]["Enums"]["interest_category"][] | null
-          nickname: string
           updated_at?: string
-          user_id: string
-          username: string
         }
         Update: {
           created_at?: string
           id?: string
-          interests?: Database["public"]["Enums"]["interest_category"][] | null
-          nickname?: string
           updated_at?: string
-          user_id?: string
-          username?: string
+        }
+        Relationships: []
+      }
+      private_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean | null
+          room_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          room_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          room_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "private_chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          daily_draws_remaining: number | null
+          id: number
+          interests: string | null
+          nickname: string | null
+          nickname_last_changed: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          daily_draws_remaining?: number | null
+          id?: number
+          interests?: string | null
+          nickname?: string | null
+          nickname_last_changed?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          daily_draws_remaining?: number | null
+          id?: number
+          interests?: string | null
+          nickname?: string | null
+          nickname_last_changed?: string | null
+          user_id?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -316,19 +320,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_today_readings_count: { Args: { p_user_id: string }; Returns: number }
       create_new_chat_room: { Args: { other_user_id: string }; Returns: string }
+      is_room_participant: { Args: { check_room_id: string }; Returns: boolean }
+      reset_daily_draws: { Args: never; Returns: undefined }
     }
     Enums: {
-      interest_category:
-      | "love"
-      | "compatibility"
-      | "reunion"
-      | "yearly"
-      | "zodiac"
-      | "career"
-      | "health"
-      | "money"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -342,130 +339,119 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
-    Enums: {
-      interest_category: [
-        "love",
-        "compatibility",
-        "reunion",
-        "yearly",
-        "zodiac",
-        "career",
-        "health",
-        "money",
-      ],
-    },
+    Enums: {},
   },
 } as const
