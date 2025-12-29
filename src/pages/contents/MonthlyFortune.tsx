@@ -168,10 +168,10 @@ export default function MonthlyFortune() {
                 <div className="w-10" />
             </div>
 
-            <div className="pt-24 px-4 max-w-md mx-auto h-full flex flex-col relative z-10">
+            <div className="pt-24 px-4 w-full max-w-7xl mx-auto h-full flex flex-col relative z-10">
 
                 {step === "intro" && (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center animate-fade-in min-h-[60vh]">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center animate-fade-in min-h-[60vh] max-w-md mx-auto w-full">
                         <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-purple-500/20 to-blue-500/20 flex items-center justify-center mb-8 border border-white/10 shadow-[0_0_50px_rgba(139,92,246,0.15)] animate-pulse-slow">
                             <span className="text-4xl">🌕</span>
                         </div>
@@ -198,21 +198,23 @@ export default function MonthlyFortune() {
                 )}
 
                 {step === "spread" && (
-                    <div className="flex-1 flex flex-col justify-center animate-fade-in py-10">
+                    <div className="flex-1 flex flex-col justify-center animate-fade-in py-10 w-full">
                         <div className="text-center mb-10">
                             <span className="text-purple-300 text-sm font-medium tracking-wider">MONTHLY SPREAD</span>
                             <h3 className="text-xl text-white font-light mt-2">이번 달을 위한 5장의 카드</h3>
                         </div>
-                        <SpreadLayout
-                            cardCount={5}
-                            onSpreadComplete={handleSpreadComplete}
-                            instruction="깊게 심호흡하고 5장을 선택해주세요"
-                        />
+                        <div className="w-full max-w-5xl mx-auto">
+                            <SpreadLayout
+                                cardCount={5}
+                                onSpreadComplete={handleSpreadComplete}
+                                instruction="깊게 심호흡하고 5장을 선택해주세요"
+                            />
+                        </div>
                     </div>
                 )}
 
                 {step === "reading" && (
-                    <div className="animate-fade-in pb-10" id="result-capture">
+                    <div className="animate-fade-in pb-10 max-w-md mx-auto w-full" id="result-capture">
                         {/* 5 Cards Display Grid */}
                         <div className="flex flex-col gap-6 mb-8">
 
