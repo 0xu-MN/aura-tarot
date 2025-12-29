@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import weeklyThumb from '@/assets/weekly-thumb.jpg';
 import monthlyThumb from '@/assets/monthly-thumb.jpg';
+import workThumb from '@/assets/work-thumb.jpg';
 
 interface ContentItem {
     title: string;
@@ -69,7 +70,9 @@ const Contents = () => {
             categories: ["직업운", "운세", "직장인"],
             displayCategory: "직장인",
             icon: "💼",
-            link: "/contents/work"
+            link: "/contents/work",
+            image: workThumb,
+            imageClass: "object-cover w-full h-full",
         },
         {
             title: "연애운 타로",
