@@ -43,7 +43,7 @@ const Contents = () => {
             icon: "🌕",
             link: "/tarot/monthly",
             image: monthlyThumb,
-            imageClass: "object-cover object-bottom w-full h-full scale-125",
+            imageClass: "object-cover object-[50%_90%] w-full h-full scale-110",
         },
         {
             title: "이번 주 나의 운세",
@@ -53,7 +53,7 @@ const Contents = () => {
             icon: "📅",
             link: "/tarot/weekly",
             image: weeklyThumb,
-            imageClass: "object-cover object-left-top w-full h-full scale-110",
+            imageClass: "object-cover object-[0%_15%] w-full h-full scale-110",
         },
         {
             title: "오늘도 수고한 너에게",

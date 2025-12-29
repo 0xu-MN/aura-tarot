@@ -57,7 +57,7 @@ const Home = () => {
                                 <img
                                     src={weeklyThumb}
                                     alt="Weekly Horoscope"
-                                    className="w-full h-full object-cover object-left-top opacity-80 scale-110 group-hover:scale-125 transition-transform duration-700"
+                                    className="w-full h-full object-cover object-[0%_15%] opacity-80 scale-110 group-hover:scale-125 transition-transform duration-700"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
                             </div>
@@ -81,7 +81,7 @@ const Home = () => {
                                 <img
                                     src={monthlyThumb}
                                     alt="Monthly Horoscope"
-                                    className="w-full h-full object-cover object-bottom opacity-80 scale-125 group-hover:scale-[1.35] transition-transform duration-700"
+                                    className="w-full h-full object-cover object-[50%_90%] opacity-80 scale-110 group-hover:scale-125 transition-transform duration-700"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
                             </div>
