@@ -18,6 +18,7 @@ interface ContentItem {
     image?: string;
     imageClass?: string;
     bgClass?: string;
+    pinned?: boolean;
 }
 
 const Contents = () => {
@@ -35,17 +36,8 @@ const Contents = () => {
             displayCategory: "운세",
             icon: "✨",
             link: "/home",
-            image: "/thumbnails/daily-fortune.png"
-        },
-        {
-            title: "이번 달 나의 운세",
-            description: "Beta Free Open! 이번 달의 전체 흐름을 확인하세요",
-            categories: ["운세", "월간"],
-            displayCategory: "월간운세",
-            icon: "🌕",
-            link: "/tarot/monthly",
-            image: monthlyThumb,
-            imageClass: "object-cover object-[50%_75%] w-full h-full scale-110",
+            image: "/thumbnails/daily-fortune.png",
+            pinned: true
         },
         {
             title: "이번 주 나의 운세",
@@ -56,6 +48,18 @@ const Contents = () => {
             link: "/tarot/weekly",
             image: weeklyThumb,
             imageClass: "object-cover object-[0%_25%] w-full h-full scale-110",
+            pinned: true
+        },
+        {
+            title: "이번 달 나의 운세",
+            description: "Beta Free Open! 이번 달의 전체 흐름을 확인하세요",
+            categories: ["운세", "월간"],
+            displayCategory: "월간운세",
+            icon: "🌕",
+            link: "/tarot/monthly",
+            image: monthlyThumb,
+            imageClass: "object-cover object-[50%_75%] w-full h-full scale-110",
+            pinned: true
         },
         {
             title: "오늘도 수고한 너에게",
@@ -158,7 +162,10 @@ const Contents = () => {
         },
     ];
 
-    const filteredItems = contentItems.filter(item => {
+    const pinnedItems = contentItems.filter(item => item.pinned);
+    const otherItems = contentItems.filter(item => !item.pinned);
+
+    const filteredItems = otherItems.filter(item => {
         // Filter by category
         const matchesCategory = activeCategory === '전체' || item.categories.includes(activeCategory);
 
@@ -211,9 +218,47 @@ const Contents = () => {
 
                 {/* Content Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Render Pinned Items First */}
+                    {pinnedItems.map((item, index) => (
+                        <div
+                            key={`pinned-${index}`}
+                            className="bg-card rounded-2xl border border-gold/40 shadow-[0_0_15px_rgba(255,215,0,0.1)] overflow-hidden hover:border-gold/70 transition-all duration-300 hover:scale-105 cursor-pointer group relative"
+                            onClick={() => {
+                                if (item.link) navigate(item.link);
+                            }}
+                        >
+                            {/* Pin Indicator */}
+                            {/* <div className="absolute top-2 right-2 z-10">
+                                <span className="text-xl">📌</span>
+                            </div> */}
+
+                            <div className={`aspect-video flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-500 relative overflow-hidden ${item.bgClass || 'bg-gradient-to-br from-gold/20 to-mystic-purple/20'}`}>
+                                {item.image ? (
+                                    <img
+                                        src={item.image}
+                                        alt={item.title}
+                                        className={`w-full h-full ${item.imageClass || 'object-cover'}`}
+                                    />
+                                ) : (
+                                    item.icon
+                                )}
+                            </div>
+                            <div className="p-4">
+                                <span className="text-xs text-gold font-medium">{item.displayCategory}</span>
+                                <h3 className="font-display text-lg mt-1 mb-2 group-hover:text-gold transition-colors">
+                                    {item.title}
+                                </h3>
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {item.description}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Render Filtered Items */}
                     {filteredItems.map((item, index) => (
                         <div
-                            key={index}
+                            key={`item-${index}`}
                             className="bg-card rounded-2xl border border-gold/20 overflow-hidden hover:border-gold/50 transition-all duration-300 hover:scale-105 cursor-pointer group"
                             onClick={() => {
                                 if (item.link) {
