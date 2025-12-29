@@ -16,7 +16,7 @@ export const TAROT_CARDS: TarotCardData[] = [
     { name: "The Emperor", koreanName: "황제", arcana: "major", number: 4, image: "/tarot-cards/major_04.jpg" },
     { name: "The Hierophant", koreanName: "교황", arcana: "major", number: 5, image: "/tarot-cards/major_05.jpg" },
     { name: "The Lovers", koreanName: "연인", arcana: "major", number: 6, image: "/tarot-cards/major_06.jpg" },
-    { name: "The Chariot", koreanName: "전차", arcana: "major", number: 7, image: "/tarot-cards/major_07.png" },
+    { name: "The Chariot", koreanName: "전차", arcana: "major", number: 7, image: "/tarot-cards/major_07.jpg" },
     { name: "Strength", koreanName: "힘", arcana: "major", number: 8, image: "/tarot-cards/major_08.jpg" },
     { name: "The Hermit", koreanName: "은둔자", arcana: "major", number: 9, image: "/tarot-cards/major_09.jpg" },
     { name: "Wheel of Fortune", koreanName: "운명의 수레바퀴", arcana: "major", number: 10, image: "/tarot-cards/major_10.jpg" },
