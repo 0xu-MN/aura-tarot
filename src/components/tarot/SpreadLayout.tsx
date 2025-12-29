@@ -121,9 +121,13 @@ export const SpreadLayout = ({
                                 const startOffset = 5; // start at 5%
 
                                 leftPos = `${startOffset + (rowIdx / 10) * spreadWidth}%`;
-                                rotation = 0; // No rotation for cleaner look
-                                yOffset = 0; // No arc
-                                topPos = isTopRow ? '30%' : '70%'; // 2 rows
+
+                                // Add arc effect
+                                // Center index is 5. Max difference is 5.
+                                rotation = (rowIdx - 5) * 4; // Fanning angle
+                                yOffset = Math.abs(rowIdx - 5) * 4; // Curve offset
+
+                                topPos = isTopRow ? '30%' : '65%'; // Adjust spacing slightly
                             }
 
                             return (
