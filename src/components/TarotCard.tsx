@@ -76,18 +76,23 @@ export const TarotCard = ({
         {/* Front of card */}
         <div
           className={cn(
-            "absolute inset-0 backface-hidden rotate-y-180 rounded-xl overflow-hidden border-2 border-gold shadow-lg",
-            isReversed && "rotate-180"
+            "absolute inset-0 backface-hidden rotate-y-180 rounded-xl overflow-hidden border-2 border-gold shadow-lg"
           )}
         >
           {frontImage ? (
             <img
               src={frontImage}
               alt="타로 카드 앞면"
-              className="w-full h-full object-cover"
+              className={cn(
+                "w-full h-full object-cover",
+                isReversed && "rotate-180"
+              )}
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-mystic-purple/20 to-mystic-orange/20 flex items-center justify-center">
+            <div className={cn(
+              "w-full h-full bg-gradient-to-br from-mystic-purple/20 to-mystic-orange/20 flex items-center justify-center",
+              isReversed && "rotate-180"
+            )}>
               <span className="text-gold font-display text-lg">✦</span>
             </div>
           )}
