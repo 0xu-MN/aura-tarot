@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { saveResultAsImage, shareResult, captureResultAsDataURL } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
+import { GlareButton } from '@/components/ui/GlareButton';
 import { PaymentModal } from '@/components/premium/PaymentModal';
 import { SpreadLayout } from '@/components/tarot/SpreadLayout';
 import { TarotCard } from '@/components/TarotCard';
@@ -412,30 +413,30 @@ export const NewYearTarot = () => {
                                     {!isAnalyzing && aiReading && (
                                         <div className="space-y-4 pt-6 border-t border-white/10">
                                             <div className="flex gap-4">
-                                                <Button
+                                                <GlareButton
                                                     variant="outline"
-                                                    className="flex-1 h-12 bg-white/5 border-white/10 hover:bg-white/10"
+                                                    className="flex-1 bg-white/5 border-white/10 hover:bg-white/10"
                                                     onClick={() => saveResultAsImage('newyear-result-content', `aura_2026_fortune`)}
                                                 >
                                                     <Download className="w-4 h-4 mr-2" />
                                                     이미지 저장
-                                                </Button>
-                                                <Button
+                                                </GlareButton>
+                                                <GlareButton
                                                     variant="outline"
-                                                    className="flex-1 h-12 bg-white/5 border-white/10 hover:bg-white/10"
+                                                    className="flex-1 bg-white/5 border-white/10 hover:bg-white/10"
                                                     onClick={() => shareResult('신년 운세 결과', `저의 2026년 ${selectedTheme.label}을 확인해보세요!`)}
                                                 >
                                                     <Share2 className="w-4 h-4 mr-2" />
                                                     공유하기
-                                                </Button>
+                                                </GlareButton>
                                             </div>
-                                            <Button
-                                                className="w-full h-12 bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium"
+                                            <GlareButton
+                                                className="w-full bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium"
                                                 onClick={handleShareToLounge}
                                             >
                                                 <Share2 className="w-4 h-4 mr-2" />
                                                 라운지에 결과 자랑하기
-                                            </Button>
+                                            </GlareButton>
                                         </div>
                                     )}
 

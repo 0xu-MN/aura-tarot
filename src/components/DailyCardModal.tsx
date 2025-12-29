@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Share2, Download, Sparkles, RotateCcw, Home, MessageCircle, Loader2 } from "lucide-react";
+import { Share2, X, MessageCircleHeart, Sparkles, Loader2, Download } from 'lucide-react';
+import { GlareButton } from '@/components/ui/GlareButton';
 import { Button } from "./ui/button";
 import { TarotCard } from "./TarotCard";
 import { cn } from "@/lib/utils";
@@ -415,39 +416,43 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
 
                   {!isAnalyzing && aiReading && (
                     <div className="flex flex-col gap-3 mt-4 no-capture">
-                      <Button
-                        className="w-full bg-gold hover:bg-gold/90 text-black border-gold/50 shadow-lg shadow-gold/20 font-bold"
+                      <GlareButton
+                        className="w-full bg-gradient-to-r from-gold to-amber-500 text-white border-0"
                         onClick={handleConsultSom}
                       >
-                        <MessageCircle className="w-4 h-4 mr-2" />
+                        <MessageCircleHeart className="w-5 h-5 mr-2" />
                         솜이에게 더 물어보기
-                      </Button>
+                      </GlareButton>
 
                       <div className="flex gap-3">
-                        <Button
+                        <GlareButton
                           variant="outline"
-                          className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/20 h-10 text-sm font-medium backdrop-blur-sm"
+                          className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm"
                           onClick={handleSave}
                           disabled={isSaving}
                         >
                           <Download className="w-4 h-4 mr-2" />
                           이미지 저장
-                        </Button>
-                        <Button
+                        </GlareButton>
+
+                        <GlareButton
                           variant="outline"
-                          className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/20 h-10 text-sm font-medium backdrop-blur-sm"
+                          className="flex-1 border-gold/30 hover:bg-gold/10 text-gold"
                           onClick={handleShare}
                         >
-                          <Share2 className="w-4 h-4 mr-2" />
+                          <Share2 className="w-5 h-5 mr-2" />
                           공유하기
-                        </Button>
+                        </GlareButton>
                       </div>
 
-                      <Button variant="gold" className="w-full shadow-lg shadow-gold/20" onClick={handleDrawAgain}>
+                      <GlareButton
+                        className="w-full bg-gold text-black shadow-lg shadow-gold/20"
+                        onClick={handleDrawAgain}
+                      >
                         <Sparkles className="w-4 h-4 mr-2" />
                         한 장 더 뽑기
-                      </Button>
-                    </div >
+                      </GlareButton>
+                    </div>
                   )}
                 </div >
               </div >

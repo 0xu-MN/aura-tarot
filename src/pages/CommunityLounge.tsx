@@ -344,28 +344,28 @@ const CommunityLounge = () => {
 
     return (
         <AppLayout>
-            <div className="container mx-auto px-4 py-8 max-w-4xl min-h-screen">
+            <div className="container mx-auto px-4 pt-2 pb-8 max-w-4xl min-h-screen">
                 {/* Lounge | Premium Header - Sticky */}
-                <div className="sticky top-16 z-40 bg-background/80 backdrop-blur-md flex justify-center items-center gap-6 border-b border-gold/10 py-4 mb-4 -mx-4 px-4 transition-all duration-300">
+                <div className="sticky top-16 z-40 bg-background/80 backdrop-blur-md flex justify-center items-center gap-6 border-b border-gold/10 py-2 mb-0 -mx-4 px-4 transition-all duration-300">
                     <button
                         onClick={() => setActiveTab('lounge')}
                         className={cn(
-                            "text-3xl font-display transition-all duration-300",
+                            "text-2xl font-display transition-all duration-300",
                             activeTab === 'lounge' ? "text-gold scale-105" : "text-muted-foreground hover:text-foreground opacity-50"
                         )}
                     >
                         Lounge
                     </button>
-                    <div className="h-8 w-px bg-gold/20" />
+                    <div className="h-6 w-px bg-gold/20" />
                     <button
                         onClick={() => setActiveTab('premium')}
                         className={cn(
-                            "text-3xl font-display transition-all duration-300 flex items-center gap-2",
+                            "text-2xl font-display transition-all duration-300 flex items-center gap-2",
                             activeTab === 'premium' ? "text-gold scale-105" : "text-muted-foreground hover:text-foreground opacity-50"
                         )}
                     >
                         Premium
-                        {!isPremium && <Lock className="w-5 h-5" />}
+                        {!isPremium && <Lock className="w-4 h-4" />}
                     </button>
                 </div>
 
@@ -375,17 +375,17 @@ const CommunityLounge = () => {
                         {/* Title Section (Welcome Banner) - Full Width */}
                         <div className="relative w-screen left-[calc(-50vw+50%)] text-center">
                             <GalaxyBackground
-                                className="py-20 px-6 w-full"
+                                className="py-12 px-6 w-full"
                                 style={{
                                     maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
                                     WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)'
                                 }}
                             >
                                 <div className="max-w-4xl mx-auto relative z-10">
-                                    <h2 className="relative text-2xl md:text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-gold to-white mb-6 drop-shadow-[0_0_20px_rgba(212,175,55,0.3)]">
+                                    <h2 className="relative text-2xl md:text-3xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-gold to-white mb-4 drop-shadow-[0_0_20px_rgba(212,175,55,0.3)]">
                                         타로로 연결된 우리들의 공간
                                     </h2>
-                                    <p className="relative text-orange-50/90 text-base md:text-lg leading-loose font-light whitespace-pre-line drop-shadow-md">
+                                    <p className="relative text-orange-50/90 text-sm md:text-base leading-relaxed font-light whitespace-pre-line drop-shadow-md">
                                         오늘의 한 장, 자유롭게 공유해요.{'\n'}
                                         서로 응원하며 즐겨보세요 ✨
                                     </p>

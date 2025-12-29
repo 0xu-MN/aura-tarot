@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { SpreadLayout } from "@/components/tarot/SpreadLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Share2, Sparkles, Loader2, Calendar } from "lucide-react";
+import { Share2, Sparkles, ChevronLeft, Loader2, Calendar, ArrowLeft } from 'lucide-react';
+import { GlareButton } from '@/components/ui/GlareButton';
 import { useNavigate } from "react-router-dom";
 import { getRandomCards, TarotCardData } from "@/lib/tarot-data";
 import { supabase } from "@/integrations/supabase/client";
@@ -303,16 +304,16 @@ export default function MonthlyFortune() {
                                     이번 달 운세 저장하기
                                 </Button>
                                 <div className="flex gap-3">
-                                    <Button
+                                    <GlareButton
                                         onClick={handleShare}
-                                        className="flex-1 h-12 bg-gradient-to-r from-indigo-900 to-purple-900 text-white hover:from-indigo-800 hover:to-purple-800 font-bold text-lg rounded-xl shadow-lg flex items-center justify-center gap-2 border border-white/10"
+                                        className="flex-1 bg-gradient-to-r from-indigo-900 to-purple-900 text-white hover:from-indigo-800 hover:to-purple-800 border border-white/10"
                                     >
-                                        <Share2 className="w-5 h-5" />
+                                        <Share2 className="w-5 h-5 mr-2" />
                                         공유하기
-                                    </Button>
-                                    <Button
+                                    </GlareButton>
+                                    <GlareButton
                                         variant="outline"
-                                        className="flex-1 h-12 bg-transparent text-white border-white/20 hover:bg-white/10 font-bold text-lg rounded-xl shadow-lg flex items-center justify-center gap-2"
+                                        className="flex-1 border-white/20 hover:bg-white/10"
                                         onClick={async () => {
                                             const element = document.getElementById('result-capture');
                                             if (!element) return;
@@ -329,9 +330,9 @@ export default function MonthlyFortune() {
                                             }
                                         }}
                                     >
-                                        <Sparkles className="w-5 h-5" />
+                                        <Sparkles className="w-5 h-5 mr-2" />
                                         이미지 저장
-                                    </Button>
+                                    </GlareButton>
                                 </div>
                                 <p className="text-center text-xs text-gray-500 mt-4">
                                     언제든 다시 확인하며 한 달을 계획해보세요
