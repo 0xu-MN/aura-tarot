@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import weeklyThumb from '@/assets/weekly-thumb.jpg';
 
 interface ContentItem {
     title: string;
@@ -47,6 +48,7 @@ const Contents = () => {
             displayCategory: "주간운세",
             icon: "📅",
             link: "/tarot/weekly",
+            image: weeklyThumb
         },
         {
             title: "오늘도 수고한 너에게",
