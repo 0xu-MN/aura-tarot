@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import weeklyThumb from '@/assets/weekly-thumb.jpg';
+import monthlyThumb from '@/assets/monthly-thumb.jpg';
 
 interface ContentItem {
     title: string;
@@ -41,6 +42,8 @@ const Contents = () => {
             displayCategory: "월간운세",
             icon: "🌕",
             link: "/tarot/monthly",
+            image: monthlyThumb,
+            imageClass: "object-cover w-full h-full scale-110",
         },
         {
             title: "이번 주 나의 운세",

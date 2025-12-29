@@ -5,6 +5,7 @@ import { LoginModal } from '@/components/auth/LoginModal';
 import { RegisterModal } from '@/components/auth/RegisterModal';
 import { useNavigate } from "react-router-dom"; // Added useNavigate
 import weeklyThumb from '@/assets/weekly-thumb.jpg';
+import monthlyThumb from '@/assets/monthly-thumb.jpg';
 import { UserProfileModal } from "@/components/community/UserProfileModal"; // Added UserProfileModal
 import { BetaBanner } from '@/components/beta/BetaBanner'; // Added BetaBanner
 import { CardDrawing } from '@/components/CardDrawing';
@@ -76,7 +77,14 @@ const Home = () => {
 
                         {/* Monthly Fortune */}
                         <div className="relative group cursor-pointer overflow-hidden rounded-2xl border border-white/10 h-32" onClick={() => window.location.href = '/tarot/monthly'}>
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-slate-900/80 group-hover:scale-105 transition-transform duration-700" />
+                            <div className="absolute inset-0">
+                                <img
+                                    src={monthlyThumb}
+                                    alt="Monthly Horoscope"
+                                    className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
+                            </div>
                             <div className="absolute inset-0 bg-[url('/assets/stars.svg')] opacity-30" />
                             <div className="relative z-10 p-5 flex flex-col justify-between h-full">
                                 <div className="flex justify-between items-start">
