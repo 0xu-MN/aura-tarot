@@ -224,9 +224,11 @@ export default function MonthlyFortune() {
                                     <div className="flex flex-col items-center gap-2 animate-scale-in w-1/3 min-w-[100px]">
                                         <span className="text-[10px] font-bold text-indigo-300 bg-indigo-900/30 px-2 py-0.5 rounded-full border border-indigo-500/30">전체 테마</span>
                                         <div className={`relative aspect-[2/3] w-full rounded-lg border border-indigo-500/30 overflow-hidden shadow-[0_0_15px_rgba(168,85,247,0.2)] ${drawnCards[0].isReversed ? 'rotate-180' : ''}`}>
-                                            <div className="w-full h-full bg-slate-800 flex items-center justify-center text-center p-1 bg-[url('/assets/tarot-back.png')] bg-cover">
-                                                <span className="text-[10px] text-white/50">{drawnCards[0].card.name}</span>
-                                            </div>
+                                            <img
+                                                src={drawnCards[0].card.image}
+                                                alt={drawnCards[0].card.name}
+                                                className="w-full h-full object-cover"
+                                            />
                                         </div>
                                         <span className="text-xs text-white/80">{drawnCards[0].card.koreanName}</span>
                                     </div>
@@ -244,9 +246,11 @@ export default function MonthlyFortune() {
                                             {idx === 0 ? "월초 (1-10)" : idx === 1 ? "월중 (11-20)" : "월말 (21-)"}
                                         </span>
                                         <div className={`relative aspect-[2/3] w-full rounded-lg border border-white/10 overflow-hidden shadow-lg ${card.isReversed ? 'rotate-180' : ''}`}>
-                                            <div className="w-full h-full bg-slate-800 flex items-center justify-center text-center p-1 bg-[url('/assets/tarot-back.png')] bg-cover">
-                                                <span className="text-[8px] text-white/50">{card.card.name}</span>
-                                            </div>
+                                            <img
+                                                src={card.card.image}
+                                                alt={card.card.name}
+                                                className="w-full h-full object-cover"
+                                            />
                                         </div>
                                         <span className="text-[10px] text-white/70 truncate w-full text-center">{card.card.koreanName}</span>
                                     </div>
@@ -259,9 +263,11 @@ export default function MonthlyFortune() {
                                     <div className="flex flex-col items-center gap-2 animate-scale-in w-1/3 min-w-[100px]" style={{ animationDelay: '0.6s' }}>
                                         <span className="text-[10px] font-bold text-purple-300 bg-purple-900/30 px-2 py-0.5 rounded-full border border-purple-500/30">✨ 조언</span>
                                         <div className={`relative aspect-[2/3] w-full rounded-lg border border-purple-500/50 overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.3)] ring-1 ring-purple-400/20 ${drawnCards[4].isReversed ? 'rotate-180' : ''}`}>
-                                            <div className="w-full h-full bg-slate-800 flex items-center justify-center text-center p-1 bg-[url('/assets/tarot-back.png')] bg-cover">
-                                                <span className="text-[10px] text-white/50">{drawnCards[4].card.name}</span>
-                                            </div>
+                                            <img
+                                                src={drawnCards[4].card.image}
+                                                alt={drawnCards[4].card.name}
+                                                className="w-full h-full object-cover"
+                                            />
                                             <div className="absolute inset-0 bg-purple-500/10 mix-blend-overlay" />
                                         </div>
                                         <span className="text-xs text-purple-300 font-medium">{drawnCards[4].card.koreanName}</span>

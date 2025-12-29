@@ -183,7 +183,7 @@ export const WorkLuck = () => {
                                     size="lg"
                                     isFlipped={isRevealed}
                                     isReversed={drawnCards[0]?.isReversed}
-                                    frontImage={undefined}
+                                    frontImage={drawnCards[0]?.card.image}
                                     interactive={false}
                                 />
                             </div>
