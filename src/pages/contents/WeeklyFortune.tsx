@@ -310,6 +310,37 @@ export default function WeeklyFortune() {
                                     <Share2 className="w-5 h-5" />
                                     이번 주 운세 저장하기
                                 </Button>
+                                <div className="flex gap-3">
+                                    <Button
+                                        onClick={handleShare}
+                                        className="flex-1 h-12 bg-white text-black hover:bg-gray-200 font-bold text-lg rounded-xl shadow-lg flex items-center justify-center gap-2"
+                                    >
+                                        <Share2 className="w-5 h-5" />
+                                        공유하기
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1 h-12 bg-transparent text-white border-white/20 hover:bg-white/10 font-bold text-lg rounded-xl shadow-lg flex items-center justify-center gap-2"
+                                        onClick={async () => {
+                                            const element = document.getElementById('result-capture');
+                                            if (!element) return;
+                                            try {
+                                                const canvas = await html2canvas(element, { backgroundColor: '#0a0a0a', scale: 2 });
+                                                const dataUrl = canvas.toDataURL('image/png');
+                                                const link = document.createElement('a');
+                                                link.download = 'weekly_fortune.png';
+                                                link.href = dataUrl;
+                                                link.click();
+                                                toast.success("이미지가 저장되었습니다.");
+                                            } catch (err) {
+                                                toast.error("이미지 저장에 실패했습니다.");
+                                            }
+                                        }}
+                                    >
+                                        <Sparkles className="w-5 h-5" />
+                                        이미지 저장
+                                    </Button>
+                                </div>
                                 <p className="text-center text-xs text-gray-500 mt-4">
                                     매주 월요일 00:00에 새로운 운세가 업데이트됩니다
                                 </p>

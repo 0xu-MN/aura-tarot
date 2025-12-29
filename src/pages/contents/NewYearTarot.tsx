@@ -110,6 +110,12 @@ export const NewYearTarot = () => {
     }, [step, drawnCards, revealedCards, aiReading, selectedTheme]);
 
     const handleStart = () => {
+        // [BETA] Bypass payment check during beta
+        if (true) { // IS_BETA_ACTIVE is implicitly true in this context based on user request "during beta period"
+            setStep('theme-selection');
+            return;
+        }
+
         if (hasPaid) {
             setStep('theme-selection');
         } else {

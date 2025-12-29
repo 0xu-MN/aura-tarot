@@ -19,6 +19,7 @@ interface ContentItem {
     imageClass?: string;
     bgClass?: string;
     pinned?: boolean;
+    badge?: string; // e.g., "Beta Open", "New"
 }
 
 const Contents = () => {
@@ -37,7 +38,8 @@ const Contents = () => {
             icon: "✨",
             link: "/home",
             image: "/thumbnails/daily-fortune.png",
-            pinned: true
+            pinned: true,
+            badge: "Beta Open"
         },
         {
             title: "이번 주 나의 운세",
@@ -48,7 +50,8 @@ const Contents = () => {
             link: "/tarot/weekly",
             image: weeklyThumb,
             imageClass: "object-cover object-[0%_25%] w-full h-full scale-110",
-            pinned: true
+            pinned: true,
+            badge: "Beta Open"
         },
         {
             title: "이번 달 나의 운세",
@@ -59,7 +62,8 @@ const Contents = () => {
             link: "/tarot/monthly",
             image: monthlyThumb,
             imageClass: "object-cover object-[50%_75%] w-full h-full scale-110",
-            pinned: true
+            pinned: true,
+            badge: "Beta Open"
         },
         {
             title: "오늘도 수고한 너에게",
@@ -70,6 +74,7 @@ const Contents = () => {
             link: "/tarot/student",
             image: studentThumb,
             imageClass: "object-cover w-full h-full",
+            badge: "Beta Open"
         },
         {
             title: "오늘도 수고한 직장인에게",
@@ -80,33 +85,7 @@ const Contents = () => {
             link: "/contents/work",
             image: workThumb,
             imageClass: "object-cover w-full h-full",
-        },
-        {
-            title: "연애운 타로",
-            description: "연애, 썸, 짝사랑에 대한 깊은 통찰을 제공합니다",
-            categories: ["연애운"],
-            displayCategory: "연애운",
-            icon: "💕",
-            link: "/tarot/love",
-            image: "/thumbnails/love-tarot.png"
-        },
-        {
-            title: "재회 확률",
-            description: "그 사람의 속마음과 재회 가능성을 알아보세요",
-            categories: ["연애운", "재회확률"],
-            displayCategory: "연애운",
-            icon: "🌙",
-            link: "/tarot/reunion",
-            image: "/thumbnails/reunion-tarot.png"
-        },
-        {
-            title: "커플 궁합",
-            description: "두 사람의 궁합을 타로로 점쳐보세요",
-            categories: ["연애운", "궁합"],
-            displayCategory: "궁합",
-            icon: "👩‍❤️‍👨",
-            link: "/compatibility",
-            image: "/thumbnails/compatibility-tarot.png"
+            badge: "Beta Open"
         },
         {
             title: "2026 신년운세",
@@ -115,7 +94,38 @@ const Contents = () => {
             displayCategory: "신년",
             icon: "📅",
             link: "/tarot/new-year",
-            image: "/thumbnails/yearly-fortune.png"
+            image: "/thumbnails/yearly-fortune.png",
+            badge: "Beta Open"
+        },
+        {
+            title: "연애운 타로",
+            description: "연애, 썸, 짝사랑에 대한 깊은 통찰을 제공합니다",
+            categories: ["연애운"],
+            displayCategory: "연애운",
+            icon: "💕",
+            link: "/tarot/love",
+            image: "/thumbnails/love-tarot.png",
+            badge: "Beta Open"
+        },
+        {
+            title: "재회 확률",
+            description: "그 사람의 속마음과 재회 가능성을 알아보세요",
+            categories: ["연애운", "재회확률"],
+            displayCategory: "연애운",
+            icon: "🌙",
+            link: "/tarot/reunion",
+            image: "/thumbnails/reunion-tarot.png",
+            badge: "Beta Open"
+        },
+        {
+            title: "커플 궁합",
+            description: "두 사람의 궁합을 타로로 점쳐보세요",
+            categories: ["연애운", "궁합"],
+            displayCategory: "궁합",
+            icon: "👩‍❤️‍👨",
+            link: "/compatibility",
+            image: "/thumbnails/compatibility-tarot.png",
+            badge: "Beta Open"
         },
         {
             title: "금전운",
