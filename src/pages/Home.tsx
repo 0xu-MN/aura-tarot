@@ -57,7 +57,7 @@ const Home = () => {
                                 <img
                                     src={weeklyThumb}
                                     alt="Weekly Horoscope"
-                                    className="w-full h-full object-cover opacity-80 scale-125 group-hover:scale-[1.35] transition-transform duration-700"
+                                    className="w-full h-full object-cover opacity-80 scale-110 group-hover:scale-125 transition-transform duration-700"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
                             </div>
