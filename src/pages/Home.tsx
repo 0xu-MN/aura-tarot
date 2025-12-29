@@ -27,7 +27,7 @@ const Home = () => {
 
     return (
         <>
-            <AppLayout showHeader={false}> {/* Changed AppLayout props */}
+            <AppLayout> {/* Default showHeader is true */}
                 <BetaBanner /> {/* Added BetaBanner */}
                 <div className="container mx-auto px-4 pt-6 pb-20"> {/* Adjusted padding */}
                     {/* Header Section */}
