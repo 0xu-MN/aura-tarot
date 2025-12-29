@@ -123,7 +123,7 @@ const Contents = () => {
             categories: ["재물운", "직업운"],
             displayCategory: "재물운",
             icon: "💰",
-            link: "/tarot/money",
+            // link: "/tarot/money",
             image: "/thumbnails/money-luck.jpg"
         },
         {
@@ -132,7 +132,7 @@ const Contents = () => {
             categories: ["별자리 운세", "신년운세"],
             displayCategory: "운세",
             icon: "🔮",
-            link: "/tarot/horoscope",
+            // link: "/tarot/horoscope",
             image: "/thumbnails/horoscope.png"
         },
         {
@@ -141,7 +141,7 @@ const Contents = () => {
             categories: ["운세", "관상/손금", "직업운", "재물운"], // 관련된 곳에 넓게 포함
             displayCategory: "관상/손금",
             icon: "✋",
-            link: "/tarot/palm",
+            // link: "/tarot/palm",
             image: "/thumbnails/palm-reading.jpg"
         },
         {

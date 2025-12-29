@@ -238,7 +238,6 @@ export const NewYearTarot = () => {
     return (
         <AppLayout>
             <div className="container mx-auto px-4 py-8 max-w-4xl relative min-h-[80vh] flex flex-col items-center">
-                <BetaLockOverlay title="2026 신년운세" />
                 {/* Header */}
                 <div className="text-center mb-8">
                     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${selectedTheme.bg} ${selectedTheme.color} ${selectedTheme.border} text-sm font-medium mb-3 transition-colors`}>
