@@ -9,6 +9,7 @@ import { getRandomCards, TarotCardData } from "@/lib/tarot-data";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+import { IS_BETA_ACTIVE, BETA_MONTHLY_LIMIT } from "@/lib/beta-config";
 
 export default function MonthlyFortune() {
     const navigate = useNavigate();
@@ -26,6 +27,26 @@ export default function MonthlyFortune() {
     };
 
     const monthlyDate = getMonthlyDate();
+
+    // Helper to get Monthly Key
+    const getMonthKey = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        return `aura_limit_monthly_${year}_${month}`;
+    };
+
+    const handleStart = () => {
+        if (IS_BETA_ACTIVE) {
+            const key = getMonthKey();
+            const currentCount = parseInt(localStorage.getItem(key) || '0', 10);
+            if (currentCount >= BETA_MONTHLY_LIMIT) {
+                toast.error(`베타 기간 동안 월간 운세는 월 ${BETA_MONTHLY_LIMIT}회로 제한됩니다. 다음 달에 다시 만나요! 🌕`);
+                return;
+            }
+        }
+        setStep("spread");
+    };
 
     // AI Interpretation Trigger
     useEffect(() => {
@@ -47,6 +68,12 @@ export default function MonthlyFortune() {
     const generateReading = async () => {
         setIsLoading(true);
         try {
+            if (IS_BETA_ACTIVE) {
+                const key = getMonthKey();
+                const currentCount = parseInt(localStorage.getItem(key) || '0', 10);
+                localStorage.setItem(key, (currentCount + 1).toString());
+            }
+
             const prompt = `
 당신은 신비로운 타로 리더 '소미'입니다.
 사용자의 [${monthlyDate}] 월간 운세를 5장의 카드로 해석해주세요.
@@ -190,7 +217,7 @@ export default function MonthlyFortune() {
                         </p>
 
                         <Button
-                            onClick={() => setStep("spread")}
+                            onClick={handleStart}
                             className="w-full max-w-xs h-14 bg-white text-black hover:bg-purple-100 font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
                         >
                             이번 달 운세 뽑기

@@ -34,6 +34,7 @@ export const NewYearTarot = () => {
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState<typeof THEMES[0]>(THEMES[0]);
+    const [resumableState, setResumableState] = useState<any>(null);
 
     const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [revealedCards, setRevealedCards] = useState<number[]>([]);
@@ -67,32 +68,19 @@ export const NewYearTarot = () => {
             // Only restore state if it has the new 'selectedThemeId' property (Version Check)
             if (state.selectedThemeId) {
                 // If the user already finished the reading (result step), we force a reset 
-                // so they can start fresh when they come back.
                 if (state.step === 'result') {
                     premiumStore.resetFeature(FEATURE_ID);
-                    // Keep payment status if paid
                     if (saved.hasPaid) setHasPaid(true);
                     return;
                 }
 
-                if (state.step) setStep(state.step);
-                if (state.drawnCards) setDrawnCards(state.drawnCards);
-                if (state.revealedCards) setRevealedCards(state.revealedCards);
-                if (state.aiReading) setAiReading(state.aiReading);
-
-                const theme = THEMES.find(t => t.id === state.selectedThemeId);
-                if (theme) setSelectedTheme(theme);
+                // Instead of auto-setting, verify if it's a valid resumable state
+                if (state.step && state.step !== 'intro') {
+                    setResumableState(state);
+                }
             } else {
-                // Detected old state format (legacy season version) -> Force Reset
+                // Detected old state format -> Force Reset
                 premiumStore.resetFeature(FEATURE_ID);
-                setStep('intro');
-                setDrawnCards([]);
-                setRevealedCards([]);
-                setAiReading('');
-                setHasPaid(false); // Optional: Re-check payment if needed, or keep payment but reset flow
-
-                // If payment was valid, keep it
-                if (saved.hasPaid) setHasPaid(true);
             }
         }
     }, []);
@@ -109,6 +97,36 @@ export const NewYearTarot = () => {
             });
         }
     }, [step, drawnCards, revealedCards, aiReading, selectedTheme]);
+
+    const handleResume = () => {
+        if (!resumableState) return;
+        const state = resumableState;
+
+        if (state.drawnCards) setDrawnCards(state.drawnCards);
+        if (state.revealedCards) setRevealedCards(state.revealedCards);
+        if (state.aiReading) setAiReading(state.aiReading);
+
+        const theme = THEMES.find(t => t.id === state.selectedThemeId);
+        if (theme) setSelectedTheme(theme);
+
+        if (state.step) setStep(state.step);
+    };
+
+    const handleResetAndStart = () => {
+        premiumStore.resetFeature(FEATURE_ID);
+        setResumableState(null);
+        setDrawnCards([]);
+        setRevealedCards([]);
+        setAiReading('');
+        // Proceed to start
+        if (true) { // IS_BETA
+            setStep('theme-selection');
+        } else if (hasPaid) {
+            setStep('theme-selection');
+        } else {
+            setStep('payment-check');
+        }
+    };
 
     const handleStart = () => {
         // [BETA] Bypass payment check during beta
@@ -276,10 +294,26 @@ export const NewYearTarot = () => {
                                 4장의 카드가 1년의 흐름을 명확히 보여드립니다.
                             </p>
                         </div>
-                        <Button size="lg" variant="gold" className="px-12 h-14 text-lg" onClick={handleStart}>
-                            <Sparkles className="w-5 h-5 mr-2" />
-                            2026년 운세보기
-                        </Button>
+                        {resumableState ? (
+                            <div className="flex flex-col gap-3 w-full max-w-xs mx-auto animate-fade-in">
+                                <Button size="lg" variant="gold" className="w-full h-14 text-lg" onClick={handleResume}>
+                                    <RefreshCw className="w-5 h-5 mr-2" />
+                                    이어하기
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full text-muted-foreground hover:text-white"
+                                    onClick={handleResetAndStart}
+                                >
+                                    처음부터 다시 하기
+                                </Button>
+                            </div>
+                        ) : (
+                            <Button size="lg" variant="gold" className="px-12 h-14 text-lg" onClick={handleStart}>
+                                <Sparkles className="w-5 h-5 mr-2" />
+                                2026년 운세보기
+                            </Button>
+                        )}
                     </div>
                 )}
 

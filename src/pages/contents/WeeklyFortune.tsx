@@ -9,6 +9,7 @@ import { getRandomCards, TarotCardData } from "@/lib/tarot-data";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+import { IS_BETA_ACTIVE, BETA_WEEKLY_LIMIT } from "@/lib/beta-config";
 
 export default function WeeklyFortune() {
     const navigate = useNavigate();
@@ -29,6 +30,30 @@ export default function WeeklyFortune() {
 
         const formatDate = (date: Date) => `${date.getMonth() + 1}.${date.getDate()}`;
         return `${formatDate(monday)} ~ ${formatDate(sunday)}`;
+    };
+
+
+    // Helper to get ISO week number and year key
+    const getWeekKey = () => {
+        const now = new Date();
+        const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const year = d.getUTCFullYear();
+        const weekNo = Math.ceil((((d.getTime() - new Date(Date.UTC(year, 0, 1)).getTime()) / 86400000) + 1) / 7);
+        return `aura_limit_weekly_${year}_${weekNo}`;
+    };
+
+    const handleStart = () => {
+        if (IS_BETA_ACTIVE) {
+            const key = getWeekKey();
+            const currentCount = parseInt(localStorage.getItem(key) || '0', 10);
+            if (currentCount >= BETA_WEEKLY_LIMIT) {
+                toast.error(`베타 기간 동안 주간 운세는 주 ${BETA_WEEKLY_LIMIT}회로 제한됩니다. 다음 주에 다시 만나요! 🌙`);
+                return;
+            }
+        }
+        setStep("spread");
     };
 
     const weeklyDate = getWeeklyDateRange();
@@ -53,6 +78,16 @@ export default function WeeklyFortune() {
     const generateReading = async () => {
         setIsLoading(true);
         try {
+            // Check limit again and increment here to ensure we only count successful attempts (or at least attempts that start reading)
+            // Ideally we check before API call to save cost?
+            // But we already checked at start.
+            // Let's increment NOW to prevent abuse.
+            if (IS_BETA_ACTIVE) {
+                const key = getWeekKey();
+                const currentCount = parseInt(localStorage.getItem(key) || '0', 10);
+                localStorage.setItem(key, (currentCount + 1).toString());
+            }
+
             const prompt = `
 당신은 신비로운 타로 리더 '소미'입니다.
 사용자의 [${weeklyDate}] 주간 운세를 5장의 카드로 해석해주세요.
@@ -89,38 +124,55 @@ export default function WeeklyFortune() {
 
             const { data, error } = await supabase.functions.invoke('tarot-chat', {
                 body: {
-                    message: prompt,
-                    history: []
+                    type: 'reading',
+                    context: {
+                        question: prompt,
+                        cards: drawnCards.map(c => ({
+                            name: c.card.name,
+                            isReversed: c.isReversed
+                        }))
+                    }
                 }
             });
 
             if (error) throw error;
 
-            let content = data.response;
+            let content = data?.message || data?.response;
             if (content) {
+                // Ensure we clean up any thinking blocks if they exist (DeepSeek style)
                 content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-
                 setReading(content);
 
                 if (user) {
                     await supabase.from('daily_readings').insert({
                         user_id: user.id,
                         reading_type: 'weekly',
-                        // Store detailed card info so we can analyze history later if needed
                         cards: drawnCards.map(c => ({ name: c.card.name, is_reversed: c.isReversed })),
                         interpretation: content,
                         query: 'weekly_fortune_5card'
                     });
                 }
             } else {
-                setReading("별들의 메시지를 수신하지 못했어요. 트래픽이 많아 잠시 후 다시 시도해주세요.");
+                throw new Error("No response from AI");
             }
-
 
         } catch (err) {
             console.error(err);
-            toast.error("해석을 불러오는 중 문제가 발생했습니다.");
-            setReading("별들의 메시지를 수신하지 못했어요. 잠시 후 다시 시도해주세요.");
+            toast.error("AI 해석을 불러오는 데 실패했습니다. 다시 시도해주세요.");
+            // Fallback content to ensure user sees something
+            setReading(`
+## 🔮 이번 주 테마
+별들의 신호를 수신하는 중에 잠시 방해가 있었나 봐요. 하지만 걱정 마세요. ${drawnCards[0]?.card.koreanName} 카드는 당신에게 긍정적인 에너지를 보내고 있습니다.
+
+## 📅 주간 흐름
+* **월~수 (초반)**: 시작이 반입니다. 차분하게 계획을 점검해보세요.
+* **목~금 (중반)**: 흐름을 타는 시기입니다. 자신감을 가지세요.
+* **토~일 (말미)**: 휴식과 재충전이 필요한 시기입니다.
+
+## ✨ 이번 주 조언
+${drawnCards[4]?.card.koreanName} 카드는 당신이 이미 충분한 능력을 가지고 있음을 상기시켜 줍니다.
+**🎯 실천 액션**: 잠시 눈을 감고 심호흡하며 나 자신을 믿어주기
+            `);
         } finally {
             setIsLoading(false);
         }
@@ -197,7 +249,7 @@ export default function WeeklyFortune() {
                         </p>
 
                         <Button
-                            onClick={() => setStep("spread")}
+                            onClick={handleStart}
                             className="w-full max-w-xs h-14 bg-white text-black hover:bg-gold hover:text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
                         >
                             이번 주 운세 뽑기

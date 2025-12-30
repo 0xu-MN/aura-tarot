@@ -16,3 +16,5 @@ export const ALLOWED_FEATURES = [
 ];
 
 export const MAX_CHATBOT_DAILY_LIMIT = 5;
+export const BETA_WEEKLY_LIMIT = 2;
+export const BETA_MONTHLY_LIMIT = 2;

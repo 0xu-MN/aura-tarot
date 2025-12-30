@@ -5,15 +5,17 @@ import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { SpreadLayout } from '@/components/tarot/SpreadLayout';
 import { TarotCard } from '@/components/TarotCard';
-import { Sparkles, Share2, Download, Loader2, Briefcase, Coffee, ArrowRight } from 'lucide-react';
+import { ArrowRight, Briefcase, Coffee, Download, Loader2, Share2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { getRandomCards, TarotCardData } from '@/lib/tarot-data';
 import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
 
 export const WorkLuck = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState<'intro' | 'question' | 'spread' | 'result'>('intro');
     const [selectedQuestion, setSelectedQuestion] = useState<string>("");
+    const [customQuestion, setCustomQuestion] = useState<string>("");
     const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [isRevealed, setIsRevealed] = useState(false);
     const [aiReading, setAiReading] = useState('');
@@ -112,6 +114,15 @@ export const WorkLuck = () => {
         setIsRevealed(true);
     };
 
+    const handleCustomQuestionSubmit = () => {
+        if (!customQuestion.trim()) {
+            toast.error("질문이나 고민을 입력해주세요");
+            return;
+        }
+        setSelectedQuestion(customQuestion);
+        setStep('spread');
+    };
+
     return (
         <AppLayout>
             <div className="container px-4 py-8 min-h-[80vh] flex flex-col items-center w-full max-w-7xl mx-auto">
@@ -160,18 +171,47 @@ export const WorkLuck = () => {
                 {/* Question Selection Step */}
                 {step === 'question' && (
                     <div className="max-w-md w-full animate-fade-in py-6">
-                        <h3 className="text-xl text-center text-white mb-8">가장 궁금한 것은 무엇인가요?</h3>
-                        <div className="space-y-3">
-                            {questions.map((q, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => handleQuestionSelect(q)}
-                                    className="w-full p-4 rounded-xl bg-card border border-gold/10 hover:border-gold/50 hover:bg-gold/5 transition-all text-left group flex items-center justify-between"
+                        <h3 className="text-xl text-center text-white mb-8">가장 듣고 싶은 위로나<br />고민이 있나요?</h3>
+                        <div className="space-y-6">
+                            <div className="relative flex items-center gap-2">
+                                <div className="flex-1">
+                                    <Input
+                                        placeholder="직접 고민이나 질문을 입력해보세요"
+                                        value={customQuestion}
+                                        onChange={(e) => setCustomQuestion(e.target.value)}
+                                        className="bg-card border-gold/20 text-white placeholder:text-muted-foreground focus:border-gold/50 h-14 text-lg px-4"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleCustomQuestionSubmit();
+                                        }}
+                                    />
+                                </div>
+                                <Button
+                                    onClick={handleCustomQuestionSubmit}
+                                    variant="gold"
+                                    className="h-14 w-14"
+                                    disabled={!customQuestion.trim()}
                                 >
-                                    <span className="text-white/90 group-hover:text-gold transition-colors">{q}</span>
-                                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-gold opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" />
-                                </button>
-                            ))}
+                                    <ArrowRight className="w-5 h-5" />
+                                </Button>
+                            </div>
+
+                            <div className="relative">
+                                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-white/10" />
+                                <span className="relative z-10 bg-background px-2 text-xs text-muted-foreground/50 block w-fit mx-auto">또는 추천 질문 선택</span>
+                            </div>
+
+                            <div className="space-y-2">
+                                {questions.map((q, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => handleQuestionSelect(q)}
+                                        className="w-full p-3 rounded-xl bg-card border border-gold/10 hover:border-gold/50 hover:bg-gold/5 transition-all text-left group flex items-center justify-between"
+                                    >
+                                        <span className="text-white/90 group-hover:text-gold transition-colors text-sm">{q}</span>
+                                        <ArrowRight className="w-3 h-3 text-muted-foreground group-hover:text-gold opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" />
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -268,6 +308,7 @@ export const WorkLuck = () => {
                                                 setAiReading('');
                                                 setWorkMission('');
                                                 setSelectedQuestion('');
+                                                setCustomQuestion('');
                                             }}
                                         >
                                             처음으로 돌아가기

@@ -10,6 +10,8 @@ import { UserProfileModal } from "@/components/community/UserProfileModal"; // A
 import { BetaBanner } from '@/components/beta/BetaBanner'; // Added BetaBanner
 import { CardDrawing } from '@/components/CardDrawing';
 import { RecommendedContent } from '@/components/RecommendedContent';
+import ShinyText from '@/components/ui/ShinyText'; // Import at top
+
 import { Sparkles } from 'lucide-react';
 
 const Home = () => {
@@ -20,11 +22,12 @@ const Home = () => {
     const [showProfileModal, setShowProfileModal] = useState(false); // Added showProfileModal
     const [welcomeMessage, setWelcomeMessage] = useState(""); // Added welcomeMessage
 
-    useEffect(() => { // Added useEffect for welcome message
+    useEffect(() => {
         const hours = new Date().getHours();
-        if (hours < 12) setWelcomeMessage("좋은 아침입니다");
-        else if (hours < 18) setWelcomeMessage("나른한 오후네요");
-        else setWelcomeMessage("하루를 마무리할 시간입니다");
+        if (hours < 6) setWelcomeMessage("별들이 당신에게 전하는 오늘의 메시지입니다.");
+        else if (hours < 12) setWelcomeMessage("기분 좋은 아침, 오늘 당신을 위한 특별한 에너지가 있어요.");
+        else if (hours < 18) setWelcomeMessage("나른한 오후, 잠시 쉬어가며 마음의 소리를 들어보세요.");
+        else setWelcomeMessage("하루의 끝, 오늘도 정말 수고 많았어요. 따뜻한 위로를 드릴게요.");
     }, []);
 
     return (
@@ -40,9 +43,14 @@ const Home = () => {
                                 안녕하세요, {userProfile?.nickname || '방문자'}님
                             </h1>
                         </div>
-                        <p className="text-muted-foreground mb-4">
-                            당신의 운명을 점쳐보세요
-                        </p>
+                        <div className="mb-4">
+                            <ShinyText
+                                text={welcomeMessage}
+                                disabled={false}
+                                speed={6}
+                                className="text-muted-foreground"
+                            />
+                        </div>
 
                     </div>
 
