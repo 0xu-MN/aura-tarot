@@ -156,6 +156,14 @@ export const RecommendedContent = () => {
 
     const refinedFeatures = [
         {
+            id: "yearly",
+            icon: Calendar,
+            title: "2026 신년운세",
+            description: "새해 12개월의 운세를 상세히 풀이",
+            badge: "HOT",
+            category: "fortune",
+        },
+        {
             id: "daily",
             icon: Sparkles,
             title: "오늘의 운세",
@@ -184,14 +192,6 @@ export const RecommendedContent = () => {
             title: "커플 궁합",
             description: "두 사람의 궁합을 타로로 점쳐보세요",
             category: "relationships",
-        },
-        {
-            id: "yearly",
-            icon: Calendar,
-            title: "2026 신년운세",
-            description: "새해 12개월의 운세를 상세히 풀이",
-            badge: "NEW",
-            category: "fortune",
         },
         {
             id: "chat",

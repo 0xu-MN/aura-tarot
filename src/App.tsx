@@ -12,8 +12,6 @@ import Community from "./pages/Community";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import CommunityLounge from "./pages/CommunityLounge";
-import Messages from "./pages/Messages";
-import ChatRoom from "./pages/ChatRoom";
 import { StudentSupportTarot } from './pages/contents/StudentSupportTarot';
 import { WorkLuck } from "./pages/contents/WorkLuck";
 import WeeklyFortune from "./pages/contents/WeeklyFortune";
@@ -49,8 +47,6 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/lounge" element={<CommunityLounge />} />
             <Route path="/profile/:userId" element={<CommunityLounge />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/chat/:roomId" element={<ChatRoom />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

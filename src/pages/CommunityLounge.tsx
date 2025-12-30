@@ -27,7 +27,7 @@ import { UserProfileModal } from "@/components/community/UserProfileModal";
 import { GalaxyBackground } from '@/components/ui/GalaxyBackground';
 
 const CommunityLounge = () => {
-    const { user, userProfile } = useAuth();
+    const { user, userProfile, session } = useAuth(); // Destructure session
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'lounge' | 'premium'>('lounge');
     const [activeCategory, setActiveCategory] = useState('all');
@@ -432,7 +432,7 @@ const CommunityLounge = () => {
                                         className="bg-black/60 rounded-2xl border border-gold/20 p-5 hover:border-gold/50 transition-all cursor-pointer group relative shadow-lg shadow-black/20"
                                     >
                                         {/* Delete Button (Only for author) */}
-                                        {user?.id === post.user_id && (
+                                        {session?.user?.id === post.user_id && (
                                             <button
                                                 onClick={(e) => handleDeletePost(e, post.id)}
                                                 className="absolute top-4 right-4 text-muted-foreground hover:text-red-500 z-10 p-1 transition-colors"

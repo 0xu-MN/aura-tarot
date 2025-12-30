@@ -10,17 +10,17 @@ import { UserProfileModal } from "@/components/community/UserProfileModal"; // A
 import { BetaBanner } from '@/components/beta/BetaBanner'; // Added BetaBanner
 import { CardDrawing } from '@/components/CardDrawing';
 import { RecommendedContent } from '@/components/RecommendedContent';
-import ShinyText from '@/components/ui/ShinyText'; // Import at top
+import { RollingText } from '@/components/ui/shadcn-io/rolling-text'; // Import RollingText
 
 import { Sparkles } from 'lucide-react';
 
 const Home = () => {
-    const navigate = useNavigate(); // Added navigate
-    const { user, userProfile } = useAuth(); // Added user
+    const navigate = useNavigate();
+    const { user, userProfile } = useAuth();
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showRegisterModal, setShowRegisterModal] = useState(false);
-    const [showProfileModal, setShowProfileModal] = useState(false); // Added showProfileModal
-    const [welcomeMessage, setWelcomeMessage] = useState(""); // Added welcomeMessage
+    const [showProfileModal, setShowProfileModal] = useState(false);
+    const [welcomeMessage, setWelcomeMessage] = useState("");
 
     useEffect(() => {
         const hours = new Date().getHours();
@@ -32,9 +32,9 @@ const Home = () => {
 
     return (
         <>
-            <AppLayout> {/* Default showHeader is true */}
-                <BetaBanner /> {/* Added BetaBanner */}
-                <div className="container mx-auto px-4 pt-6 pb-20"> {/* Adjusted padding */}
+            <AppLayout>
+                <BetaBanner />
+                <div className="container mx-auto px-4 pt-6 pb-20">
                     {/* Header Section */}
                     <div className="mb-8">
                         <div className="flex items-center gap-2 mb-2">
@@ -43,24 +43,24 @@ const Home = () => {
                                 안녕하세요, {userProfile?.nickname || '방문자'}님
                             </h1>
                         </div>
-                        <div className="mb-4">
-                            <ShinyText
+                        <div className="mb-4 h-6"> {/* Fixed height to prevent layout shift */}
+                            <RollingText
+                                key={welcomeMessage}
                                 text={welcomeMessage}
-                                disabled={false}
-                                speed={6}
-                                className="text-muted-foreground"
+                                inView={true}
+                                transition={{ duration: 0.6, delay: 0.05, ease: "easeOut" }}
+                                className="text-muted-foreground inline-block"
                             />
                         </div>
-
                     </div>
 
                     {/* Card Drawing Section */}
-                    <CardDrawing />
+                    < CardDrawing />
 
                     {/* Weekly & Monthly Fortune Banner Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10 w-full animate-fade-in mt-8">
+                    < div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10 w-full animate-fade-in mt-8" >
                         {/* Weekly Fortune */}
-                        <div className="relative group cursor-pointer overflow-hidden rounded-2xl border border-white/10 h-32" onClick={() => window.location.href = '/tarot/weekly'}>
+                        < div className="relative group cursor-pointer overflow-hidden rounded-2xl border border-white/10 h-32" onClick={() => window.location.href = '/tarot/weekly'}>
                             <div className="absolute inset-0">
                                 <img
                                     src={weeklyThumb}
@@ -71,9 +71,14 @@ const Home = () => {
                             </div>
                             <div className="relative z-10 p-5 flex flex-col justify-between h-full">
                                 <div className="flex justify-between items-start">
-                                    <span className="inline-block px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-gold font-bold">
-                                        WEEKLY
-                                    </span>
+                                    <div className="flex gap-2">
+                                        <span className="inline-block px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-gold font-bold">
+                                            WEEKLY
+                                        </span>
+                                        <span className="inline-block px-2 py-0.5 rounded-full bg-gold/20 border border-gold/30 text-[10px] text-gold font-bold animate-pulse">
+                                            BETA 무료
+                                        </span>
+                                    </div>
                                     <Sparkles className="w-5 h-5 text-gray-400 group-hover:text-gold transition-colors" />
                                 </div>
                                 <div>
@@ -81,10 +86,10 @@ const Home = () => {
                                     <p className="text-xs text-gray-300">한 주의 에너지를 미리 확인하세요</p>
                                 </div>
                             </div>
-                        </div>
+                        </div >
 
                         {/* Monthly Fortune */}
-                        <div className="relative group cursor-pointer overflow-hidden rounded-2xl border border-white/10 h-32" onClick={() => window.location.href = '/tarot/monthly'}>
+                        < div className="relative group cursor-pointer overflow-hidden rounded-2xl border border-white/10 h-32" onClick={() => window.location.href = '/tarot/monthly'}>
                             <div className="absolute inset-0">
                                 <img
                                     src={monthlyThumb}
@@ -96,9 +101,14 @@ const Home = () => {
                             <div className="absolute inset-0 bg-[url('/assets/stars.svg')] opacity-30" />
                             <div className="relative z-10 p-5 flex flex-col justify-between h-full">
                                 <div className="flex justify-between items-start">
-                                    <span className="inline-block px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-purple-200 font-bold">
-                                        MONTHLY
-                                    </span>
+                                    <div className="flex gap-2">
+                                        <span className="inline-block px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-purple-200 font-bold">
+                                            MONTHLY
+                                        </span>
+                                        <span className="inline-block px-2 py-0.5 rounded-full bg-gold/20 border border-gold/30 text-[10px] text-gold font-bold animate-pulse">
+                                            BETA 무료
+                                        </span>
+                                    </div>
                                     <span className="text-xl group-hover:scale-110 transition-transform">🌕</span>
                                 </div>
                                 <div>
@@ -106,18 +116,18 @@ const Home = () => {
                                     <p className="text-xs text-gray-300">이달의 흐름과 키워드를 알아보세요</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </div >
+                    </div >
 
                     {/* Recommended Content */}
-                    <div className="mt-12">
+                    < div className="mt-12" >
                         <RecommendedContent />
-                    </div>
-                </div>
-            </AppLayout>
+                    </div >
+                </div >
+            </AppLayout >
 
             {/* Auth Modals */}
-            <LoginModal
+            < LoginModal
                 isOpen={showLoginModal}
                 onClose={() => setShowLoginModal(false)}
                 onSwitchToRegister={() => {
@@ -125,7 +135,7 @@ const Home = () => {
                     setShowRegisterModal(true);
                 }}
             />
-            <RegisterModal
+            < RegisterModal
                 isOpen={showRegisterModal}
                 onClose={() => setShowRegisterModal(false)}
                 onSwitchToLogin={() => {
