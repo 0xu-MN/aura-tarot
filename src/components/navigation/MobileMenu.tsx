@@ -1,4 +1,4 @@
-import { User, Settings, BookOpen, Users, MessageSquare, LogOut } from 'lucide-react';
+import { User, Settings, BookOpen, Users, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -63,12 +63,6 @@ export const MobileMenu = ({ isOpen, onClose, onLoginClick }: MobileMenuProps) =
             label: '라운지',
             path: '/lounge',
             description: '소통 공간',
-        },
-        {
-            icon: MessageSquare,
-            label: '메시지',
-            path: '/messages',
-            description: '1:1 대화',
         },
         {
             icon: Settings,
