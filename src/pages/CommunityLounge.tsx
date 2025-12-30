@@ -676,7 +676,11 @@ const CommunityLounge = () => {
                         onClose={() => setSelectedPost(null)}
                         post={selectedPost}
                         onCommentChange={handleCommentUpdate}
-                        onDelete={() => handleDetailDelete(selectedPost.id)}
+                        onDelete={
+                            (session?.user?.id && selectedPost?.user_id && session.user.id === selectedPost.user_id)
+                                ? () => handleDetailDelete(selectedPost.id)
+                                : undefined
+                        }
                     />
                 )}
 
