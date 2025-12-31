@@ -162,16 +162,17 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
 
     // Check if user has exceeded free draws
     const currentDraws = getDailyDrawCount();
+    const isDev = localStorage.getItem('dev_mode') === 'true';
 
-    // STRICT BETA LIMIT CHECK
-    if (IS_BETA_ACTIVE) {
+    // STRICT BETA LIMIT CHECK (Bypassed in Developer Mode)
+    if (IS_BETA_ACTIVE && !isDev) {
       if (currentDraws >= MAX_FREE_DRAWS) {
         toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다. 내일 다시 이용해주세요! ✨', {
           duration: 3000,
         });
         return;
       }
-    } else {
+    } else if (!isDev) {
       // Only block if limit exceeded AND not paid for today (Normal Mode)
       if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
         setShowPaymentModal(true);
@@ -241,16 +242,17 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
   const handleDrawAgain = () => {
     // Check if user has exceeded free draws
     const currentDraws = getDailyDrawCount();
+    const isDev = localStorage.getItem('dev_mode') === 'true';
 
-    // STRICT BETA LIMIT CHECK
-    if (IS_BETA_ACTIVE) {
+    // STRICT BETA LIMIT CHECK (Bypassed in Developer Mode)
+    if (IS_BETA_ACTIVE && !isDev) {
       if (currentDraws >= MAX_FREE_DRAWS) {
         toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다. 내일 다시 이용해주세요! ✨', {
           duration: 3000,
         });
         return;
       }
-    } else {
+    } else if (!isDev) {
       // Only block if limit exceeded AND not paid for today
       if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
         setShowPaymentModal(true);

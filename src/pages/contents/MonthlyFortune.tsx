@@ -37,7 +37,10 @@ export default function MonthlyFortune() {
     };
 
     const handleStart = () => {
-        if (IS_BETA_ACTIVE) {
+        const isDev = localStorage.getItem('dev_mode') === 'true';
+
+        // Check Beta Limits (Bypassed if Developer Mode is active)
+        if (IS_BETA_ACTIVE && !isDev) {
             const key = getMonthKey();
             const currentCount = parseInt(localStorage.getItem(key) || '0', 10);
             if (currentCount >= BETA_MONTHLY_LIMIT) {
@@ -68,7 +71,9 @@ export default function MonthlyFortune() {
     const generateReading = async () => {
         setIsLoading(true);
         try {
-            if (IS_BETA_ACTIVE) {
+            const isDev = localStorage.getItem('dev_mode') === 'true';
+
+            if (IS_BETA_ACTIVE && !isDev) {
                 const key = getMonthKey();
                 const currentCount = parseInt(localStorage.getItem(key) || '0', 10);
                 localStorage.setItem(key, (currentCount + 1).toString());
