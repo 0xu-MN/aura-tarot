@@ -122,8 +122,11 @@ export default function MonthlyFortune() {
 
             if (error) throw error;
 
-            let content = data.response;
+            // FIX: Backend returns 'message', not 'response'
+            let content = data.message || data.response;
+
             if (content) {
+                // Remove thinking tokens if present
                 content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
                 setReading(content);
@@ -139,13 +142,14 @@ export default function MonthlyFortune() {
                     });
                 }
             } else {
-                setReading("별들의 메시지를 수신하지 못했어요. 트래픽이 많아 잠시 후 다시 시도해주세요.");
+                console.error("AI Response Data:", data);
+                setReading(`별들의 메시지를 수신하지 못했어요.\n(상세 에러: ${data?.debug_error || '응답 없음'})`);
             }
 
-        } catch (err) {
-            console.error(err);
+        } catch (err: any) {
+            console.error('Reading Generation Error:', err);
             toast.error("해석을 불러오는 중 문제가 발생했습니다.");
-            setReading("별들의 메시지를 수신하지 못했어요. 잠시 후 다시 시도해주세요.");
+            setReading(`별들의 메시지를 수신하지 못했어요. \n(에러: ${err.message || '알 수 없는 오류'})`);
         } finally {
             setIsLoading(false);
         }

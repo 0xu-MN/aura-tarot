@@ -551,7 +551,8 @@ const CommunityLounge = () => {
                                     <div
                                         key={lounge.id}
                                         onClick={() => {
-                                            if (isPremium || isDeveloperMode) {
+                                            const isDev = localStorage.getItem('dev_mode') === 'true';
+                                            if (isPremium || isDev) {
                                                 setCurrentChatRoom(lounge.name);
                                             } else {
                                                 setShowUpgradeModal(true);
