@@ -14,7 +14,6 @@ export const BottomNav = () => {
 
 
     return (
-    return (
         <nav className="fixed bottom-6 left-4 right-4 z-50">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl" />
             <div className="relative container mx-auto px-2">
