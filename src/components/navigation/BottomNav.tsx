@@ -14,50 +14,59 @@ export const BottomNav = () => {
 
 
     return (
-        <nav className="fixed bottom-6 left-4 right-4 z-50">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl" />
-            <div className="relative container mx-auto px-2">
-                <div className="flex items-center justify-around h-16">
+        <nav className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+            <div className="relative w-full max-w-md pointer-events-auto">
+                {/* Glass Background */}
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl rounded-full border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] ring-1 ring-white/5" />
+
+                {/* Shine Effect */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+
+                <div className="relative flex items-center justify-around h-16 px-2">
                     {navItems.map((item) => (
                         <RouterNavLink
                             key={item.path}
                             to={item.path}
                             className={({ isActive }) =>
                                 cn(
-                                    'relative flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all duration-300',
-                                    'hover:bg-white/5',
+                                    'relative flex flex-col items-center justify-center w-full h-full gap-1 rounded-full transition-all duration-300 group',
                                     isActive
                                         ? 'text-gold'
-                                        : 'text-muted-foreground/60 hover:text-muted-foreground'
+                                        : 'text-muted-foreground/60 hover:text-white/80'
                                 )
                             }
                         >
                             {({ isActive }) => (
                                 <>
+                                    {/* Active Glow Background */}
                                     <div className={cn(
-                                        "absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gold/20 blur-xl transition-all duration-300",
-                                        isActive ? "opacity-100" : "opacity-0"
+                                        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-gold/10 blur-md transition-all duration-500",
+                                        isActive ? "opacity-100 scale-100" : "opacity-0 scale-50"
                                     )} />
 
+                                    {/* Icon */}
                                     <item.icon
                                         className={cn(
-                                            'w-5 h-5 transition-transform duration-300 z-10',
-                                            isActive && 'scale-110 -translate-y-0.5'
+                                            'w-6 h-6 transition-all duration-300 z-10',
+                                            isActive ? 'scale-110 -translate-y-1 drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]' : 'group-hover:scale-105'
                                         )}
                                     />
+
+                                    {/* Label */}
                                     <span
                                         className={cn(
-                                            'text-[10px] font-medium transition-all duration-300 z-10',
+                                            'text-[10px] font-medium transition-all duration-300 z-10 absolute bottom-2',
                                             isActive
                                                 ? 'opacity-100 translate-y-0'
-                                                : 'opacity-70 translate-y-0.5'
+                                                : 'opacity-0 translate-y-2'
                                         )}
                                     >
                                         {item.label}
                                     </span>
 
+                                    {/* Active Dot indicator (Optional, keeping simple for now) */}
                                     {isActive && (
-                                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold shadow-[0_0_10px_rgba(255,215,0,0.8)]" />
+                                        <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-gold shadow-[0_0_5px_#ffd700]" />
                                     )}
                                 </>
                             )}
