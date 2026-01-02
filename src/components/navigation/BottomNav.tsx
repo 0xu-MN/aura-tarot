@@ -14,8 +14,10 @@ export const BottomNav = () => {
 
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-t border-gold/20">
-            <div className="container mx-auto px-4">
+    return (
+        <nav className="fixed bottom-6 left-4 right-4 z-50">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl" />
+            <div className="relative container mx-auto px-2">
                 <div className="flex items-center justify-around h-16">
                     {navItems.map((item) => (
                         <RouterNavLink
@@ -23,32 +25,40 @@ export const BottomNav = () => {
                             to={item.path}
                             className={({ isActive }) =>
                                 cn(
-                                    'flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200',
-                                    'hover:bg-gold/10',
+                                    'relative flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all duration-300',
+                                    'hover:bg-white/5',
                                     isActive
                                         ? 'text-gold'
-                                        : 'text-muted-foreground'
+                                        : 'text-muted-foreground/60 hover:text-muted-foreground'
                                 )
                             }
                         >
                             {({ isActive }) => (
                                 <>
+                                    <div className={cn(
+                                        "absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gold/20 blur-xl transition-all duration-300",
+                                        isActive ? "opacity-100" : "opacity-0"
+                                    )} />
+
                                     <item.icon
                                         className={cn(
-                                            'w-5 h-5 transition-transform duration-200',
-                                            isActive && 'scale-110'
+                                            'w-5 h-5 transition-transform duration-300 z-10',
+                                            isActive && 'scale-110 -translate-y-0.5'
                                         )}
                                     />
                                     <span
                                         className={cn(
-                                            'text-xs font-medium',
-                                            isActive && 'font-semibold'
+                                            'text-[10px] font-medium transition-all duration-300 z-10',
+                                            isActive
+                                                ? 'opacity-100 translate-y-0'
+                                                : 'opacity-70 translate-y-0.5'
                                         )}
                                     >
                                         {item.label}
                                     </span>
+
                                     {isActive && (
-                                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold animate-pulse" />
+                                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold shadow-[0_0_10px_rgba(255,215,0,0.8)]" />
                                     )}
                                 </>
                             )}
@@ -57,5 +67,6 @@ export const BottomNav = () => {
                 </div>
             </div>
         </nav>
+    );
     );
 };
