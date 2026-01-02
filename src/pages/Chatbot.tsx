@@ -268,7 +268,7 @@ const Chatbot = () => {
                     <div className="flex items-center gap-2">
                         <Sparkles className="w-6 h-6 text-gold" />
                         <h1 className="font-display text-2xl text-gold-gradient">
-                            솜이한테 물어봐!
+                            방구석 비밀 타로방
                         </h1>
                     </div>
                     <div className="flex gap-2">
