@@ -717,7 +717,10 @@ const CommunityLounge = () => {
                 {/* Guest Access Modals */}
                 <LoginRequiredModal
                     isOpen={showLoginRequired}
-                    onClose={() => setShowLoginRequired(false)}
+                    onClose={() => {
+                        setShowLoginRequired(false);
+                        navigate('/home');
+                    }}
                     onShowLogin={() => {
                         setShowLoginRequired(false);
                         setShowLoginModal(true);
