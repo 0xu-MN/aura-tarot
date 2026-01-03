@@ -217,8 +217,8 @@ const Settings = () => {
                     </div>
                 </div>
 
-                {/* User Feedback Section */}
-                <UserFeedbackSection userId={user?.id} />
+                {/* User Feedback Section (Temporarily Disabled) */}
+                {/* <UserFeedbackSection userId={user?.id} /> */}
 
                 {/* Logout */}
                 <Button

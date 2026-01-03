@@ -210,12 +210,24 @@ const Chatbot = () => {
     };
 
     const sendMessage = async (text: string) => {
-        if (!text.trim() || isLoading) return;
+        console.log('[Chatbot] sendMessage called with:', text); // DEBUG
+
+        if (!text.trim()) {
+            console.log('[Chatbot] text is empty'); // DEBUG
+            return;
+        }
+        if (isLoading) {
+            console.log('[Chatbot] isLoading is true, ignoring'); // DEBUG
+            return;
+        }
 
         // Guest Check: Allow only 1 message
         if (!user) {
+            console.log('[Chatbot] User is guest'); // DEBUG
             const userMessageCount = messages.filter(m => m.role === 'user').length;
+            console.log('[Chatbot] Guest message count:', userMessageCount); // DEBUG
             if (userMessageCount >= 1) {
+                console.log('[Chatbot] Guest limit reached, showing modal'); // DEBUG
                 setShowLoginRequired(true);
                 return;
             }
@@ -223,13 +235,11 @@ const Chatbot = () => {
 
         // Check Daily Limit
         const todayCount = getTodayChatCount();
-        const MAX_LIMIT = 5; // Enforce 5 times limit
+        console.log('[Chatbot] Today count:', todayCount); // DEBUG
 
-        // You might want to allow checking limit from beta-config, but hardcoding for now or importing
-        // import { MAX_CHATBOT_DAILY_LIMIT, IS_BETA_ACTIVE } from '@/lib/beta-config';
-        // Let's assume IS_BETA_ACTIVE is true if we are running this code
-
+        const MAX_LIMIT = 5;
         if (todayCount >= MAX_LIMIT) {
+            console.log('[Chatbot] Daily limit reached'); // DEBUG
             toast({
                 title: '일일 대화 한도 초과',
                 description: '베타 기간 동안 하루 5회 대화만 가능합니다. 내일 다시 이용해주세요! ✨',
@@ -245,6 +255,7 @@ const Chatbot = () => {
             timestamp: new Date(),
         };
 
+        console.log('[Chatbot] Setting messages state...'); // DEBUG
         setMessages((prev) => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
@@ -253,6 +264,7 @@ const Chatbot = () => {
         incrementChatCount();
 
         try {
+            console.log('[Chatbot] Invoking Supabase function...'); // DEBUG
             const messageHistory = [...messages, userMessage]
                 .filter(msg => msg.role === 'user' || msg.role === 'assistant')
                 .map(msg => ({
@@ -264,6 +276,8 @@ const Chatbot = () => {
                 method: 'POST',
                 body: { messages: messageHistory }
             });
+
+            console.log('[Chatbot] Supabase response:', { data, error }); // DEBUG
 
             if (error) {
                 throw error;
@@ -281,7 +295,7 @@ const Chatbot = () => {
             };
             setMessages((prev) => [...prev, aiResponse]);
         } catch (error) {
-            console.error('Error sending message:', error);
+            console.error('[Chatbot] Error sending message:', error); // DEBUG
             toast({
                 title: '오류 발생',
                 description: '메시지 전송에 실패했습니다. 다시 시도해주세요.',
@@ -292,7 +306,11 @@ const Chatbot = () => {
         }
     };
 
-    const handleSend = () => sendMessage(input);
+    const handleSend = () => {
+        // alert("DEBUG: Send Clicked!"); // Force visible feedback
+        console.log('[Chatbot] Handle Send Triggered');
+        sendMessage(input);
+    };
 
     const handleSuggestedPrompt = (prompt: string) => {
         sendMessage(prompt);
@@ -396,16 +414,26 @@ const Chatbot = () => {
 
                 {/* Input */}
                 <div className="container mx-auto px-4 py-4 border-t border-gold/20">
+                    {/* DEBUG UI */}
+                    <div className="text-xs text-red-500 mb-2">
+                        State: {isLoading ? 'LOADING' : 'READY'} | Messages: {messages.length} | User: {user ? 'Logged In' : 'Guest'}
+                    </div>
                     <div className="flex gap-2">
                         <Input
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
                             placeholder="메시지를 입력하세요..."
                             className="flex-1 bg-card/50"
-                            disabled={isLoading}
+                        // disabled={isLoading} // REMOVED FOR DEBUGGING
                         />
-                        <Button onClick={handleSend} variant="gold" size="icon" disabled={isLoading}>
+                        <Button onClick={handleSend} variant="gold" size="icon">
+                            {/* Removed disabled={isLoading} */}
                             {isLoading ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (

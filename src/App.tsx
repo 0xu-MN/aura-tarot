@@ -1,31 +1,17 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
-import Contents from "./pages/Contents";
-import TarotReading from "./pages/TarotReading";
-import Chatbot from "./pages/Chatbot";
-import Community from "./pages/Community";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
-import CommunityLounge from "./pages/CommunityLounge";
-import { StudentSupportTarot } from './pages/contents/StudentSupportTarot';
-import { WorkLuck } from "./pages/contents/WorkLuck";
-import WeeklyFortune from "./pages/contents/WeeklyFortune";
-import MonthlyFortune from "./pages/contents/MonthlyFortune";
-import { LoveTarot } from "./pages/contents/LoveTarot";
-import { ReunionTarot } from "./pages/contents/ReunionTarot";
-import { NewYearTarot } from "./pages/contents/NewYearTarot";
-import { CompatibilityTarot } from "./pages/contents/CompatibilityTarot";
-
-const queryClient = new QueryClient();
+// ... imports ...
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <Sonner />
       <Toaster />
       <AuthProvider>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
