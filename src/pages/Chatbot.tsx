@@ -210,24 +210,12 @@ const Chatbot = () => {
     };
 
     const sendMessage = async (text: string) => {
-        console.log('[Chatbot] sendMessage called with:', text); // DEBUG
-
-        if (!text.trim()) {
-            console.log('[Chatbot] text is empty'); // DEBUG
-            return;
-        }
-        if (isLoading) {
-            console.log('[Chatbot] isLoading is true, ignoring'); // DEBUG
-            return;
-        }
+        if (!text.trim() || isLoading) return;
 
         // Guest Check: Allow only 1 message
         if (!user) {
-            console.log('[Chatbot] User is guest'); // DEBUG
             const userMessageCount = messages.filter(m => m.role === 'user').length;
-            console.log('[Chatbot] Guest message count:', userMessageCount); // DEBUG
             if (userMessageCount >= 1) {
-                console.log('[Chatbot] Guest limit reached, showing modal'); // DEBUG
                 setShowLoginRequired(true);
                 return;
             }
@@ -235,11 +223,8 @@ const Chatbot = () => {
 
         // Check Daily Limit
         const todayCount = getTodayChatCount();
-        console.log('[Chatbot] Today count:', todayCount); // DEBUG
-
         const MAX_LIMIT = 5;
         if (todayCount >= MAX_LIMIT) {
-            console.log('[Chatbot] Daily limit reached'); // DEBUG
             toast({
                 title: '일일 대화 한도 초과',
                 description: '베타 기간 동안 하루 5회 대화만 가능합니다. 내일 다시 이용해주세요! ✨',
@@ -255,7 +240,6 @@ const Chatbot = () => {
             timestamp: new Date(),
         };
 
-        console.log('[Chatbot] Setting messages state...'); // DEBUG
         setMessages((prev) => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
@@ -264,7 +248,6 @@ const Chatbot = () => {
         incrementChatCount();
 
         try {
-            console.log('[Chatbot] Invoking Supabase function...'); // DEBUG
             const messageHistory = [...messages, userMessage]
                 .filter(msg => msg.role === 'user' || msg.role === 'assistant')
                 .map(msg => ({
@@ -276,8 +259,6 @@ const Chatbot = () => {
                 method: 'POST',
                 body: { messages: messageHistory }
             });
-
-            console.log('[Chatbot] Supabase response:', { data, error }); // DEBUG
 
             if (error) {
                 throw error;
@@ -295,7 +276,7 @@ const Chatbot = () => {
             };
             setMessages((prev) => [...prev, aiResponse]);
         } catch (error) {
-            console.error('[Chatbot] Error sending message:', error); // DEBUG
+            console.error('Error sending message:', error);
             toast({
                 title: '오류 발생',
                 description: '메시지 전송에 실패했습니다. 다시 시도해주세요.',
