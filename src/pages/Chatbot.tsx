@@ -9,6 +9,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ChatHistoryModal } from '@/components/chat/ChatHistoryModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoginRequiredModal } from '@/components/LoginRequiredModal';
+import { LoginModal } from '@/components/auth/LoginModal';
+import { RegisterModal } from '@/components/auth/RegisterModal';
 
 interface Message {
     id: string;
@@ -27,11 +31,15 @@ const suggestedPrompts = [
 
 const Chatbot = () => {
     const { toast } = useToast();
+    const { user } = useAuth(); // Add useAuth
+    const [showLoginRequired, setShowLoginRequired] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
             role: 'assistant',
-            content: '안녕하세요! 당신의 꿈속을 여행하는 행운의 길잡이, 솜이입니다. 오늘 당신의 마음엔 어떤 별이 뜨고 있나요? ☁️✨',
+            content: '안녕하세요! 당신의 꿈과 희망을 비추는 타로전문가 솜이입니다. 오늘 당신의 마음속에는 어떤 이야기가 담겨 있나요? ✨',
             timestamp: new Date(),
         },
     ]);
@@ -41,6 +49,27 @@ const Chatbot = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const location = useLocation();
+
+    // Check for guest user - REMOVED IMMEDIATE BLOCK
+    /* 
+    useEffect(() => {
+        if (!user) {
+            setShowLoginRequired(true);
+        }
+    }, [user]); 
+    */
+
+    // Set initial greeting based on user status
+    useEffect(() => {
+        if (!user && messages.length === 1 && messages[0].role === 'assistant') {
+            setMessages([{
+                id: '1',
+                role: 'assistant',
+                content: '반가워요, 여행자님! 🌟 \n어떤 고민이 있어 찾아오셨나요? \n타로 카드는 아니지만, 당신의 이야기를 들어줄 수는 있어요.',
+                timestamp: new Date(),
+            }]);
+        }
+    }, [user]); // Run once when user status is determined/changed initial
 
     // Check for consultation context on mount
     useEffect(() => {
@@ -182,6 +211,15 @@ const Chatbot = () => {
 
     const sendMessage = async (text: string) => {
         if (!text.trim() || isLoading) return;
+
+        // Guest Check: Allow only 1 message
+        if (!user) {
+            const userMessageCount = messages.filter(m => m.role === 'user').length;
+            if (userMessageCount >= 1) {
+                setShowLoginRequired(true);
+                return;
+            }
+        }
 
         // Check Daily Limit
         const todayCount = getTodayChatCount();
@@ -381,6 +419,33 @@ const Chatbot = () => {
                     isOpen={showHistory}
                     onClose={() => setShowHistory(false)}
                     onSelectSession={handleLoadSession}
+                />
+
+                {/* Guest Access Modals */}
+                <LoginRequiredModal
+                    isOpen={showLoginRequired}
+                    onClose={() => setShowLoginRequired(false)}
+                    onShowLogin={() => {
+                        setShowLoginRequired(false);
+                        setShowLoginModal(true);
+                    }}
+                    message="더 깊은 상담을 이어가려면 로그인이 필요합니다."
+                />
+                <LoginModal
+                    isOpen={showLoginModal}
+                    onClose={() => setShowLoginModal(false)}
+                    onSwitchToRegister={() => {
+                        setShowLoginModal(false);
+                        setShowRegisterModal(true);
+                    }}
+                />
+                <RegisterModal
+                    isOpen={showRegisterModal}
+                    onClose={() => setShowRegisterModal(false)}
+                    onSwitchToLogin={() => {
+                        setShowRegisterModal(false);
+                        setShowLoginModal(true);
+                    }}
                 />
             </div>
         </AppLayout>

@@ -10,6 +10,74 @@ import { ProfileEditModal } from '@/components/ProfileEditModal';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { INTEREST_CATEGORIES } from '@/types/user';
+import supabase from '@/utils/supabase';
+import { Textarea } from '@/components/ui/textarea';
+import { Send } from 'lucide-react';
+
+const UserFeedbackSection = ({ userId }: { userId?: string }) => {
+    const [message, setMessage] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!message.trim()) {
+            toast.error('내용을 입력해주세요.');
+            return;
+        }
+
+        if (!userId) {
+            toast.error('로그인이 필요합니다.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const { error } = await supabase
+                .from('user_feedback')
+                .insert({
+                    user_id: userId,
+                    message: message.trim()
+                });
+
+            if (error) throw error;
+
+            toast.success('소중한 의견 감사합니다! 💌');
+            setMessage('');
+        } catch (error) {
+            console.error('Feedback Error:', error);
+            toast.error('의견 전송 중 문제가 발생했습니다.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="bg-card rounded-2xl border border-gold/20 p-6 mb-6">
+            <h3 className="font-display text-lg mb-4 flex items-center gap-2">
+                <Send className="w-5 h-5 text-gold" />
+                의견 보내기
+            </h3>
+            <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                    서비스 이용 중 불편한 점이나 개선할 부분이 있다면 알려주세요.
+                </p>
+                <Textarea
+                    placeholder="건의사항을 자유롭게 적어주세요..."
+                    className="min-h-[100px] resize-none bg-background/50 border-gold/10 focus:border-gold/30"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                />
+                <Button
+                    className="w-full bg-gold/10 text-gold hover:bg-gold/20 border-gold/20"
+                    variant="outline"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? '전송 중...' : '보내기'}
+                </Button>
+            </div>
+        </div>
+    );
+};
 
 const Settings = () => {
     const { user, userProfile, signOut } = useAuth();
@@ -148,6 +216,9 @@ const Settings = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* User Feedback Section */}
+                <UserFeedbackSection userId={user?.id} />
 
                 {/* Logout */}
                 <Button

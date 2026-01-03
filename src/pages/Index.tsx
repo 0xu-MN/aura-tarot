@@ -34,6 +34,13 @@ const Index = () => {
     }
   };
 
+  const handleGuestEntry = () => {
+    setIsEntering(true);
+    setTimeout(() => {
+      navigate("/home");
+    }, 700);
+  };
+
   const handleFeatureClick = () => {
     handleStartReading();
   };
@@ -53,7 +60,11 @@ const Index = () => {
       <Header />
 
       <main>
-        <HeroSection onStartReading={handleStartReading} isEntering={isEntering} />
+        <HeroSection
+          onStartReading={handleStartReading}
+          onGuestEntry={handleGuestEntry}
+          isEntering={isEntering}
+        />
         <FeaturesSection onFeatureClick={handleFeatureClick} />
 
         {/* Footer */}

@@ -10,6 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { IS_BETA_ACTIVE, BETA_MONTHLY_LIMIT } from "@/lib/beta-config";
+import { LoginRequiredModal } from '@/components/LoginRequiredModal';
+import { LoginModal } from '@/components/auth/LoginModal';
+import { RegisterModal } from '@/components/auth/RegisterModal';
 
 export default function MonthlyFortune() {
     const navigate = useNavigate();
@@ -19,6 +22,9 @@ export default function MonthlyFortune() {
     const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
     const [reading, setReading] = useState<string>("");
     const [isLoading, setIsLoading] = useState(false);
+    const [showLoginRequired, setShowLoginRequired] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showRegisterModal, setShowRegisterModal] = useState(false);
 
     // Calculate Monthly Date
     const getMonthlyDate = () => {
@@ -54,9 +60,15 @@ export default function MonthlyFortune() {
     // AI Interpretation Trigger
     useEffect(() => {
         if (step === "reading" && drawnCards.length > 0 && !reading && !isLoading) {
-            generateReading();
+            if (!user) {
+                // Determine if guest user - show login modal instead of generating reading
+                if (!showLoginRequired) setShowLoginRequired(true);
+            } else {
+                generateReading();
+            }
         }
-    }, [step, drawnCards]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [step, drawnCards, user?.id]);
 
     const handleSpreadComplete = (indices: number[]) => {
         setIsLoading(true);
@@ -80,7 +92,7 @@ export default function MonthlyFortune() {
             }
 
             const prompt = `
-당신은 신비로운 타로 리더 '소미'입니다.
+당신은 전문적인 타로 리더 '솜이'입니다.
 사용자의 [${monthlyDate}] 월간 운세를 5장의 카드로 해석해주세요.
 
 1. 전체 테마: ${drawnCards[0].card.koreanName} (${drawnCards[0].isReversed ? '역방향' : '정방향'})
@@ -92,7 +104,9 @@ export default function MonthlyFortune() {
 사용자: ${user?.nickname || '방문자'}님
 
 요청사항:
-- 반말(친근한 말투) 사용
+- 반말(친근한 말투) 사용하되 전문적인 느낌 유지
+- '멍!', '킁킁' 등 강아지 소리 사용 금지
+- 시작 멘트: "안녕하세요, ${user?.nickname || '방문자'}님! 타로전문가 솜이입니다! 이번 달 운세 흐름을 읽어드릴게요."
 - 전체 테마 요약 (2~3문장)
 - 각 시기별(초/중/말) 흐름 해석 (2~3문장)
 - 조언 비중 있게 해석 + 구체적인 '이번 달 실천 액션' 1가지 제안
@@ -315,7 +329,19 @@ export default function MonthlyFortune() {
 
                         {/* Reading Content */}
                         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 min-h-[200px] relative overflow-hidden shadow-2xl">
-                            {isLoading ? (
+                            {!user ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/80 backdrop-blur-sm z-10 transition-all duration-300">
+                                    <Sparkles className="w-12 h-12 text-purple-400 animate-pulse" />
+                                    <p className="text-gray-300 font-medium">카드의 의미를 확인하려면 로그인이 필요합니다</p>
+                                    <Button
+                                        onClick={() => setShowLoginRequired(true)}
+                                        className="bg-purple-600 text-white hover:bg-purple-700 font-bold"
+                                        variant="default"
+                                    >
+                                        로그인하고 결과 보기
+                                    </Button>
+                                </div>
+                            ) : isLoading ? (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                                     <Loader2 className="w-8 h-8 animate-spin text-purple-400/50" />
                                     <p className="text-sm text-gray-400 animate-pulse">월간 운세 데이터를 분석중입니다...</p>
@@ -328,6 +354,33 @@ export default function MonthlyFortune() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Guest Access Modals */}
+                        <LoginRequiredModal
+                            isOpen={showLoginRequired}
+                            onClose={() => setShowLoginRequired(false)}
+                            onShowLogin={() => {
+                                setShowLoginRequired(false);
+                                setShowLoginModal(true);
+                            }}
+                            message="월간 운세를 확인하려면 로그인이 필요합니다."
+                        />
+                        <LoginModal
+                            isOpen={showLoginModal}
+                            onClose={() => setShowLoginModal(false)}
+                            onSwitchToRegister={() => {
+                                setShowLoginModal(false);
+                                setShowRegisterModal(true);
+                            }}
+                        />
+                        <RegisterModal
+                            isOpen={showRegisterModal}
+                            onClose={() => setShowRegisterModal(false)}
+                            onSwitchToLogin={() => {
+                                setShowRegisterModal(false);
+                                setShowLoginModal(true);
+                            }}
+                        />
 
                         {/* Action Buttons */}
                         {!isLoading && (

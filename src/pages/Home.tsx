@@ -55,7 +55,7 @@ const Home = () => {
                     </div>
 
                     {/* Card Drawing Section */}
-                    < CardDrawing />
+                    <CardDrawing onShowLogin={() => setShowLoginModal(true)} />
 
                     {/* Weekly & Monthly Fortune Banner Grid */}
                     < div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10 w-full animate-fade-in mt-8" >

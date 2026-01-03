@@ -6,10 +6,11 @@ import { cn } from "@/lib/utils";
 
 interface HeroSectionProps {
   onStartReading?: () => void;
+  onGuestEntry?: () => void;
   isEntering?: boolean;
 }
 
-export const HeroSection = ({ onStartReading, isEntering = false }: HeroSectionProps) => {
+export const HeroSection = ({ onStartReading, onGuestEntry, isEntering = false }: HeroSectionProps) => {
   const handleCardClick = () => {
     if (isEntering) return;
     onStartReading?.();
@@ -51,27 +52,40 @@ export const HeroSection = ({ onStartReading, isEntering = false }: HeroSectionP
           <span className="block md:hidden">해석을 전해드립니다</span>
         </p>
 
-        <div
-          className={cn(
-            "my-10 cursor-pointer transition-all duration-700 hover:scale-105",
-            !isEntering && "animate-float",
-            isEntering && "scale-150 opacity-0"
-          )}
-          onClick={handleCardClick}
-        >
-          <div className="relative mx-auto w-fit mb-4">
-            <TarotCard size="lg" interactive={false} className="mx-auto glow-gold" />
+        <div className="flex flex-col items-center gap-6">
+          <div
+            className={cn(
+              "cursor-pointer transition-all duration-700 hover:scale-105",
+              !isEntering && "animate-float",
+              isEntering && "scale-150 opacity-0"
+            )}
+            onClick={handleCardClick}
+          >
+            <div className="relative mx-auto w-fit mb-4">
+              <TarotCard size="lg" interactive={false} className="mx-auto glow-gold" />
 
-            {/* Simple Text CTA */}
-            <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
-              <span className="font-display text-lg text-gold/80 hover:text-white transition-colors drop-shadow-[0_0_10px_rgba(255,215,0,0.3)] tracking-wider">
-                카드를 터치하세요
-              </span>
+              {/* Simple Text CTA */}
+              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <span className="font-display text-lg text-gold/80 hover:text-white transition-colors drop-shadow-[0_0_10px_rgba(255,215,0,0.3)] tracking-wider">
+                  카드를 터치하세요
+                </span>
+              </div>
             </div>
           </div>
+
+          <button
+            onClick={onGuestEntry}
+            className={cn(
+              "px-6 py-2 rounded-full text-sm font-medium text-white/50 border border-white/20 hover:bg-white/10 hover:text-white/80 transition-all duration-300 animate-fade-in mt-8",
+              isEntering && "opacity-0"
+            )}
+            style={{ animationDelay: "0.5s" }}
+          >
+            회원가입 없이 둘러보기
+          </button>
         </div>
 
-        <p className="mt-12 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.4s" }}>
+        <p className="mt-8 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: "0.4s" }}>
           무료로 시작하기 • 매일 새로운 운세
         </p>
       </div>

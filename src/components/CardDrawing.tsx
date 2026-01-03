@@ -21,7 +21,7 @@ const AI_SUGGESTED_QUESTIONS = [
     '나의 재물운을 높이려면 어떻게 해야 하나요?',
 ];
 
-export const CardDrawing = () => {
+export const CardDrawing = ({ onShowLogin }: { onShowLogin?: () => void }) => {
     const { user, userProfile, refreshProfile } = useAuth();
     const [question, setQuestion] = useState('');
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -205,6 +205,7 @@ export const CardDrawing = () => {
                 isOpen={showCardModal}
                 onClose={handleCardModalClose}
                 onDrawAgain={handleDrawCard}
+                onShowLogin={onShowLogin}
                 question={question}
             />
             <PaymentModal

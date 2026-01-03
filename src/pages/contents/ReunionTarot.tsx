@@ -100,8 +100,10 @@ export function ReunionTarot() {
     const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
         try {
             const prompt = `
-당신은 솔직하면서도 공감 능력이 뛰어난 타로 리더 '문'입니다.
+당신은 솔직하면서도 공감 능력이 뛰어난 전문 타로 리더 '솜이'입니다.
 사용자의 재회 관련 질문에 대해 [나의 감정, 상대방 속마음, 방해물, 재회 가능성] 4장으로 해석해주세요.
+
+시작 멘트: "안녕하세요 타로전문가 솜이 입니다! 두 분의 인연을 조심스럽게 읽어드릴게요."
 
 질문: ${question}
 

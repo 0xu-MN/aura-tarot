@@ -12,11 +12,14 @@ import { toast } from 'sonner';
 import { premiumStore } from '@/lib/premiumStore';
 import { getRandomCards, TarotCardData } from '@/lib/tarot-data';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 const FEATURE_ID = 'money-tarot';
 
 export const MoneyTarot = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [step, setStep] = useState<'intro' | 'input' | 'payment-check' | 'spread' | 'result'>('intro');
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -106,7 +109,8 @@ export const MoneyTarot = () => {
                         cards: cards.map(c => ({
                             name: c.card.name,
                             isReversed: c.isReversed
-                        }))
+                        })),
+                        username: user?.user_metadata?.nickname || '방문자'
                     }
                 }
             });

@@ -25,6 +25,9 @@ const CATEGORIES = [
 
 import { UserProfileModal } from "@/components/community/UserProfileModal";
 import { GalaxyBackground } from '@/components/ui/GalaxyBackground';
+import { LoginRequiredModal } from '@/components/LoginRequiredModal';
+import { LoginModal } from '@/components/auth/LoginModal';
+import { RegisterModal } from '@/components/auth/RegisterModal';
 
 const CommunityLounge = () => {
     const { user, userProfile, session } = useAuth(); // Destructure session
@@ -36,6 +39,9 @@ const CommunityLounge = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showActivityModal, setShowActivityModal] = useState(false);
+    const [showLoginRequired, setShowLoginRequired] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [selectedPost, setSelectedPost] = useState<any>(null);
     const [currentChatRoom, setCurrentChatRoom] = useState<string | null>(null);
     const [initialPostData, setInitialPostData] = useState<{
@@ -47,6 +53,13 @@ const CommunityLounge = () => {
     const [selectedUserProfile, setSelectedUserProfile] = useState<{ id: string, nickname: string, avatar_url?: string | null } | null>(null);
     const [posts, setPosts] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Check for guest user
+    useEffect(() => {
+        if (!user) {
+            setShowLoginRequired(true);
+        }
+    }, [user]);
 
     // Check developer mode and location state
     useEffect(() => {
@@ -692,12 +705,40 @@ const CommunityLounge = () => {
                 <MyActivityModal
                     isOpen={showActivityModal}
                     onClose={() => setShowActivityModal(false)}
+                    userId={user?.id || ''}
                 />
 
                 <UserProfileModal
                     isOpen={!!selectedUserProfile}
                     onClose={() => setSelectedUserProfile(null)}
                     targetUser={selectedUserProfile}
+                />
+
+                {/* Guest Access Modals */}
+                <LoginRequiredModal
+                    isOpen={showLoginRequired}
+                    onClose={() => setShowLoginRequired(false)}
+                    onShowLogin={() => {
+                        setShowLoginRequired(false);
+                        setShowLoginModal(true);
+                    }}
+                    message="커뮤니티 기능을 이용하려면 로그인이 필요합니다."
+                />
+                <LoginModal
+                    isOpen={showLoginModal}
+                    onClose={() => setShowLoginModal(false)}
+                    onSwitchToRegister={() => {
+                        setShowLoginModal(false);
+                        setShowRegisterModal(true);
+                    }}
+                />
+                <RegisterModal
+                    isOpen={showRegisterModal}
+                    onClose={() => setShowRegisterModal(false)}
+                    onSwitchToLogin={() => {
+                        setShowRegisterModal(false);
+                        setShowLoginModal(true);
+                    }}
                 />
             </div>
         </AppLayout>

@@ -104,7 +104,8 @@ export const YearlyFortune = () => {
                         cards: cards.map(c => ({
                             name: c.card.name,
                             isReversed: c.isReversed
-                        }))
+                        })),
+                        username: name
                     }
                 }
             });
@@ -133,11 +134,27 @@ export const YearlyFortune = () => {
         }, 1000);
     };
 
-    const handleReveal = (index: number) => {
-        if (!revealedCards.includes(index)) {
-            setRevealedCards([...revealedCards, index]);
+    // Auto-reveal cards sequentially when entering result step
+    useEffect(() => {
+        if (step === 'result' && revealedCards.length < 4) {
+            const timeouts: NodeJS.Timeout[] = [];
+
+            // Reveal cards 0, 1, 2, 3 with delay
+            [0, 1, 2, 3].forEach((index) => {
+                const timeout = setTimeout(() => {
+                    setRevealedCards(prev => {
+                        if (!prev.includes(index)) {
+                            return [...prev, index];
+                        }
+                        return prev;
+                    });
+                }, index * 800 + 500); // 0.5s, 1.3s, 2.1s, 2.9s
+                timeouts.push(timeout);
+            });
+
+            return () => timeouts.forEach(t => clearTimeout(t));
         }
-    };
+    }, [step]);
 
     const handleShareToLounge = async () => {
         try {

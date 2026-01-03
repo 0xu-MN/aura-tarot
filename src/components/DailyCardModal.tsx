@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DrawAgainModal } from "./DrawAgainModal";
 import { TAROT_CARDS, TarotCardData } from "@/lib/tarot-data";
 import { IS_BETA_ACTIVE } from "@/lib/beta-config";
+import { LoginRequiredModal } from '@/components/LoginRequiredModal';
 
 const MAX_FREE_DRAWS = 3;
 const DAILY_DRAW_KEY = 'daily_card_draws';
@@ -26,6 +27,7 @@ interface DailyCardModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDrawAgain?: () => void;
+  onShowLogin?: () => void;
   question?: string;
 }
 
@@ -73,7 +75,7 @@ const setDailyPaid = () => {
   }));
 };
 
-export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: DailyCardModalProps) => {
+export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, question }: DailyCardModalProps) => {
   const { refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<"shuffle" | "select" | "reading">("shuffle");
@@ -137,7 +139,8 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
           type: 'reading',
           context: {
             question: question || '오늘의 전반적인 운세와 조언을 알려주세요.',
-            cards: [{ name: card.name, isReversed: reversed }]
+            cards: [{ name: card.name, isReversed: reversed }],
+            username: user?.user_metadata?.nickname || user?.user_metadata?.full_name || '방문자'
           }
         }
       });
@@ -157,30 +160,18 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
   };
 
 
+  /* Inside Component */
+  const { user } = useAuth(); // Destructure user
+  const [showLoginRequired, setShowLoginRequired] = useState(false);
+
   const handleCardSelect = async () => {
     if (isSelectionProcessing.current) return;
 
-    // Check if user has exceeded free draws
-    const currentDraws = getDailyDrawCount();
-    const isDev = localStorage.getItem('dev_mode') === 'true';
+    // Check if user has exceeded free draws (Only checks if user exists, if guest, bypass this check mainly but we might want to limit guests too? User said "first time entry", so maybe limit 1 for guest or just let them draw but fail to see result?)
+    // Actually, user wants "allow entry -> draw card -> THEN login". 
+    // So we proceed with drawing animation.
 
-    // STRICT BETA LIMIT CHECK (Bypassed in Developer Mode)
-    if (IS_BETA_ACTIVE && !isDev) {
-      if (currentDraws >= MAX_FREE_DRAWS) {
-        toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다. 내일 다시 이용해주세요! ✨', {
-          duration: 3000,
-        });
-        return;
-      }
-    } else if (!isDev) {
-      // Only block if limit exceeded AND not paid for today (Normal Mode)
-      if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
-        setShowPaymentModal(true);
-        return;
-      }
-    }
-
-    // Lock selection to prevent double counting
+    // Lock selection
     isSelectionProcessing.current = true;
 
     const randomCard = TAROT_CARDS[Math.floor(Math.random() * TAROT_CARDS.length)];
@@ -188,16 +179,51 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
     setSelectedCard(randomCard);
     setIsReversed(reversed);
 
-    // Increment draw count
-    incrementDailyDrawCount();
-    setDrawCount(currentDraws + 1);
+    // If Guest, we DO NOT fetch AI reading yet to save cost/logic, or we fetch it but don't show?
+    // User strategy: "allow drawing animation, then ask for login for result".
+    // So we can skip fetchAiReading if no user.
 
-    // Start AI Reading
-    fetchAiReading(randomCard, reversed);
+    if (user) {
+      // Normal Flow
+      const currentDraws = getDailyDrawCount();
+      const isDev = localStorage.getItem('dev_mode') === 'true';
+      if (!isDev) {
+        if (IS_BETA_ACTIVE) {
+          if (currentDraws >= MAX_FREE_DRAWS) {
+            toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다.');
+            isSelectionProcessing.current = false;
+            return;
+          }
+        } else {
+          if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
+            setShowPaymentModal(true);
+            isSelectionProcessing.current = false;
+            return;
+          }
+        }
+      }
+      incrementDailyDrawCount();
+      setDrawCount(currentDraws + 1);
+      fetchAiReading(randomCard, reversed);
+    }
 
-    // Immediate transition to reading
+    // Transition to reading phase (Card Reveal)
     setPhase("reading");
-    setTimeout(() => setShowCard(true), 100);
+    setTimeout(() => {
+      setShowCard(true);
+      // If guest, show login modal AFTER card flip or BEFORE?
+      // "Show result" means typically the interpretation.
+      // Let's show the card image and name, but block the text?
+      // OR block the whole thing?
+      // User said: "allow drawing, then when result comes out -> login".
+      // I'll show the card flipping, then immediately trigger login modal if guest.
+
+      if (!user) {
+        setTimeout(() => {
+          setShowLoginRequired(true);
+        }, 1000); // 1 sec after flip
+      }
+    }, 100);
   };
 
   const handleSave = async () => {
@@ -399,61 +425,78 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
                     )}
                   </div>
 
-                  <div className="p-6 rounded-2xl bg-black/40 border border-purple-500/20 backdrop-blur-md shadow-inner max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
-                    <div className="flex items-center gap-2 mb-4 text-purple-300 border-b border-purple-500/20 pb-2 sticky top-0 bg-black/40 backdrop-blur-md z-10 w-full">
-                      <Sparkles className="w-5 h-5" />
-                      <span className="font-bold">리딩 결과</span>
-                    </div>
-                    {isAnalyzing ? (
-                      <div className="flex flex-col items-center justify-center py-8 gap-4">
-                        <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
-                        <p className="text-sm text-purple-200/80 animate-pulse">AI 마스터가 운명을 읽고 있습니다...</p>
+                  {/* Only show detailed reading if user exists */}
+                  {user ? (
+                    <>
+                      <div className="p-6 rounded-2xl bg-black/40 border border-purple-500/20 backdrop-blur-md shadow-inner max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
+                        <div className="flex items-center gap-2 mb-4 text-purple-300 border-b border-purple-500/20 pb-2 sticky top-0 bg-black/40 backdrop-blur-md z-10 w-full">
+                          <Sparkles className="w-5 h-5" />
+                          <span className="font-bold">리딩 결과</span>
+                        </div>
+                        {isAnalyzing ? (
+                          <div className="flex flex-col items-center justify-center py-8 gap-4">
+                            <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+                            <p className="text-sm text-purple-200/80 animate-pulse">AI 마스터가 운명을 읽고 있습니다...</p>
+                          </div>
+                        ) : (
+                          <p className="text-gray-100 leading-relaxed text-left whitespace-pre-wrap break-words text-base font-light tracking-wide">
+                            {aiReading}
+                          </p>
+                        )}
                       </div>
-                    ) : (
-                      <p className="text-gray-100 leading-relaxed text-left whitespace-pre-wrap break-words text-base font-light tracking-wide">
-                        {aiReading}
+
+                      {!isAnalyzing && aiReading && (
+                        <div className="flex flex-col gap-3 mt-4 no-capture">
+                          <GlareButton
+                            className="w-full bg-gradient-to-r from-gold to-amber-500 text-white border-0"
+                            onClick={handleConsultSom}
+                          >
+                            <MessageCircleHeart className="w-5 h-5 mr-2" />
+                            솜이에게 더 물어보기
+                          </GlareButton>
+
+                          <div className="flex gap-3">
+                            <GlareButton
+                              variant="outline"
+                              className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm"
+                              onClick={handleSave}
+                              disabled={isSaving}
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              이미지 저장
+                            </GlareButton>
+
+                            <GlareButton
+                              variant="outline"
+                              className="flex-1 border-gold/30 hover:bg-gold/10 text-gold"
+                              onClick={handleShare}
+                            >
+                              <Share2 className="w-5 h-5 mr-2" />
+                              공유하기
+                            </GlareButton>
+                          </div>
+
+                          <GlareButton
+                            className="w-full bg-gold text-black shadow-lg shadow-gold/20"
+                            onClick={handleDrawAgain}
+                          >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            한 장 더 뽑기
+                          </GlareButton>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="p-6 rounded-2xl bg-black/40 border border-purple-500/20 backdrop-blur-md flex flex-col items-center justify-center min-h-[200px]">
+                      <p className="text-gray-400 text-center mb-4">
+                        운세 내용을 확인하려면<br />로그인이 필요합니다.
                       </p>
-                    )}
-                  </div>
-
-                  {!isAnalyzing && aiReading && (
-                    <div className="flex flex-col gap-3 mt-4 no-capture">
-                      <GlareButton
-                        className="w-full bg-gradient-to-r from-gold to-amber-500 text-white border-0"
-                        onClick={handleConsultSom}
-                      >
-                        <MessageCircleHeart className="w-5 h-5 mr-2" />
-                        솜이에게 더 물어보기
-                      </GlareButton>
-
-                      <div className="flex gap-3">
-                        <GlareButton
-                          variant="outline"
-                          className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm"
-                          onClick={handleSave}
-                          disabled={isSaving}
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          이미지 저장
-                        </GlareButton>
-
-                        <GlareButton
-                          variant="outline"
-                          className="flex-1 border-gold/30 hover:bg-gold/10 text-gold"
-                          onClick={handleShare}
-                        >
-                          <Share2 className="w-5 h-5 mr-2" />
-                          공유하기
-                        </GlareButton>
-                      </div>
-
-                      <GlareButton
+                      <Button
                         className="w-full bg-gold text-black shadow-lg shadow-gold/20"
-                        onClick={handleDrawAgain}
+                        onClick={() => setShowLoginRequired(true)}
                       >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        한 장 더 뽑기
-                      </GlareButton>
+                        결과 확인하기
+                      </Button>
                     </div>
                   )}
                 </div >
@@ -525,6 +568,18 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, question }: Daily
         featureName="오늘의 타로 - 추가 뽑기"
         featureId="daily-tarot-extra"
         price={1}
+      />
+
+      {/* Login Required Modal for Guest */}
+      <LoginRequiredModal
+        isOpen={showLoginRequired}
+        onClose={() => {
+          setShowLoginRequired(false);
+          onClose(); // Close the daily card modal too, or navigate to login?
+          // User likely wants to go to login. Modal has "Go to Login" button which navigates to '/'.
+        }}
+        onShowLogin={onShowLogin}
+        message="카드의 의미를 확인하려면 로그인이 필요합니다."
       />
     </div >
   );
