@@ -307,8 +307,6 @@ const Chatbot = () => {
     };
 
     const handleSend = () => {
-        // alert("DEBUG: Send Clicked!"); // Force visible feedback
-        console.log('[Chatbot] Handle Send Triggered');
         sendMessage(input);
     };
 
@@ -414,10 +412,6 @@ const Chatbot = () => {
 
                 {/* Input */}
                 <div className="container mx-auto px-4 py-4 border-t border-gold/20">
-                    {/* DEBUG UI */}
-                    <div className="text-xs text-red-500 mb-2">
-                        State: {isLoading ? 'LOADING' : 'READY'} | Messages: {messages.length} | User: {user ? 'Logged In' : 'Guest'}
-                    </div>
                     <div className="flex gap-2">
                         <Input
                             value={input}
@@ -430,10 +424,9 @@ const Chatbot = () => {
                             }}
                             placeholder="메시지를 입력하세요..."
                             className="flex-1 bg-card/50"
-                        // disabled={isLoading} // REMOVED FOR DEBUGGING
+                            disabled={isLoading}
                         />
-                        <Button onClick={handleSend} variant="gold" size="icon">
-                            {/* Removed disabled={isLoading} */}
+                        <Button onClick={handleSend} variant="gold" size="icon" disabled={isLoading}>
                             {isLoading ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
