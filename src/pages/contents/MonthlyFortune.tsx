@@ -129,8 +129,12 @@ export default function MonthlyFortune() {
 
             const { data, error } = await supabase.functions.invoke('tarot-chat', {
                 body: {
-                    message: prompt,
-                    history: []
+                    type: 'reading',
+                    context: {
+                        question: prompt,
+                        cards: drawnCards.map(c => ({ name: c.card.name, isReversed: c.isReversed })),
+                        username: user?.nickname || '방문자'
+                    }
                 }
             });
 

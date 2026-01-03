@@ -114,9 +114,13 @@ serve(async (req: Request) => {
     if (type === 'reading') {
       const { question, cards, username } = context;
       const cardInfo = cards.map((c: any) => `${c.name}${c.isReversed ? '(역방향)' : ''}`).join(', ');
-      systemPrompt = SYSTEM_PROMPT_READING;
-      const nameInstruction = username ? `사용자 이름: ${username}` : `사용자 이름: 방문자`;
-      userPrompt = `[지침: 사용자의 이름을 '${username || '방문자'}'님이라고 불러주세요]\n질문: ${question}\n뽑은 카드: ${cardInfo}\n\n이 카드들을 바탕으로 타로 리딩을 해주세요.`;
+
+      const userNameToUse = username || '방문자';
+
+      // Dynamically replace placeholder in system prompt
+      systemPrompt = SYSTEM_PROMPT_READING.replace('{지정된 사용자 이름}', userNameToUse);
+
+      userPrompt = `[지침: 사용자의 이름을 '${userNameToUse}'님이라고 불러주세요]\n질문: ${question}\n뽑은 카드: ${cardInfo}\n\n이 카드들을 바탕으로 타로 리딩을 해주세요.`;
     } else if (type === 'horoscope') {
       const { sign, timeframe } = context;
       systemPrompt = SYSTEM_PROMPT_HOROSCOPE;
@@ -126,7 +130,11 @@ serve(async (req: Request) => {
       userPrompt = `손바닥 사진을 분석하여 생명선, 두뇌선, 감정선을 중심으로 운세를 알려주세요.`;
     } else {
       // Chat mode
-      systemPrompt = SYSTEM_PROMPT_CHAT;
+      // Also inject name into Chat prompt if possible (though context might be missing in some legacy calls, we try to handle it)
+      // If messages array exists, we assume chat. We don't standardized extracting username from context in Chat mode yet in frontend,
+      // but let's check context.username if available.
+      const userNameToUse = context?.username || '방문자';
+      systemPrompt = SYSTEM_PROMPT_CHAT.replace('[사용자명]', userNameToUse);
     }
 
     // Transform messages for Gemini

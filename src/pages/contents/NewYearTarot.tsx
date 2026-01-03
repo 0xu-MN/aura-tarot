@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { premiumStore } from '@/lib/premiumStore';
 import { getWeightedCards, TarotCardData } from '@/lib/tarot-data';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const FEATURE_ID = 'new-year-2026';
 
@@ -30,6 +31,7 @@ import { BetaLockOverlay } from '@/components/beta/BetaLockOverlay';
 
 export const NewYearTarot = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [step, setStep] = useState<'intro' | 'payment-check' | 'theme-selection' | 'spread' | 'result'>('intro');
     const [hasPaid, setHasPaid] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -158,7 +160,7 @@ export const NewYearTarot = () => {
         try {
             const prompt = `
 당신은 신비로운 타로 마스터입니다.
-사용자의 2026년 신년 운세를 '${theme.label}' 테마 중심으로 해석해주세요.
+사용자(${user?.nickname || '방문자'}님)의 2026년 신년 운세를 '${theme.label}' 테마 중심으로 해석해주세요.
 
 1. 초반: ${cards[0].card.koreanName} (${cards[0].isReversed ? '역방향' : '정방향'})
 2. 중반: ${cards[1].card.koreanName} (${cards[1].isReversed ? '역방향' : '정방향'})
@@ -174,7 +176,14 @@ export const NewYearTarot = () => {
 `;
 
             const { data, error } = await supabase.functions.invoke('tarot-chat', {
-                body: { messages: [{ role: 'user', content: prompt }] }
+                body: {
+                    type: 'reading',
+                    context: {
+                        question: prompt,
+                        cards: cards.map(c => ({ name: c.card.name, isReversed: c.isReversed })),
+                        username: user?.nickname || '방문자'
+                    }
+                }
             });
 
             if (error) throw error;
