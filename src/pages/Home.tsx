@@ -57,8 +57,42 @@ const Home = () => {
                     {/* Card Drawing Section */}
                     <CardDrawing onShowLogin={() => setShowLoginModal(true)} />
 
+
+                    {/* New Year Fortune Banner (Jan Promo) */}
+                    <div className="mb-4 w-full animate-fade-in mt-8" onClick={() => window.location.href = '/tarot/new-year'}>
+                        <div className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gold/30 h-40 shadow-[0_0_20px_rgba(218,165,32,0.15)]">
+                            <div className="absolute inset-0">
+                                <img
+                                    src="/thumbnails/yearly-fortune.png"
+                                    alt="2026 New Year Fortune"
+                                    className="w-full h-full object-cover object-[50%_25%] opacity-90 scale-105 group-hover:scale-110 transition-transform duration-700"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+                            </div>
+                            <div className="absolute inset-0 bg-[url('/assets/stars.svg')] opacity-50" />
+                            <div className="relative z-10 p-6 flex flex-col justify-center h-full max-w-lg">
+                                <div className="flex gap-2 mb-2">
+                                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-gold text-[11px] text-black font-bold shadow-[0_0_10px_rgba(218,165,32,0.4)] animate-pulse">
+                                        2026 SPECIAL
+                                    </span>
+                                </div>
+                                <h3 className="font-display text-2xl md:text-3xl text-white mb-1 group-hover:text-gold transition-colors">
+                                    2026년 신년운세
+                                </h3>
+                                <p className="text-sm md:text-base text-gray-200 font-light">
+                                    새로운 한 해, 당신의 운명을 미리 확인해보세요 ✨
+                                </p>
+                            </div>
+                            <div className="absolute right-6 top-1/2 -translate-y-1/2 hidden md:block">
+                                <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:bg-gold group-hover:text-black transition-all duration-300">
+                                    <Sparkles className="w-6 h-6" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Weekly & Monthly Fortune Banner Grid */}
-                    < div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10 w-full animate-fade-in mt-8" >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10 w-full animate-fade-in mt-4">
                         {/* Weekly Fortune */}
                         < div className="relative group cursor-pointer overflow-hidden rounded-2xl border border-white/10 h-32" onClick={() => window.location.href = '/tarot/weekly'}>
                             <div className="absolute inset-0">

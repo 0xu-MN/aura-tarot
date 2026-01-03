@@ -31,6 +31,17 @@ const Contents = () => {
 
     const contentItems: ContentItem[] = [
         {
+            title: "2026 신년운세",
+            description: "새해 12개월의 운세를 상세히 풀이해드립니다",
+            categories: ["신년운세"],
+            displayCategory: "신년",
+            icon: "📅",
+            link: "/tarot/new-year",
+            image: "/thumbnails/yearly-fortune.png",
+            pinned: true,
+            badge: "Beta Open"
+        },
+        {
             title: "오늘의 운세",
             description: "하루를 시작하는 특별한 메시지를 받아보세요",
             categories: ["운세", "신년운세"], // 신년운세에도 포함시켜줌 (넓은 의미)
@@ -85,16 +96,6 @@ const Contents = () => {
             link: "/contents/work",
             image: workThumb,
             imageClass: "object-cover w-full h-full",
-            badge: "Beta Open"
-        },
-        {
-            title: "2026 신년운세",
-            description: "새해 12개월의 운세를 상세히 풀이해드립니다",
-            categories: ["신년운세"],
-            displayCategory: "신년",
-            icon: "📅",
-            link: "/tarot/new-year",
-            image: "/thumbnails/yearly-fortune.png",
             badge: "Beta Open"
         },
         {
