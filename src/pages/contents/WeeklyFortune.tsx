@@ -13,6 +13,8 @@ import { IS_BETA_ACTIVE, BETA_WEEKLY_LIMIT } from "@/lib/beta-config";
 import { LoginRequiredModal } from '@/components/LoginRequiredModal';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { RegisterModal } from '@/components/auth/RegisterModal';
+import { captureResultAsDataURL } from '@/lib/shareUtils';
+import { CreatePostModal } from '@/components/community/CreatePostModal';
 
 export default function WeeklyFortune() {
     const navigate = useNavigate();
@@ -25,6 +27,8 @@ export default function WeeklyFortune() {
     const [showLoginRequired, setShowLoginRequired] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showRegisterModal, setShowRegisterModal] = useState(false);
+    const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+    const [postInitialData, setPostInitialData] = useState<{ images: string[], title: string, content: string } | null>(null);
 
     // Calculate Weekly Date Range
     const getWeeklyDateRange = () => {
@@ -220,6 +224,56 @@ ${drawnCards[4]?.card.koreanName} 카드는 당신이 이미 충분한 능력을
         }
     };
 
+    const handleShareToLounge = async () => {
+        try {
+            const dataUrl = await captureResultAsDataURL('result-capture');
+            if (dataUrl) {
+                setPostInitialData({
+                    images: [dataUrl],
+                    title: `이번 주 나의 운세 (${weeklyDate})`,
+                    content: `오늘 본 주간 운세 결과입니다. #타로 #주간운세`
+                });
+                setShowCreatePostModal(true);
+            }
+        } catch (error) {
+            console.error('Error capturing result:', error);
+            toast.error('이미지 캡처 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleCreatePost = async (postData: any) => {
+        try {
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError || !session?.user) {
+                throw new Error('로그인이 필요합니다.');
+            }
+
+            // Upload image logic here if needed
+            // For now, assume image is already a data URL
+
+            const { error } = await supabase.from('community_posts').insert({
+                user_id: session.user.id,
+                title: postData.title,
+                content: postData.content,
+                category: 'tarot',
+                tarot_image_url: postData.images?.[0] || null,
+                lounge_type: 'general'
+            });
+
+            if (error) throw error;
+
+            toast.success('라운지에 게시되었습니다!');
+            setShowCreatePostModal(false);
+            setPostInitialData(null);
+
+            // Navigate to lounge after successful post
+            navigate('/lounge');
+        } catch (error) {
+            console.error('Error creating post:', error);
+            toast.error('게시글 등록에 실패했습니다.');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white pb-24 overflow-x-hidden relative selection:bg-gold/30">
             {/* Background */}
@@ -411,11 +465,15 @@ ${drawnCards[4]?.card.koreanName} 카드는 당신이 이미 충분한 능력을
                         {!isLoading && (
                             <div className="mt-8 space-y-3">
                                 <Button
-                                    onClick={handleShare}
-                                    className="w-full h-14 bg-white text-black hover:bg-gray-200 font-bold text-lg rounded-xl shadow-lg flex items-center justify-center gap-2"
+                                    onClick={() => {
+                                        setStep('intro');
+                                        setDrawnCards([]);
+                                        setReading('');
+                                    }}
+                                    className="w-full h-14 bg-gold text-black hover:bg-gold/80 font-bold text-lg rounded-xl shadow-lg flex items-center justify-center gap-2"
                                 >
-                                    <Share2 className="w-5 h-5" />
-                                    이번 주 운세 저장하기
+                                    <Sparkles className="w-5 h-5" />
+                                    한번 더 뽑기
                                 </Button>
                                 <div className="flex gap-3">
                                     <GlareButton
@@ -448,6 +506,13 @@ ${drawnCards[4]?.card.koreanName} 카드는 당신이 이미 충분한 능력을
                                         이미지 저장
                                     </GlareButton>
                                 </div>
+                                <Button
+                                    className="w-full h-12 bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium"
+                                    onClick={handleShareToLounge}
+                                >
+                                    <Share2 className="w-4 h-4 mr-2" />
+                                    라운지에 자랑하기
+                                </Button>
                                 <p className="text-center text-xs text-gray-500 mt-4">
                                     매주 월요일 00:00에 새로운 운세가 업데이트됩니다
                                 </p>
@@ -456,6 +521,17 @@ ${drawnCards[4]?.card.koreanName} 카드는 당신이 이미 충분한 능력을
                     </div>
                 )}
             </div>
+
+            <CreatePostModal
+                isOpen={showCreatePostModal}
+                onClose={() => {
+                    setShowCreatePostModal(false);
+                    setPostInitialData(null);
+                }}
+                onSubmit={handleCreatePost}
+                initialImages={postInitialData?.images}
+                initialType="tarot"
+            />
         </div>
     );
 }

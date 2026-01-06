@@ -115,7 +115,7 @@ export const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModa
 
         if (error) {
             toast.error('회원가입 실패', {
-                description: error,
+                description: error.message || error,
             });
         } else {
             toast.success('회원가입 완료!', {

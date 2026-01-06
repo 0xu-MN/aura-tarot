@@ -15,6 +15,7 @@ import { getWeightedCards, TarotCardData } from '@/lib/tarot-data';
 import { supabase } from '@/integrations/supabase/client';
 
 import { BetaLockOverlay } from '@/components/beta/BetaLockOverlay';
+import { CreatePostModal } from '@/components/community/CreatePostModal';
 
 const FEATURE_ID = 'compatibility-tarot';
 
@@ -37,6 +38,8 @@ export const CompatibilityTarot = () => {
     const [score, setScore] = useState(0);
     const [aiReading, setAiReading] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+    const [postInitialData, setPostInitialData] = useState<{ images: string[], title: string, content: string } | null>(null);
 
     // Load persisted state on mount
     useEffect(() => {
@@ -164,18 +167,44 @@ export const CompatibilityTarot = () => {
         try {
             const dataUrl = await captureResultAsDataURL('compatibility-result-content');
             if (dataUrl) {
-                navigate('/lounge', {
-                    state: {
-                        autoOpenCreate: true,
-                        attachedImage: dataUrl,
-                        initialTitle: `${myName} & ${partnerName}의 궁합: ${score}% 💕`,
-                        initialContent: `오늘 본 커플 궁합 타로 결과입니다. #타로 #궁합 #럽스타그램`
-                    }
+                setPostInitialData({
+                    images: [dataUrl],
+                    title: `${myName} & ${partnerName}의 궁합: ${score}% 💕`,
+                    content: `오늘 본 커플 궁합 타로 결과입니다. #타로 #궁합 #럽스타그램`
                 });
+                setShowCreatePostModal(true);
             }
         } catch (error) {
-            console.error('Error sharing to lounge:', error);
-            toast.error('라운지 공유 중 오류가 발생했습니다.');
+            console.error('Error capturing result:', error);
+            toast.error('이미지 캡처 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleCreatePost = async (postData: any) => {
+        try {
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError || !session?.user) {
+                throw new Error('로그인이 필요합니다.');
+            }
+
+            const { error } = await supabase.from('community_posts').insert({
+                user_id: session.user.id,
+                title: postData.title,
+                content: postData.content,
+                category: 'tarot',
+                tarot_image_url: postData.images?.[0] || null,
+                lounge_type: 'general'
+            });
+
+            if (error) throw error;
+
+            toast.success('라운지에 게시되었습니다!');
+            setShowCreatePostModal(false);
+            setPostInitialData(null);
+            navigate('/lounge');
+        } catch (error) {
+            console.error('Error creating post:', error);
+            toast.error('게시글 등록에 실패했습니다.');
         }
     };
 
@@ -476,6 +505,17 @@ export const CompatibilityTarot = () => {
                     </div>
                 )}
             </div>
+
+            <CreatePostModal
+                isOpen={showCreatePostModal}
+                onClose={() => {
+                    setShowCreatePostModal(false);
+                    setPostInitialData(null);
+                }}
+                onSubmit={handleCreatePost}
+                initialImages={postInitialData?.images}
+                initialType="tarot"
+            />
 
             <PaymentModal
                 isOpen={showPaymentModal}

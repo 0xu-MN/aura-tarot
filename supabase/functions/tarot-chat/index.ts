@@ -196,7 +196,7 @@ serve(async (req: Request) => {
       }
     }
 
-    console.log('Calling Google Gemini API (gemini-2.5-flash)...');
+    console.log('Calling Google Gemini API with retry logic...');
 
     // Simplified payload for stability
     const payload = {
@@ -207,37 +207,76 @@ serve(async (req: Request) => {
       }
     };
 
-    let response;
-    try {
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-    } catch (fetchError) {
-      console.error('Network/Fetch Error:', fetchError);
-      throw new Error(`Network error calling Gemini: ${fetchError}`);
-    }
+    // Retry logic with fallback models
+    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-exp'];
+    let lastError = null;
+    let response = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Gemini API Error (Status: ${response.status}):`, errorText);
+    for (let modelIndex = 0; modelIndex < models.length; modelIndex++) {
+      const currentModel = models[modelIndex];
 
-      // If 404, try to list available models to debug
-      let availableModels = 'Could not fetch models';
-      try {
-        const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
-        const modelsData = await modelsRes.json();
-        if (modelsData.models) {
-          availableModels = modelsData.models.map((m: any) => m.name).join(', ');
+      // Retry each model up to 3 times
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`Attempt ${attempt}/3 with model: ${currentModel}`);
+
+          response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${GEMINI_API_KEY}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            }
+          );
+
+          // If successful response, break out of retry loop
+          if (response.ok) {
+            console.log(`✅ Success with ${currentModel} on attempt ${attempt}`);
+            break;
+          }
+
+          // Check if it's a 503 (overloaded)
+          const status = response.status;
+          if (status === 503 || status === 529) {
+            console.log(`⚠️ Model overloaded (${status}), retrying...`);
+            lastError = await response.text();
+
+            // Exponential backoff: wait before retry
+            if (attempt < 3) {
+              const waitTime = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+              console.log(`Waiting ${waitTime}ms before retry...`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+          } else {
+            // Other error, don't retry
+            lastError = await response.text();
+            break;
+          }
+        } catch (fetchError) {
+          console.error(`Network error on attempt ${attempt}:`, fetchError);
+          lastError = fetchError.toString();
+
+          if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
         }
-      } catch (e) {
-        console.error('Failed to list models', e);
       }
 
-      throw new Error(`Gemini API error: ${response.status} - ${errorText}. \n\n[Available Models for your Key]: ${availableModels}`);
+      // If we got a successful response, break out of model loop
+      if (response && response.ok) {
+        break;
+      }
+
+      // If not last model, try next model
+      if (modelIndex < models.length - 1) {
+        console.log(`❌ ${currentModel} failed, trying fallback model...`);
+      }
+    }
+
+    // Final check
+    if (!response || !response.ok) {
+      console.error('All models and retries failed');
+      throw new Error(`모든 AI 모델이 현재 과부하 상태입니다. 잠시 후 다시 시도해주세요. (마지막 오류: ${lastError})`);
     }
 
     const data = await response.json();

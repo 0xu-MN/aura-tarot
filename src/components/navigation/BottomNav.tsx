@@ -14,7 +14,7 @@ export const BottomNav = () => {
 
 
     return (
-        <nav className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+        <nav className="fixed bottom-8 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
             <div className="relative w-full max-w-md pointer-events-auto">
                 {/* Glass Background */}
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-2xl rounded-full border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] ring-1 ring-white/5" />
@@ -22,7 +22,7 @@ export const BottomNav = () => {
                 {/* Shine Effect */}
                 <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
 
-                <div className="relative flex items-center justify-around h-16 px-2">
+                <div className="relative flex items-center justify-around h-20 px-4">
                     {navItems.map((item) => (
                         <RouterNavLink
                             key={item.path}

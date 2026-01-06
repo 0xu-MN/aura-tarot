@@ -21,6 +21,8 @@ import { LoveTarot } from "./pages/contents/LoveTarot";
 import { ReunionTarot } from "./pages/contents/ReunionTarot";
 import { NewYearTarot } from "./pages/contents/NewYearTarot";
 import { CompatibilityTarot } from "./pages/contents/CompatibilityTarot";
+import SharePreview from "./pages/SharePreview";
+import SavePreview from "./pages/SavePreview";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +51,8 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/lounge" element={<CommunityLounge />} />
             <Route path="/profile/:userId" element={<CommunityLounge />} />
+            <Route path="/share-preview" element={<SharePreview />} />
+            <Route path="/save-preview" element={<SavePreview />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

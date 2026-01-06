@@ -8,7 +8,7 @@ export default function SharePreview() {
     const sampleDate = "2024. 01. 06";
 
     // Promotional Copy
-    const promoReading = `2026년 신년운? 연애운? 재물운? 직장운?
+    const promoReading = `2026년 운세 궁금해! 연애운이랑 재물운 좀 봐줘~
 오늘의 한장에서 다 물어봐도 돼 💌
 팔로우하고 지금 무료로 뽑아보자 💕`;
 

@@ -115,7 +115,7 @@ export const CardDrawing = ({ onShowLogin }: { onShowLogin?: () => void }) => {
                         id="question"
                         value={question}
                         onChange={(e) => setQuestion(e.target.value)}
-                        placeholder="예: 오늘 나에게 필요한 조언은 무엇인가요?"
+                        placeholder="솜이야, 연애운 봐줘"
                         className="min-h-[100px] bg-background/50 resize-none"
                         maxLength={200}
                     />

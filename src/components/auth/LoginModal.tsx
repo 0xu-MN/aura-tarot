@@ -82,8 +82,9 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
 
     // Developer mode bypass
     const handleDevMode = () => {
+        localStorage.setItem('dev_mode', 'true'); // Fix: Actually set the flag
         toast.success('개발자 모드로 진입합니다', {
-            description: '데이터베이스 없이 UI를 테스트할 수 있습니다.',
+            description: '데이터베이스 없이 UI를 테스트할 수 있습니다. (무제한 모드)',
         });
         onClose();
         navigate('/home');
@@ -204,6 +205,20 @@ export const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
                             </svg>
                             Google로 계속하기
                         </Button>
+
+                        {/* Developer Mode Button - Localhost Only */}
+                        {window.location.hostname === 'localhost' && (
+                            <div className="mt-4 pt-4 border-t border-white/5">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="w-full text-xs text-muted-foreground hover:text-white"
+                                    onClick={handleDevMode}
+                                >
+                                    🛠️ 개발자 모드 (Localhost Only)
+                                </Button>
+                            </div>
+                        )}
                     </form>
 
                     <div className="mt-6 text-center">

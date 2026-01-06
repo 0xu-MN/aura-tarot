@@ -14,6 +14,7 @@ import { premiumStore } from '@/lib/premiumStore';
 import { getWeightedCards, TarotCardData } from '@/lib/tarot-data';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { CreatePostModal } from '@/components/community/CreatePostModal';
 
 const FEATURE_ID = 'new-year-2026';
 
@@ -43,6 +44,8 @@ export const NewYearTarot = () => {
     const [aiReading, setAiReading] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [currentInstruction, setCurrentInstruction] = useState("");
+    const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+    const [postInitialData, setPostInitialData] = useState<{ images: string[], title: string, content: string } | null>(null);
 
     const handleProgress = (count: number) => {
         const prompts = [
@@ -244,18 +247,44 @@ export const NewYearTarot = () => {
         try {
             const dataUrl = await captureResultAsDataURL('newyear-result-content');
             if (dataUrl) {
-                navigate('/lounge', {
-                    state: {
-                        autoOpenCreate: true,
-                        attachedImage: dataUrl,
-                        initialTitle: `나의 2026년 ${selectedTheme.label} 🎆`,
-                        initialContent: `2026년 ${selectedTheme.label} 결과를 공유합니다. #타로 #신년운세 #2026`
-                    }
+                setPostInitialData({
+                    images: [dataUrl],
+                    title: `나의 2026년 ${selectedTheme.label} 🎆`,
+                    content: `2026년 ${selectedTheme.label} 결과를 공유합니다. #타로 #신년운세 #2026`
                 });
+                setShowCreatePostModal(true);
             }
         } catch (error) {
-            console.error('Error sharing to lounge:', error);
-            toast.error('라운지 공유 중 오류가 발생했습니다.');
+            console.error('Error capturing result:', error);
+            toast.error('이미지 캡처 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleCreatePost = async (postData: any) => {
+        try {
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError || !session?.user) {
+                throw new Error('로그인이 필요합니다.');
+            }
+
+            const { error } = await supabase.from('community_posts').insert({
+                user_id: session.user.id,
+                title: postData.title,
+                content: postData.content,
+                category: 'tarot',
+                tarot_image_url: postData.images?.[0] || null,
+                lounge_type: 'general'
+            });
+
+            if (error) throw error;
+
+            toast.success('라운지에 게시되었습니다!');
+            setShowCreatePostModal(false);
+            setPostInitialData(null);
+            navigate('/lounge');
+        } catch (error) {
+            console.error('Error creating post:', error);
+            toast.error('게시글 등록에 실패했습니다.');
         }
     };
 
@@ -484,19 +513,18 @@ export const NewYearTarot = () => {
                                     )}
 
                                     <Button
-                                        variant="ghost"
-                                        className="w-full mt-2 text-muted-foreground hover:text-white hover:bg-white/5"
                                         onClick={() => {
                                             premiumStore.resetFeature(FEATURE_ID);
                                             setHasPaid(false);
-                                            setStep('intro'); // Go back to intro for New Year
+                                            setStep('intro');
                                             setRevealedCards([]);
                                             setDrawnCards([]);
                                             setAiReading('');
                                         }}
+                                        className="w-full h-14 bg-gold text-black hover:bg-gold/80 font-bold text-lg rounded-xl shadow-lg flex items-center justify-center gap-2"
                                     >
-                                        <RefreshCw className="w-4 h-4 mr-2" />
-                                        처음부터 다시 보기
+                                        <Sparkles className="w-5 h-5" />
+                                        한번 더 뽑기
                                     </Button>
                                 </div>
                             </div>
@@ -504,6 +532,17 @@ export const NewYearTarot = () => {
                     </div>
                 )}
             </div>
+
+            <CreatePostModal
+                isOpen={showCreatePostModal}
+                onClose={() => {
+                    setShowCreatePostModal(false);
+                    setPostInitialData(null);
+                }}
+                onSubmit={handleCreatePost}
+                initialImages={postInitialData?.images}
+                initialType="tarot"
+            />
 
             <PaymentModal
                 isOpen={showPaymentModal}
