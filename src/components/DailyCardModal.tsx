@@ -18,6 +18,9 @@ import { DrawAgainModal } from "./DrawAgainModal";
 import { TAROT_CARDS, TarotCardData } from "@/lib/tarot-data";
 import { IS_BETA_ACTIVE } from "@/lib/beta-config";
 import { LoginRequiredModal } from '@/components/LoginRequiredModal';
+import { TarotShareCard } from "./share/TarotShareCard";
+import { TarotSaveCard } from "./share/TarotSaveCard";
+import html2canvas from "html2canvas";
 
 const MAX_FREE_DRAWS = 3;
 const DAILY_DRAW_KEY = 'daily_card_draws';
@@ -56,6 +59,7 @@ const incrementDailyDrawCount = () => {
     count: currentCount + 1
   }));
 };
+
 
 const isDailyPaid = (): boolean => {
   try {
@@ -130,6 +134,10 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
     }
   };
 
+  /* Inside Component */
+  const { user } = useAuth(); // Destructure user
+  const [showLoginRequired, setShowLoginRequired] = useState(false);
+
   const fetchAiReading = async (card: TarotCardData, reversed: boolean) => {
     setIsAnalyzing(true);
     try {
@@ -147,6 +155,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
 
       if (error) throw error;
       if (data?.message) {
+        // Save original response with intro (for web display)
         setAiReading(data.message);
         await recordReading(card, reversed, data.message);
       }
@@ -159,17 +168,8 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
     }
   };
 
-
-  /* Inside Component */
-  const { user } = useAuth(); // Destructure user
-  const [showLoginRequired, setShowLoginRequired] = useState(false);
-
   const handleCardSelect = async () => {
     if (isSelectionProcessing.current) return;
-
-    // Check if user has exceeded free draws (Only checks if user exists, if guest, bypass this check mainly but we might want to limit guests too? User said "first time entry", so maybe limit 1 for guest or just let them draw but fail to see result?)
-    // Actually, user wants "allow entry -> draw card -> THEN login". 
-    // So we proceed with drawing animation.
 
     // Lock selection
     isSelectionProcessing.current = true;
@@ -179,27 +179,21 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
     setSelectedCard(randomCard);
     setIsReversed(reversed);
 
-    // If Guest, we DO NOT fetch AI reading yet to save cost/logic, or we fetch it but don't show?
-    // User strategy: "allow drawing animation, then ask for login for result".
-    // So we can skip fetchAiReading if no user.
-
     if (user) {
-      // Normal Flow
+      // Normal Flow for production
       const currentDraws = getDailyDrawCount();
-      const isDev = localStorage.getItem('dev_mode') === 'true';
-      if (!isDev) {
-        if (IS_BETA_ACTIVE) {
-          if (currentDraws >= MAX_FREE_DRAWS) {
-            toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다.');
-            isSelectionProcessing.current = false;
-            return;
-          }
-        } else {
-          if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
-            setShowPaymentModal(true);
-            isSelectionProcessing.current = false;
-            return;
-          }
+
+      if (IS_BETA_ACTIVE) {
+        if (currentDraws >= MAX_FREE_DRAWS) {
+          toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다.');
+          isSelectionProcessing.current = false;
+          return;
+        }
+      } else {
+        if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
+          setShowPaymentModal(true);
+          isSelectionProcessing.current = false;
+          return;
         }
       }
       incrementDailyDrawCount();
@@ -211,42 +205,141 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
     setPhase("reading");
     setTimeout(() => {
       setShowCard(true);
-      // If guest, show login modal AFTER card flip or BEFORE?
-      // "Show result" means typically the interpretation.
-      // Let's show the card image and name, but block the text?
-      // OR block the whole thing?
-      // User said: "allow drawing, then when result comes out -> login".
-      // I'll show the card flipping, then immediately trigger login modal if guest.
-
       if (!user) {
         setTimeout(() => {
           setShowLoginRequired(true);
-        }, 1000); // 1 sec after flip
+        }, 1000);
       }
     }, 100);
   };
 
   const handleSave = async () => {
+    if (!selectedCard) return;
+
     setIsSaving(true);
-    const success = await saveResultAsImage('daily-reading-result', `AuraTarot_${new Date().getTime()}`);
-    if (success) {
-      toast.success('이미지가 저장되었습니다');
-    } else {
-      toast.error('이미지 저장에 실패했습니다');
+    toast.info("카드를 예쁘게 인화하고 있어요... 📸");
+
+    try {
+      // Find the hidden save card element
+      const saveCardElement = document.getElementById('tarot-save-final');
+      if (!saveCardElement) {
+        toast.error('저장할 카드를 찾을 수 없습니다.');
+        setIsSaving(false);
+        return;
+      }
+
+      // Get the parent wrapper
+      const wrapper = saveCardElement.closest('.fixed') as HTMLElement;
+      if (!wrapper) {
+        toast.error('카드 래퍼를 찾을 수 없습니다.');
+        setIsSaving(false);
+        return;
+      }
+
+      // Temporarily make it visible for capture (but invisible to user)
+      wrapper.style.zIndex = '9999';
+      wrapper.style.width = 'auto';
+      wrapper.style.height = 'auto';
+      wrapper.style.overflow = 'visible';
+      wrapper.style.opacity = '0.01'; // Almost invisible but renderable
+      wrapper.style.pointerEvents = 'none';
+
+      // Wait for styles to apply and render
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Capture using html2canvas
+      const canvas = await html2canvas(saveCardElement, {
+        scale: 2,
+        backgroundColor: '#1a1a1a',
+        useCORS: true,
+        logging: false,
+        width: 1080,
+        height: 1350
+      });
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `AuraTarot_${new Date().getTime()}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          toast.success('앨범에 저장되었습니다! ✨');
+        } else {
+          toast.error('이미지 변환에 실패했습니다.');
+        }
+      }, 'image/png');
+
+      // Restore hidden state
+      wrapper.style.zIndex = '-50';
+      wrapper.style.width = '0';
+      wrapper.style.height = '0';
+      wrapper.style.overflow = 'hidden';
+      wrapper.style.opacity = '1';
+
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('저장에 실패했어요. 다시 시도해주세요.');
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const handleShare = async () => {
     if (!selectedCard) return;
-    const success = await shareResult(
-      'Aura Tarot - 오늘의 운세',
-      `오늘 나의 카드는 "${selectedCard.koreanName}"입니다. 당신의 운세도 확인해보세요!`
-    );
-    if (!success) {
-      // Fallback for browsers that don't support Web Share API
-      navigator.clipboard.writeText(window.location.href);
-      toast.info('링크가 클립보드에 복사되었습니다');
+
+    try {
+      // Generate Image from hidden component
+      const element = document.getElementById('hidden-share-card');
+      if (!element) return;
+
+      toast.info("공유 이미지를 생성하고 있습니다...");
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        backgroundColor: '#1a1a1a', // Match component bg
+        useCORS: true
+      });
+      const dataUrl = canvas.toDataURL('image/png');
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'auratarot-daily.png', { type: 'image/png' });
+
+      if (navigator.share) {
+        await navigator.share({
+          title: '오늘의 한 장 - Aura Tarot',
+          text: `[오늘의 운세] ${selectedCard.koreanName}\n\n솜이가 전해주는 오늘의 조언을 확인해보세요! ✨`,
+          files: [file]
+        });
+      } else {
+        // Fallback for desktop: Copy to clipboard or download?
+        // User context suggests mobile-first sharing but fallback is needed.
+        // Let's try clipboard for image or just text fallback.
+        try {
+          // Try copying image to clipboard if supported
+          if (navigator.clipboard && navigator.clipboard.write) {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            toast.success('이미지가 클립보드에 복사되었습니다!');
+            return;
+          }
+        } catch (e) {
+          console.warn('Image copy failed', e);
+        }
+
+        // Text fallback
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(window.location.href);
+          toast.info('링크가 클립보드에 복사되었습니다');
+        }
+      }
+    } catch (err) {
+      console.error('Share error:', err);
+      toast.error('공유하기에 실패했습니다.');
     }
   };
 
@@ -581,6 +674,38 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
         onShowLogin={onShowLogin}
         message="카드의 의미를 확인하려면 로그인이 필요합니다."
       />
+
+      {/* Hidden Share Card for Generation - Rendered BEHIND modal to ensure capture */}
+      {selectedCard && (
+        <div className="fixed top-0 left-0 z-[-50] w-0 h-0 overflow-hidden">
+          {/* Wrapper with fixed dimensions prevents layout collapse */}
+          <div className="w-[1080px] h-[1350px] relative bg-[#1a1a1a]">
+            {/* Share Card (Hidden/Legacy) */}
+            <div className="absolute top-0 left-0">
+              <TarotShareCard
+                id="hidden-share-card"
+                date={new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                card={selectedCard}
+                isReversed={isReversed}
+                reading={aiReading || "오늘의 운세를 확인해보세요!"}
+                userName={user?.user_metadata?.nickname || "Traveler"}
+                type="daily"
+              />
+            </div>
+
+            {/* Save Card (Target) */}
+            <div className="absolute top-0 left-0 bg-[#1a1a1a]">
+              <TarotSaveCard
+                date={new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                card={selectedCard}
+                isReversed={isReversed}
+                reading={aiReading || "오늘의 운세를 확인해보세요!"}
+                userName={user?.user_metadata?.nickname || "Traveler"}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 };
