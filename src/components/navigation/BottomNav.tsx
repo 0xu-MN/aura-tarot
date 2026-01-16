@@ -6,7 +6,7 @@ const navItems = [
     { path: '/home', label: '홈', icon: Home },
     { path: '/contents', label: '컨텐츠', icon: BookOpen },
     { path: '/chatbot', label: '챗봇', icon: MessageCircle },
-    { path: '/lounge', label: '라운지', icon: Users },
+
     { path: '/settings', label: '설정', icon: Settings },
 ];
 

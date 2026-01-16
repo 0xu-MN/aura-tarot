@@ -6,7 +6,7 @@ import { RegisterModal } from '@/components/auth/RegisterModal';
 import { useNavigate } from "react-router-dom"; // Added useNavigate
 import weeklyThumb from '@/assets/weekly-thumb.jpg';
 import monthlyThumb from '@/assets/monthly-thumb.jpg';
-import { UserProfileModal } from "@/components/community/UserProfileModal"; // Added UserProfileModal
+
 import { BetaBanner } from '@/components/beta/BetaBanner'; // Added BetaBanner
 import { CardDrawing } from '@/components/CardDrawing';
 import { RecommendedContent } from '@/components/RecommendedContent';
@@ -19,7 +19,7 @@ const Home = () => {
     const { user, userProfile } = useAuth();
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showRegisterModal, setShowRegisterModal] = useState(false);
-    const [showProfileModal, setShowProfileModal] = useState(false);
+
     const [welcomeMessage, setWelcomeMessage] = useState("");
 
     useEffect(() => {

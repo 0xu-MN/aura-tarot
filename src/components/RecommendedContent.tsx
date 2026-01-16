@@ -58,7 +58,7 @@ export const RecommendedContent = () => {
             // I will leave it as is if I can't find it, or set to alert.
             // But user said "previously it worked". Maybe I missed it in App.tsx?
             // Let me re-read App.tsx carefully in my mind.
-            // App.tsx has: Index, Home, Contents, WorkLuck, Weekly, Monthly, Love, Reunion, TarotReading (:type), Student, Chatbot, NewYear, Compatibility, Community, Settings, Lounge, NotFound.
+            // App.tsx has: Index, Home, Contents, WorkLuck, Weekly, Monthly, Love, Reunion, TarotReading (:type), Student, Chatbot, NewYear, Compatibility, Settings, NotFound.
             // There is NO Palm route.
             // So "손금 분석" really doesn't exist.
             // I will set it to alert "Ready".

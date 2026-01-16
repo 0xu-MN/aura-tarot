@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { saveResultAsImage, shareResult, captureResultAsDataURL } from '@/lib/shareUtils';
+import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { PaymentModal } from '@/components/premium/PaymentModal';
@@ -97,24 +97,7 @@ export const PalmReading = () => {
         fetchAiReading();
     };
 
-    const handleShareToLounge = async () => {
-        try {
-            const dataUrl = await captureResultAsDataURL('palm-result-content');
-            if (dataUrl) {
-                navigate('/lounge', {
-                    state: {
-                        autoOpenCreate: true,
-                        attachedImage: dataUrl,
-                        initialTitle: `AI 손금 분석 결과`,
-                        initialContent: `오늘 본 AI 손금 분석 결과입니다. ✋ #손금 #운세 #AI`
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Error sharing to lounge:', error);
-            toast.error('라운지 공유 중 오류가 발생했습니다.');
-        }
-    };
+
 
     return (
         <AppLayout>
@@ -260,12 +243,7 @@ export const PalmReading = () => {
                                                     <Share2 className="w-4 h-4 mr-2" /> 공유
                                                 </Button>
                                             </div>
-                                            <Button
-                                                className="w-full bg-mystic-purple/20 hover:bg-mystic-purple/30 border border-mystic-purple/40 text-white"
-                                                onClick={handleShareToLounge}
-                                            >
-                                                <Share2 className="w-4 h-4 mr-2" /> 라운지에 공유하여 자랑하기
-                                            </Button>
+
                                         </div>
                                     )}
 

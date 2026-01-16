@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { saveResultAsImage, shareResult, captureResultAsDataURL } from '@/lib/shareUtils';
+import { saveResultAsImage, shareResult } from '@/lib/shareUtils';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -156,24 +156,13 @@ export const YearlyFortune = () => {
         }
     }, [step]);
 
-    const handleShareToLounge = async () => {
-        try {
-            const dataUrl = await captureResultAsDataURL('yearly-result-content');
-            if (dataUrl) {
-                navigate('/lounge', {
-                    state: {
-                        autoOpenCreate: true,
-                        attachedImage: dataUrl,
-                        initialTitle: `${name}님의 2026년 AI 신년운세 결과`,
-                        initialContent: `오늘 본 2026년 AI 신년운세 결과입니다. #타로 #신년운세 #2026`
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Error sharing to lounge:', error);
-            toast.error('라운지 공유 중 오류가 발생했습니다.');
+    const handleReveal = (index: number) => {
+        if (!revealedCards.includes(index)) {
+            setRevealedCards([...revealedCards, index]);
         }
     };
+
+
 
     return (
         <AppLayout>
@@ -316,12 +305,7 @@ export const YearlyFortune = () => {
                                                     <Share2 className="w-4 h-4 mr-2" /> 공유
                                                 </Button>
                                             </div>
-                                            <Button
-                                                className="w-full bg-mystic-purple/20 hover:bg-mystic-purple/30 border border-mystic-purple/40 text-white"
-                                                onClick={handleShareToLounge}
-                                            >
-                                                <Share2 className="w-4 h-4 mr-2" /> 라운지에 공유하여 자랑하기
-                                            </Button>
+
                                         </div>
                                     )}
 

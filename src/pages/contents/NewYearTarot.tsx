@@ -14,7 +14,7 @@ import { premiumStore } from '@/lib/premiumStore';
 import { getWeightedCards, TarotCardData } from '@/lib/tarot-data';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { CreatePostModal } from '@/components/community/CreatePostModal';
+
 
 const FEATURE_ID = 'new-year-2026';
 
@@ -44,8 +44,7 @@ export const NewYearTarot = () => {
     const [aiReading, setAiReading] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [currentInstruction, setCurrentInstruction] = useState("");
-    const [showCreatePostModal, setShowCreatePostModal] = useState(false);
-    const [postInitialData, setPostInitialData] = useState<{ images: string[], title: string, content: string } | null>(null);
+
 
     const handleProgress = (count: number) => {
         const prompts = [
@@ -243,50 +242,7 @@ export const NewYearTarot = () => {
         }
     };
 
-    const handleShareToLounge = async () => {
-        try {
-            const dataUrl = await captureResultAsDataURL('newyear-result-content');
-            if (dataUrl) {
-                setPostInitialData({
-                    images: [dataUrl],
-                    title: `나의 2026년 ${selectedTheme.label} 🎆`,
-                    content: `2026년 ${selectedTheme.label} 결과를 공유합니다. #타로 #신년운세 #2026`
-                });
-                setShowCreatePostModal(true);
-            }
-        } catch (error) {
-            console.error('Error capturing result:', error);
-            toast.error('이미지 캡처 중 오류가 발생했습니다.');
-        }
-    };
 
-    const handleCreatePost = async (postData: any) => {
-        try {
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-            if (sessionError || !session?.user) {
-                throw new Error('로그인이 필요합니다.');
-            }
-
-            const { error } = await supabase.from('community_posts').insert({
-                user_id: session.user.id,
-                title: postData.title,
-                content: postData.content,
-                category: 'tarot',
-                tarot_image_url: postData.images?.[0] || null,
-                lounge_type: 'general'
-            });
-
-            if (error) throw error;
-
-            toast.success('라운지에 게시되었습니다!');
-            setShowCreatePostModal(false);
-            setPostInitialData(null);
-            navigate('/lounge');
-        } catch (error) {
-            console.error('Error creating post:', error);
-            toast.error('게시글 등록에 실패했습니다.');
-        }
-    };
 
     const getPositionLabel = (index: number) => {
         switch (index) {
@@ -502,13 +458,7 @@ export const NewYearTarot = () => {
                                                     공유하기
                                                 </GlareButton>
                                             </div>
-                                            <GlareButton
-                                                className="w-full bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium"
-                                                onClick={handleShareToLounge}
-                                            >
-                                                <Share2 className="w-4 h-4 mr-2" />
-                                                라운지에 결과 자랑하기
-                                            </GlareButton>
+
                                         </div>
                                     )}
 
@@ -533,16 +483,7 @@ export const NewYearTarot = () => {
                 )}
             </div>
 
-            <CreatePostModal
-                isOpen={showCreatePostModal}
-                onClose={() => {
-                    setShowCreatePostModal(false);
-                    setPostInitialData(null);
-                }}
-                onSubmit={handleCreatePost}
-                initialImages={postInitialData?.images}
-                initialType="tarot"
-            />
+
 
             <PaymentModal
                 isOpen={showPaymentModal}

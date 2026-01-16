@@ -1,4 +1,4 @@
-import { User, Settings, BookOpen, Users, LogOut } from 'lucide-react';
+import { User, Settings, BookOpen, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -58,12 +58,7 @@ export const MobileMenu = ({ isOpen, onClose, onLoginClick }: MobileMenuProps) =
             path: '/contents',
             description: '타로 & 운세',
         },
-        {
-            icon: Users,
-            label: '라운지',
-            path: '/lounge',
-            description: '소통 공간',
-        },
+
         {
             icon: Settings,
             label: '설정',

@@ -87,13 +87,13 @@ export const ProfileEditModal = ({ isOpen, onClose }: ProfileEditModalProps) => 
             setLoading(true);
 
             const { error: uploadError } = await supabase.storage
-                .from('lounge')
+                .from('avatars')
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
 
             const { data: { publicUrl } } = supabase.storage
-                .from('lounge')
+                .from('avatars')
                 .getPublicUrl(filePath);
 
             setAvatarUrl(publicUrl);
