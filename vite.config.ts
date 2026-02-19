@@ -6,13 +6,16 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
-    port: 8080,
+    host: "0.0.0.0",
+    port: 5173,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "react-native": "react-native-web",
+      "@bedrock": path.resolve(__dirname, "./bedrock-app/src"),
+      "@bedrock-pages": path.resolve(__dirname, "./bedrock-app/pages"),
     },
   },
 }));

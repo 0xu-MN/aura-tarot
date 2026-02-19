@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
+import BedrockPreview from "./pages/BedrockPreview";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Contents from "./pages/Contents";
@@ -33,6 +34,7 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
+            <Route path="/bedrock" element={<BedrockPreview />} />
             <Route path="/" element={<Index />} />
             <Route path="/home" element={<Home />} />
             <Route path="/contents" element={<Contents />} />
