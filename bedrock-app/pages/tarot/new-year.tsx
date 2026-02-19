@@ -4,7 +4,7 @@ import {
   View, ScrollView,
   StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
-import { PageNavbar, Button, BottomInfo, Txt, Badge, PressableEffect } from '@toss/tds-react-native';
+import { PageNavbar, BottomInfo, Txt, Badge, PressableEffect } from '@toss/tds-react-native';
 import { getWeightedCards, TarotCardData } from '../../lib/tarot-data';
 import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
@@ -125,7 +125,7 @@ function NewYearTarot() {
         {step === 'spread' && (
           <View style={s.section}>
             <View style={s.themeTag}>
-              <Badge type="yellow" badgeStyle="fill" size="large">{theme.emoji} {theme.label}</Badge>
+              <Badge type="yellow" badgeStyle="fill" size="large">{`${theme.emoji} ${theme.label}`}</Badge>
             </View>
             <Txt style={s.title}>4장을 하나씩 선택해주세요</Txt>
             <Txt style={s.subText}>선택됨: {selectedCards.length}/4</Txt>

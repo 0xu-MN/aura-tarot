@@ -47,14 +47,17 @@ function LoveTarot() {
     const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
         if (cards.length < 3) return;
         try {
+            const [past, present, future] = cards;
+            if (!past || !present || !future) throw new Error('Invalid cards');
+
             const prompt = `당신은 로맨틱하고 감성적인 타로 리더 '로즈'입니다.
 사용자의 연애 고민에 대해 [과거-현재-미래] 3장으로 해석해주세요.
 
 질문: ${question}
 
-1. 과거: ${cards[0].card.koreanName} (${cards[0].isReversed ? '역방향' : '정방향'})
-2. 현재: ${cards[1].card.koreanName} (${cards[1].isReversed ? '역방향' : '정방향'})
-3. 미래: ${cards[2].card.koreanName} (${cards[2].isReversed ? '역방향' : '정방향'})
+1. 과거: ${past.card.koreanName} (${past.isReversed ? '역방향' : '정방향'})
+2. 현재: ${present.card.koreanName} (${present.isReversed ? '역방향' : '정방향'})
+3. 미래: ${future.card.koreanName} (${future.isReversed ? '역방향' : '정방향'})
 
 요청사항:
 - 말투: 부드럽고 다정하게 (해요체), 이모지 많이 사용 🌹💖

@@ -2,12 +2,11 @@ import { createRoute } from '@granite-js/react-native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   Image,
-  TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { PageNavbar, Txt, PressableEffect } from '@toss/tds-react-native';
 import { RecommendedContent } from '../components/RecommendedContent';
 import { DailyCardModal } from '../components/DailyCardModal';
 import { CardDrawing } from '../components/CardDrawing';
@@ -45,105 +44,108 @@ function HomePage() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.sparkle}>✨</Text>
-          <Text style={styles.greeting}>안녕하세요, 방문자님</Text>
-        </View>
-        <Text style={styles.welcomeMessage}>{welcomeMessage}</Text>
-      </View>
+    <View style={styles.container}>
+      <PageNavbar>
+        <PageNavbar.Title>오늘의 한장 타로</PageNavbar.Title>
+      </PageNavbar>
 
-      <View style={styles.content}>
-
-
-        {/* Card Drawing Section */}
-        <CardDrawing onDrawCard={handleDrawCard} />
-
-        {/* New Year Banner */}
-        <TouchableOpacity
-          style={styles.newYearBanner}
-          onPress={() => navigation.push('/tarot/new-year')}
-        >
-          {/* Background image layer */}
-          <Image
-            source={ASSETS.yearlyFortune}
-            style={StyleSheet.absoluteFill as any}
-            resizeMode="cover"
-          />
-          <View style={styles.bannerOverlay} />
-          <View style={styles.bannerContent}>
-            <View style={styles.specialBadge}>
-              <Text style={styles.badgeText}>2026 SPECIAL</Text>
-            </View>
-            <Text style={styles.bannerTitle}>2026년 신년운세</Text>
-            <Text style={styles.bannerSubtitle}>
-              새로운 한 해, 당신의 운명을 미리 확인해보세요 ✨
-            </Text>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <Txt style={styles.sparkle}>✨</Txt>
+            <Txt style={styles.greeting}>안녕하세요, 방문자님</Txt>
           </View>
-        </TouchableOpacity>
-
-        {/* Weekly & Monthly Fortune Grid */}
-        <View style={styles.fortuneGrid}>
-          <TouchableOpacity
-            style={styles.fortuneCard}
-            onPress={() => navigation.push('/tarot/weekly')}
-          >
-            <Image
-              source={ASSETS.weeklyThumb}
-              style={StyleSheet.absoluteFill as any}
-              resizeMode="cover"
-            />
-            <View style={styles.fortuneOverlay} />
-            <View style={styles.fortuneContent}>
-              <View style={styles.fortuneBadges}>
-                <View style={styles.fortuneBadge}>
-                  <Text style={styles.fortuneBadgeText}>WEEKLY</Text>
-                </View>
-              </View>
-              <Text style={styles.fortuneTitle}>이번 주 운세</Text>
-              <Text style={styles.fortuneDesc}>한 주의 에너지를 미리 확인하세요</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.fortuneCard}
-            onPress={() => navigation.push('/tarot/monthly')}
-          >
-            <Image
-              source={ASSETS.monthlyThumb}
-              style={StyleSheet.absoluteFill as any}
-              resizeMode="cover"
-            />
-            <View style={styles.fortuneOverlay} />
-            <View style={styles.fortuneContent}>
-              <View style={styles.fortuneBadges}>
-                <View style={styles.fortuneBadge}>
-                  <Text style={styles.fortuneBadgeText}>MONTHLY</Text>
-                </View>
-              </View>
-              <Text style={styles.fortuneTitle}>이번 달 운세</Text>
-              <Text style={styles.fortuneDesc}>이달의 흐름과 키워드를 알아보세요</Text>
-            </View>
-          </TouchableOpacity>
+          <Txt style={styles.welcomeMessage}>{welcomeMessage}</Txt>
         </View>
 
-        {/* Recommended Content */}
-        <RecommendedContent onNavigate={handleNavigate} />
-      </View>
+        <View style={styles.content}>
+          {/* Card Drawing Section */}
+          <CardDrawing onDrawCard={handleDrawCard} />
 
-      {/* Daily Card Modal */}
-      {drawnCard && (
-        <DailyCardModal
-          isOpen={showCardModal}
-          onClose={() => setShowCardModal(false)}
-          card={drawnCard.card}
-          isReversed={drawnCard.isReversed}
-          question={currentQuestion}
-        />
-      )}
-    </ScrollView>
+          {/* New Year Banner */}
+          <PressableEffect
+            style={styles.newYearBanner}
+            onPress={() => navigation.push('/tarot/new-year')}
+          >
+            <Image
+              source={ASSETS.yearlyFortune}
+              style={StyleSheet.absoluteFill as any}
+              resizeMode="cover"
+            />
+            <View style={styles.bannerOverlay} />
+            <View style={styles.bannerContent}>
+              <View style={styles.specialBadge}>
+                <Txt style={styles.badgeText}>2026 SPECIAL</Txt>
+              </View>
+              <Txt style={styles.bannerTitle}>2026년 신년운세</Txt>
+              <Txt style={styles.bannerSubtitle}>
+                새로운 한 해, 당신의 운명을 미리 확인해보세요 ✨
+              </Txt>
+            </View>
+          </PressableEffect>
+
+          {/* Weekly & Monthly Fortune Grid */}
+          <View style={styles.fortuneGrid}>
+            <PressableEffect
+              style={styles.fortuneCard}
+              onPress={() => navigation.push('/tarot/weekly')}
+            >
+              <Image
+                source={ASSETS.weeklyThumb}
+                style={StyleSheet.absoluteFill as any}
+                resizeMode="cover"
+              />
+              <View style={styles.fortuneOverlay} />
+              <View style={styles.fortuneContent}>
+                <View style={styles.fortuneBadges}>
+                  <View style={styles.fortuneBadge}>
+                    <Txt style={styles.fortuneBadgeText}>WEEKLY</Txt>
+                  </View>
+                </View>
+                <Txt style={styles.fortuneTitle}>이번 주 운세</Txt>
+                <Txt style={styles.fortuneDesc}>한 주의 에너지를 미리 확인하세요</Txt>
+              </View>
+            </PressableEffect>
+
+            <PressableEffect
+              style={styles.fortuneCard}
+              onPress={() => navigation.push('/tarot/monthly')}
+            >
+              <Image
+                source={ASSETS.monthlyThumb}
+                style={StyleSheet.absoluteFill as any}
+                resizeMode="cover"
+              />
+              <View style={styles.fortuneOverlay} />
+              <View style={styles.fortuneContent}>
+                <View style={styles.fortuneBadges}>
+                  <View style={styles.fortuneBadge}>
+                    <Txt style={styles.fortuneBadgeText}>MONTHLY</Txt>
+                  </View>
+                </View>
+                <Txt style={styles.fortuneTitle}>이번 달 운세</Txt>
+                <Txt style={styles.fortuneDesc}>이달의 흐름과 키워드를 알아보세요</Txt>
+              </View>
+            </PressableEffect>
+          </View>
+
+          {/* Recommended Content */}
+          <RecommendedContent onNavigate={handleNavigate} />
+        </View>
+
+        {/* Daily Card Modal */}
+        {drawnCard && (
+          <DailyCardModal
+            isOpen={showCardModal}
+            onClose={() => setShowCardModal(false)}
+            card={drawnCard.card}
+            isReversed={drawnCard.isReversed}
+            question={currentQuestion}
+          />
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -152,8 +154,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0a0a0b',
   },
+  scroll: {
+    flex: 1,
+  },
   header: {
-    paddingTop: 60,
+    paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },

@@ -2,13 +2,12 @@ import { createRoute } from '@granite-js/react-native';
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   Image,
-  TouchableOpacity,
   StyleSheet,
   TextInput,
 } from 'react-native';
+import { PageNavbar, Txt, PressableEffect } from '@toss/tds-react-native';
 import { ASSETS } from '../lib/assets';
 
 export const Route = createRoute('/contents', {
@@ -162,97 +161,99 @@ function ContentsPage() {
   });
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Contents</Text>
-        <Text style={styles.subtitle}>당신의 운명을 점쳐보세요</Text>
-      </View>
+    <View style={styles.container}>
+      <PageNavbar>
+        <PageNavbar.Title>콘텐츠</PageNavbar.Title>
+      </PageNavbar>
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="콘텐츠 검색..."
-          placeholderTextColor="#666"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Txt style={styles.title}>Contents</Txt>
+          <Txt style={styles.subtitle}>당신의 운명을 점쳐보세요</Txt>
+        </View>
 
-      {/* Category Tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoriesContainer}
-        contentContainerStyle={styles.categoriesContent}
-      >
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category}
-            onPress={() => setActiveCategory(category)}
-            style={[
-              styles.categoryButton,
-              activeCategory === category && styles.categoryButtonActive
-            ]}
-          >
-            <Text style={[
-              styles.categoryText,
-              activeCategory === category && styles.categoryTextActive
-            ]}>
-              {category}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {/* Search */}
+        <View style={styles.searchContainer}>
+          <Txt style={styles.searchIcon}>🔍</Txt>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="콘텐츠 검색..."
+            placeholderTextColor="#666"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        {/* Category Tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoriesContainer}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          {categories.map((category) => (
+            <PressableEffect
+              key={category}
+              onPress={() => setActiveCategory(category)}
+              style={[
+                styles.categoryButton,
+                activeCategory === category && styles.categoryButtonActive
+              ]}
+            >
+              <Txt style={[
+                styles.categoryText,
+                activeCategory === category && styles.categoryTextActive
+              ]}>
+                {category}
+              </Txt>
+            </PressableEffect>
+          ))}
+        </ScrollView>
+
+        {/* Content Grid */}
+        <View style={styles.grid}>
+          {filteredItems.map((item, index) => (
+            <PressableEffect
+              key={index}
+              style={[styles.card, item.pinned && styles.cardPinned]}
+              onPress={() => {
+                if (item.link) {
+                  navigation.push(item.link as any);
+                }
+              }}
+            >
+              <View style={styles.cardImageContainer}>
+                {item.image ? (
+                  <View style={styles.cardImageWrapper}>
+                    <Image
+                      source={item.image}
+                      style={StyleSheet.absoluteFill as any}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.imageOverlay} />
+                  </View>
+                ) : (
+                  <View style={styles.cardIconContainer}>
+                    <Txt style={styles.cardIcon}>{item.icon}</Txt>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.cardContent}>
+                <Txt style={styles.cardCategory}>{item.displayCategory}</Txt>
+                <Txt style={styles.cardTitle}>{item.title}</Txt>
+                <Txt style={styles.cardDescription} numberOfLines={2}>
+                  {item.description}
+                </Txt>
+              </View>
+            </PressableEffect>
+          ))}
+        </View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
-
-      {/* Content Grid */}
-      <View style={styles.grid}>
-        {filteredItems.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.card,
-              item.pinned && styles.cardPinned
-            ]}
-            onPress={() => {
-              if (item.link) {
-                navigation.push(item.link as any);
-              }
-            }}
-            activeOpacity={0.9}
-          >
-            <View style={styles.cardImageContainer}>
-              {item.image ? (
-                <View style={styles.cardImageWrapper}>
-                  <Image
-                    source={item.image}
-                    style={StyleSheet.absoluteFill as any}
-                    resizeMode="cover"
-                  />
-                  <View style={styles.imageOverlay} />
-                </View>
-              ) : (
-                <View style={styles.cardIconContainer}>
-                  <Text style={styles.cardIcon}>{item.icon}</Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.cardContent}>
-              <Text style={styles.cardCategory}>{item.displayCategory}</Text>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-              <Text style={styles.cardDescription} numberOfLines={2}>
-                {item.description}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={{ height: 100 }} />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -261,8 +262,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0a0a0b',
   },
+  scroll: {
+    flex: 1,
+  },
   header: {
-    paddingTop: 60,
+    paddingTop: 20,
     paddingBottom: 24,
     paddingHorizontal: 24,
     alignItems: 'center',
