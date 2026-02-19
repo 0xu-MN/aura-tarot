@@ -1,9 +1,10 @@
 import { createRoute } from '@granite-js/react-native';
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput,
+  View, ScrollView, TextInput,
   StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
+import { PageNavbar, Button, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
 import { getWeightedCards, TarotCardData } from '../../lib/tarot-data';
 import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
@@ -41,17 +42,20 @@ function ReunionTarot() {
   };
 
   const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
+    if (cards.length < 4) return;
     setIsLoading(true);
     try {
+      const [c1, c2, c3, c4] = cards;
+      if (!c1 || !c2 || !c3 || !c4) return;
       const prompt = `당신은 솔직하면서도 공감 능력이 뛰어난 전문 타로 리더 '솜이'입니다.
 사용자의 재회 관련 질문에 대해 [나의 감정, 상대방 속마음, 방해물, 재회 가능성] 4장으로 해석해주세요.
 
 질문: ${question}
 
-1. 나의 감정: ${cards[0].card.koreanName} (${cards[0].isReversed ? '역방향' : '정방향'})
-2. 상대방 속마음: ${cards[1].card.koreanName} (${cards[1].isReversed ? '역방향' : '정방향'})
-3. 방해물: ${cards[2].card.koreanName} (${cards[2].isReversed ? '역방향' : '정방향'})
-4. 재회 가능성: ${cards[3].card.koreanName} (${cards[3].isReversed ? '역방향' : '정방향'})
+1. 나의 감정: ${c1.card.koreanName} (${c1.isReversed ? '역방향' : '정방향'})
+2. 상대방 속마음: ${c2.card.koreanName} (${c2.isReversed ? '역방향' : '정방향'})
+3. 방해물: ${c3.card.koreanName} (${c3.isReversed ? '역방향' : '정방향'})
+4. 재회 가능성: ${c4.card.koreanName} (${c4.isReversed ? '역방향' : '정방향'})
 
 - 재회 확률을 0~100 사이 숫자로 맨 마지막 줄에 "CHANCE: [숫자]" 형식으로 꼭 포함하세요.
 
@@ -69,8 +73,9 @@ function ReunionTarot() {
 
 CHANCE: [숫자]`;
       const result = await callGemini(prompt);
+      if (!result) throw new Error('No result from AI');
       const match = result.match(/CHANCE:\s*(\d+)/i);
-      const chance = match ? parseInt(match[1], 10) : Math.floor(Math.random() * 60) + 20;
+      const chance = match ? parseInt(match[1] || '0', 10) : Math.floor(Math.random() * 60) + 20;
       setReunionChance(Math.min(100, Math.max(0, chance)));
       setReading(result.replace(/CHANCE:\s*\d+/i, '').trim());
     } catch {
@@ -85,113 +90,154 @@ CHANCE: [숫자]`;
 
   return (
     <View style={s.container}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-          <Text style={s.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>재회 확률 타로</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <PageNavbar>
+        <PageNavbar.Title>재회 확률 타로</PageNavbar.Title>
+        <PageNavbar.AccessoryButtons>
+          <PageNavbar.AccessoryTextButton onPress={() => navigation.goBack()}>
+            뒤로
+          </PageNavbar.AccessoryTextButton>
+        </PageNavbar.AccessoryButtons>
+      </PageNavbar>
 
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
         {step === 'intro' && (
           <View style={s.center}>
-            <View style={s.iconCircle}><Text style={{ fontSize: 48 }}>🌙</Text></View>
-            <Text style={s.title}>재회 확률 타로</Text>
-            <Text style={s.desc}>상대방의 진심, 그리고 다시 만날 가능성.{'\n'}마주할 준비가 되셨나요? 💭</Text>
-            <TouchableOpacity style={s.mainBtn} onPress={() => setStep('question')}>
-              <Text style={s.mainBtnText}>속마음 알아보기</Text>
-            </TouchableOpacity>
+            <View style={s.iconCircle}><Txt style={{ fontSize: 48 }}>🌙</Txt></View>
+            <Txt style={s.title}>재회 확률 타로</Txt>
+            <Txt style={s.desc}>상대방의 진심, 그리고 다시 만날 가능성.{'\n'}마주할 준비가 되셨나요? 💭</Txt>
+
           </View>
-        )}
+        )
+        }
 
-        {step === 'question' && (
-          <View style={s.section}>
-            <Text style={s.title}>무엇이 가장 궁금한가요?</Text>
-            <Text style={s.subText}>솔직한 질문이 가장 정확한 답을 줍니다</Text>
-            <View style={s.tagRow}>
-              {SAMPLE_QUESTIONS.map((q, i) => (
-                <TouchableOpacity key={i} style={s.tag} onPress={() => setQuestion(q)}>
-                  <Text style={s.tagText}>{q}</Text>
-                </TouchableOpacity>
-              ))}
+        {
+          step === 'question' && (
+            <View style={s.section}>
+              <Txt style={s.title}>무엇이 가장 궁금한가요?</Txt>
+              <Txt style={s.subText}>솔직한 질문이 가장 정확한 답을 줍니다</Txt>
+              <View style={s.tagRow}>
+                {SAMPLE_QUESTIONS.map((q, i) => (
+                  <PressableEffect key={i} style={s.tag} onPress={() => setQuestion(q)}>
+                    <Txt style={s.tagText}>{q}</Txt>
+                  </PressableEffect>
+                ))}
+              </View>
+              <TextInput style={s.input} value={question} onChangeText={setQuestion}
+                placeholder="직접 입력하거나 위에서 선택하세요"
+                placeholderTextColor="rgba(165,180,252,0.4)" multiline />
+              <Button
+                size="large"
+                type="primary"
+                style="fill"
+                disabled={!question.trim()}
+                containerStyle={{ backgroundColor: '#4f46e5', borderRadius: 30, height: 56, width: '100%', opacity: !question.trim() ? 0.5 : 1, alignItems: 'center', justifyContent: 'center' }}
+                textStyle={{ color: '#fff', fontSize: 17, fontWeight: '800' }}
+                onPress={() => { if (question.trim()) setStep('spread'); }}
+              >
+                카드 뽑기
+              </Button>
             </View>
-            <TextInput style={s.input} value={question} onChangeText={setQuestion}
-              placeholder="직접 입력하거나 위에서 선택하세요"
-              placeholderTextColor="rgba(165,180,252,0.4)" multiline />
-            <TouchableOpacity style={[s.mainBtn, !question.trim() && { opacity: 0.5 }]}
-              onPress={() => { if (question.trim()) setStep('spread'); }}>
-              <Text style={s.mainBtnText}>카드 뽑기</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          )
+        }
 
-        {step === 'spread' && (
-          <View style={s.section}>
-            <Text style={s.title}>당신의 마음을 담아</Text>
-            <Text style={s.subText}>4장을 선택해주세요 ({selectedCards.length}/4)</Text>
-            <View style={s.cardGrid}>
-              {[...Array(12)].map((_, idx) => (
-                <TouchableOpacity key={idx}
-                  style={[s.cardBack, selectedCards.includes(idx) && s.cardSelected]}
-                  onPress={() => handleCardSelect(idx)}>
-                  <Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" />
-                </TouchableOpacity>
-              ))}
+        {
+          step === 'spread' && (
+            <View style={s.section}>
+              <Txt style={s.title}>당신의 마음을 담아</Txt>
+              <Txt style={s.subText}>4장을 선택해주세요 ({selectedCards.length}/4)</Txt>
+              <View style={s.cardGrid}>
+                {[...Array(12)].map((_, idx) => (
+                  <PressableEffect key={idx}
+                    style={[s.cardBack, selectedCards.includes(idx) && s.cardSelected]}
+                    onPress={() => handleCardSelect(idx)}>
+                    <Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" />
+                  </PressableEffect>
+                ))}
+              </View>
             </View>
-          </View>
-        )}
+          )
+        }
 
-        {step === 'reading' && (
-          <View style={s.section}>
-            <View style={s.drawnRow}>
-              {drawnCards.map((c, i) => (
-                <View key={i} style={s.drawnCard}>
-                  <Text style={s.posLabel}>{['나', '상대', '장애', '결과'][i]}</Text>
-                  <Image source={c.card.image} style={[s.cardImg, c.isReversed && { transform: [{ rotate: '180deg' }] }]} />
-                  <Text style={s.cardName}>{c.card.koreanName}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Chance Gauge */}
-            <View style={s.gaugeBox}>
-              <Text style={s.gaugeTitle}>REUNION PROBABILITY</Text>
-              {isLoading ? (
-                <View style={s.gaugeBar}><View style={[s.gaugeFill, { width: '100%', opacity: 0.3 }]} /></View>
-              ) : (
-                <>
-                  <View style={s.gaugeBar}>
-                    <View style={[s.gaugeFill, { width: `${reunionChance}%` }]} />
+        {
+          step === 'reading' && (
+            <View style={s.section}>
+              <View style={s.drawnRow}>
+                {drawnCards.map((c, i) => (
+                  <View key={i} style={s.drawnCard}>
+                    <Txt style={s.posLabel}>{['나', '상대', '장애', '결과'][i]}</Txt>
+                    <Image source={c.card.image} style={[s.cardImg, c.isReversed && { transform: [{ rotate: '180deg' }] }]} />
+                    <Txt style={s.cardName}>{c.card.koreanName}</Txt>
                   </View>
-                  <View style={s.gaugeLabels}>
-                    <Text style={s.gaugeLabel}>0%</Text>
-                    <Text style={s.gaugeBig}>{reunionChance}%</Text>
-                    <Text style={s.gaugeLabel}>100%</Text>
+                ))}
+              </View>
+
+              {/* Chance Gauge */}
+              <View style={s.gaugeBox}>
+                <Txt style={s.gaugeTitle}>REUNION PROBABILITY</Txt>
+                {isLoading ? (
+                  <View style={s.gaugeBar}><View style={[s.gaugeFill, { width: '100%', opacity: 0.3 }]} /></View>
+                ) : (
+                  <>
+                    <View style={s.gaugeBar}>
+                      <View style={[s.gaugeFill, { width: `${reunionChance}%` }]} />
+                    </View>
+                    <View style={s.gaugeLabels}>
+                      <Txt style={s.gaugeLabel}>0%</Txt>
+                      <Txt style={s.gaugeBig}>{reunionChance}%</Txt>
+                      <Txt style={s.gaugeLabel}>100%</Txt>
+                    </View>
+                  </>
+                )}
+              </View>
+
+              <View style={s.resultBox}>
+                {isLoading ? (
+                  <View style={s.loadingBox}>
+                    <ActivityIndicator size="large" color="#818cf8" />
+                    <Txt style={s.loadingText}>별들이 운명을 계산하고 있습니다... 🌙</Txt>
                   </View>
-                </>
+                ) : (
+                  <Txt style={s.readingText}>{reading}</Txt>
+                )}
+              </View>
+              {!isLoading && (
+                <Button
+                  size="medium"
+                  type="primary"
+                  style="weak"
+                  containerStyle={{ borderColor: 'rgba(129,140,248,0.3)', borderWidth: 1, borderRadius: 30, alignItems: 'center', justifyContent: 'center' }}
+                  textStyle={{ color: INDIGO }}
+                  onPress={reset}
+                >
+                  다시 하기
+                </Button>
               )}
             </View>
+          )
+        }
+        <BottomInfo style={{ backgroundColor: BG, paddingBottom: 40 }}>
+          <Txt style={[s.subText, { marginTop: 20 }]}>이 운세는 재미로만 봐주세요. 맹신하지 마세요.</Txt>
+        </BottomInfo>
+      </ScrollView >
 
-            <View style={s.resultBox}>
-              {isLoading ? (
-                <View style={s.loadingBox}>
-                  <ActivityIndicator size="large" color="#818cf8" />
-                  <Text style={s.loadingText}>별들이 운명을 계산하고 있습니다... 🌙</Text>
-                </View>
-              ) : (
-                <Text style={s.readingText}>{reading}</Text>
-              )}
-            </View>
-            {!isLoading && (
-              <TouchableOpacity style={s.secondaryBtn} onPress={reset}>
-                <Text style={s.secondaryBtnText}>다시 하기</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-      </ScrollView>
-    </View>
+      {step === 'intro' && (
+        <View style={s.fixedBottom}>
+          <PressableEffect
+            style={{
+              backgroundColor: '#4f46e5',
+              borderRadius: 30,
+              height: 56,
+              width: '100%',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onPress={() => setStep('question')}
+          >
+            <Txt style={{ color: '#fff', fontSize: 17, fontWeight: '800' }}>속마음 알아보기</Txt>
+          </PressableEffect>
+        </View>
+      )}
+    </View >
   );
 }
 
@@ -199,19 +245,14 @@ const INDIGO = '#818cf8';
 const BG = '#0f172a';
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 60, paddingHorizontal: 20, paddingBottom: 10 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
-  backIcon: { fontSize: 22, color: '#fff' },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#e0e7ff' },
-  scroll: { padding: 20, paddingBottom: 60 },
+  scroll: { padding: 20, paddingBottom: 120 },
   center: { alignItems: 'center', paddingTop: 40, gap: 20 },
   section: { gap: 16 },
   iconCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(129,140,248,0.1)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(129,140,248,0.2)' },
   title: { fontSize: 26, fontWeight: '800', color: '#e0e7ff', textAlign: 'center' },
   desc: { fontSize: 15, color: 'rgba(129,140,248,0.7)', textAlign: 'center', lineHeight: 24 },
   subText: { fontSize: 13, color: 'rgba(129,140,248,0.6)', textAlign: 'center' },
-  mainBtn: { backgroundColor: '#4f46e5', borderRadius: 30, paddingVertical: 16, alignItems: 'center', width: '100%' },
-  mainBtnText: { fontSize: 17, fontWeight: '800', color: '#fff' },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(129,140,248,0.3)', backgroundColor: 'rgba(129,140,248,0.05)' },
   tagText: { fontSize: 12, color: 'rgba(165,180,252,0.8)' },
@@ -235,6 +276,5 @@ const s = StyleSheet.create({
   loadingBox: { alignItems: 'center', gap: 16, paddingVertical: 30 },
   loadingText: { color: 'rgba(129,140,248,0.7)', fontSize: 14 },
   readingText: { fontSize: 14, color: '#e0e7ff', lineHeight: 24 },
-  secondaryBtn: { borderWidth: 1, borderColor: 'rgba(129,140,248,0.3)', borderRadius: 30, paddingVertical: 14, alignItems: 'center' },
-  secondaryBtnText: { fontSize: 15, color: INDIGO, fontWeight: '700' },
+  fixedBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 40, paddingTop: 20, alignItems: 'center', backgroundColor: 'rgba(15,23,42,0.9)', borderTopWidth: 1, borderTopColor: 'rgba(129,140,248,0.2)' },
 });

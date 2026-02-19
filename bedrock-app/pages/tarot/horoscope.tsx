@@ -1,9 +1,10 @@
 import { createRoute } from '@granite-js/react-native';
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, ScrollView,
   StyleSheet, ActivityIndicator, Dimensions, Image
 } from 'react-native';
+import { PageNavbar, Button, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
 import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
 
@@ -72,28 +73,26 @@ ${selectedSign!.name}의 ${tf.label}를 상세하게 분석해주세요.
 
   return (
     <View style={s.container}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={step === 'select-sign' ? () => navigation.goBack() : () => setStep(step === 'result' ? 'select-timeframe' : 'select-sign')} style={s.backBtn}>
-          <Text style={s.backIcon}>←</Text>
-        </TouchableOpacity>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={s.headerSub}>별자리 운세</Text>
-          <Text style={s.headerTitle}>별들이 말하는 당신의 운명</Text>
-        </View>
-        <View style={{ width: 40 }} />
-      </View>
+      <PageNavbar>
+        <PageNavbar.Title>별들이 말하는 운명</PageNavbar.Title>
+        <PageNavbar.AccessoryButtons>
+          <PageNavbar.AccessoryTextButton onPress={step === 'select-sign' ? () => navigation.goBack() : () => setStep(step === 'result' ? 'select-timeframe' : 'select-sign')}>
+            뒤로
+          </PageNavbar.AccessoryTextButton>
+        </PageNavbar.AccessoryButtons>
+      </PageNavbar>
 
       <ScrollView contentContainerStyle={s.scroll}>
         {step === 'select-sign' && (
           <View style={s.section}>
-            <Text style={s.title}>본인의 별자리를 선택해주세요</Text>
+            <Txt style={s.title}>본인의 별자리를 선택해주세요</Txt>
             <View style={s.signGrid}>
               {ZODIAC_SIGNS.map((sign) => (
-                <TouchableOpacity key={sign.name} style={s.signCard} onPress={() => handleSignSelect(sign)}>
+                <PressableEffect key={sign.name} style={s.signCard} onPress={() => handleSignSelect(sign)}>
                   <Image source={sign.image} style={s.signIcon} resizeMode="contain" />
-                  <Text style={s.signName}>{sign.name}</Text>
-                  <Text style={s.signDate}>{sign.date}</Text>
-                </TouchableOpacity>
+                  <Txt style={s.signName}>{sign.name}</Txt>
+                  <Txt style={s.signDate}>{sign.date}</Txt>
+                </PressableEffect>
               ))}
             </View>
           </View>
@@ -104,19 +103,25 @@ ${selectedSign!.name}의 ${tf.label}를 상세하게 분석해주세요.
             <View style={s.selectedSignCard}>
               <Image source={selectedSign.image} style={s.selSignIcon} resizeMode="contain" />
               <View>
-                <Text style={s.selSignName}>{selectedSign.name}</Text>
-                <Text style={s.signDate}>{selectedSign.date}</Text>
+                <Txt style={s.selSignName}>{selectedSign.name}</Txt>
+                <Txt style={s.signDate}>{selectedSign.date}</Txt>
               </View>
-              <TouchableOpacity onPress={() => setStep('select-sign')} style={s.changeBtn}>
-                <Text style={s.changeText}>변경</Text>
-              </TouchableOpacity>
+              <Button
+                size="tiny"
+                type="light"
+                style="weak"
+                containerStyle={{ marginLeft: 'auto', borderRadius: 20 }}
+                onPress={() => setStep('select-sign')}
+              >
+                변경
+              </Button>
             </View>
-            <Text style={[s.title, { fontSize: 18 }]}>어떤 운세가 궁금하신가요?</Text>
+            <Txt style={[s.title, { fontSize: 18 }]}>어떤 운세가 궁금하신가요?</Txt>
             {TIMEFRAMES.map((tf) => (
-              <TouchableOpacity key={tf.id} style={s.tfCard} onPress={() => handleTimeframeSelect(tf)}>
-                <Text style={s.tfLabel}>{tf.label}</Text>
-                <Text style={{ color: 'rgba(218,165,32,0.5)', fontSize: 18 }}>→</Text>
-              </TouchableOpacity>
+              <PressableEffect key={tf.id} style={s.tfCard} onPress={() => handleTimeframeSelect(tf)}>
+                <Txt style={s.tfLabel}>{tf.label}</Txt>
+                <Txt style={{ color: 'rgba(218,165,32,0.5)', fontSize: 18 }}>→</Txt>
+              </PressableEffect>
             ))}
           </View>
         )}
@@ -125,29 +130,39 @@ ${selectedSign!.name}의 ${tf.label}를 상세하게 분석해주세요.
           <View style={s.section}>
             <View style={s.resultHeader}>
               <Image source={selectedSign.image} style={s.resultSignIcon} resizeMode="contain" />
-              <Text style={s.resultTitle}>{selectedSign.name} {selectedTimeframe.label}</Text>
-              <Text style={s.dateText}>{new Date().toLocaleDateString()} 기준</Text>
+              <Txt style={s.resultTitle}>{selectedSign.name} {selectedTimeframe.label}</Txt>
+              <Txt style={s.dateText}>{new Date().toLocaleDateString()} 기준</Txt>
             </View>
 
             <View style={s.resultBox}>
-              <Text style={s.resultBoxTitle}>✨ AI 심층 분석</Text>
+              <Txt style={s.resultBoxTitle}>✨ AI 심층 분석</Txt>
               {isAnalyzing ? (
                 <View style={s.loadingBox}>
                   <ActivityIndicator size="large" color="#818cf8" />
-                  <Text style={s.loadingText}>별들의 움직임을 읽고 있습니다...</Text>
+                  <Txt style={s.loadingText}>별들의 움직임을 읽고 있습니다...</Txt>
                 </View>
               ) : (
-                <Text style={s.readingText}>{aiReading}</Text>
+                <Txt style={s.readingText}>{aiReading}</Txt>
               )}
             </View>
 
             {!isAnalyzing && (
-              <TouchableOpacity style={s.resetBtn} onPress={reset}>
-                <Text style={s.resetText}>다른 별자리 보기</Text>
-              </TouchableOpacity>
+              <Button
+                size="medium"
+                type="primary"
+                style="weak"
+                containerStyle={{ borderColor: 'rgba(129,140,248,0.3)', borderWidth: 1, borderRadius: 30, alignItems: 'center', justifyContent: 'center' }}
+                textStyle={{ color: '#818cf8' }}
+                onPress={reset}
+              >
+                다른 별자리 보기
+              </Button>
             )}
           </View>
         )}
+        <BottomInfo style={{ backgroundColor: BG, paddingBottom: 40 }}>
+          <Txt style={[s.subText, { marginTop: 20 }]}>이 운세는 재미로만 봐주세요. 맹신하지 마세요.</Txt>
+        </BottomInfo>
       </ScrollView>
     </View>
   );
@@ -156,22 +171,17 @@ ${selectedSign!.name}의 ${tf.label}를 상세하게 분석해주세요.
 const BG = '#060815';
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 60, paddingHorizontal: 20, paddingBottom: 10 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
-  backIcon: { fontSize: 22, color: '#fff' },
-  headerSub: { fontSize: 10, color: 'rgba(129,140,248,0.7)', letterSpacing: 2, fontWeight: '700' },
   headerTitle: { fontSize: 14, fontWeight: '700', color: '#c7d2fe' },
   scroll: { padding: 20, paddingBottom: 60 },
   section: { gap: 14 },
   title: { fontSize: 22, fontWeight: '800', color: '#fff', textAlign: 'center' },
+  subText: { fontSize: 12, color: 'rgba(255,255,255,0.4)', textAlign: 'center' },
   signGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
   signCard: { width: (width - 80) / 3, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(129,140,248,0.2)', borderRadius: 14, padding: 14, gap: 6 },
   signName: { fontSize: 12, fontWeight: '700', color: '#c7d2fe', textAlign: 'center' },
   signDate: { fontSize: 9, color: 'rgba(255,255,255,0.35)', textAlign: 'center' },
   selectedSignCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: 'rgba(129,140,248,0.08)', borderWidth: 1, borderColor: 'rgba(129,140,248,0.25)', borderRadius: 16, padding: 16 },
   selSignName: { fontSize: 18, fontWeight: '700', color: '#DAA520' },
-  changeBtn: { marginLeft: 'auto' as any, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-  changeText: { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
   tfCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(129,140,248,0.15)', borderRadius: 14, padding: 18 },
   tfLabel: { fontSize: 16, fontWeight: '600', color: '#e0e7ff' },
   resultHeader: { alignItems: 'center', gap: 8, paddingVertical: 20 },
@@ -182,8 +192,6 @@ const s = StyleSheet.create({
   loadingBox: { alignItems: 'center', gap: 12, paddingVertical: 20 },
   loadingText: { color: 'rgba(129,140,248,0.7)', fontSize: 13, textAlign: 'center' },
   readingText: { fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 26 },
-  resetBtn: { borderWidth: 1, borderColor: 'rgba(129,140,248,0.3)', borderRadius: 30, paddingVertical: 14, alignItems: 'center' },
-  resetText: { fontSize: 15, color: '#818cf8', fontWeight: '700' },
   signIcon: { width: 40, height: 40, marginBottom: 4 },
   selSignIcon: { width: 60, height: 60 },
   resultSignIcon: { width: 80, height: 80, marginBottom: 10 },

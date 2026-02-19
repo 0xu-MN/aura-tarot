@@ -1,9 +1,10 @@
 import { createRoute } from '@granite-js/react-native';
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput,
+  View, ScrollView,
   StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
+import { PageNavbar, Button, BottomInfo, Txt, Badge, PressableEffect } from '@toss/tds-react-native';
 import { getWeightedCards, TarotCardData } from '../../lib/tarot-data';
 import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
@@ -25,7 +26,8 @@ const THEMES = [
 function NewYearTarot() {
   const navigation = Route.useNavigation();
   const [step, setStep] = useState<Step>('intro');
-  const [theme, setTheme] = useState(THEMES[0]);
+  const [selectedThemeId, setSelectedThemeId] = useState(THEMES[0]!.id);
+  const theme = THEMES.find(t => t.id === selectedThemeId) || THEMES[0]!;
   const [drawnCards, setDrawnCards] = useState<{ card: TarotCardData; isReversed: boolean }[]>([]);
   const [revealedCards, setRevealedCards] = useState<number[]>([]);
   const [aiReading, setAiReading] = useState('');
@@ -33,7 +35,7 @@ function NewYearTarot() {
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
 
   const handleThemeSelect = (t: typeof THEMES[0]) => {
-    setTheme(t);
+    setSelectedThemeId(t.id);
     setStep('spread');
   };
 
@@ -52,13 +54,15 @@ function NewYearTarot() {
   const fetchReading = async (cards: { card: TarotCardData; isReversed: boolean }[], t: typeof THEMES[0]) => {
     setIsAnalyzing(true);
     try {
+      const [c1, c2, c3, c4] = cards;
+      if (!c1 || !c2 || !c3 || !c4) throw new Error('Invalid cards');
       const prompt = `당신은 신비로운 타로 마스터입니다.
 사용자의 2026년 신년 운세를 '${t.label}' 테마 중심으로 해석해주세요.
 
-1. 초반 (1~4월): ${cards[0].card.koreanName} (${cards[0].isReversed ? '역방향' : '정방향'})
-2. 중반 (5~8월): ${cards[1].card.koreanName} (${cards[1].isReversed ? '역방향' : '정방향'})
-3. 후반 (9~12월): ${cards[2].card.koreanName} (${cards[2].isReversed ? '역방향' : '정방향'})
-4. 전체 조언: ${cards[3].card.koreanName} (${cards[3].isReversed ? '역방향' : '정방향'})
+1. 초반 (1~4월): ${c1.card.koreanName} (${c1.isReversed ? '역방향' : '정방향'})
+2. 중반 (5~8월): ${c2.card.koreanName} (${c2.isReversed ? '역방향' : '정방향'})
+3. 후반 (9~12월): ${c3.card.koreanName} (${c3.isReversed ? '역방향' : '정방향'})
+4. 전체 조언: ${c4.card.koreanName} (${c4.isReversed ? '역방향' : '정방향'})
 
 - ${t.label} 관점에서 구체적으로 해석해주세요.
 - 희망차고 긍정적인 톤을 유지하되, 조심할 점은 부드럽게 조언해주세요.
@@ -83,37 +87,37 @@ function NewYearTarot() {
 
   return (
     <View style={s.container}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}><Text style={s.backIcon}>←</Text></TouchableOpacity>
-        <Text style={s.headerTitle}>2026년 신년운세</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <PageNavbar>
+        <PageNavbar.Title>2026년 신년운세</PageNavbar.Title>
+        <PageNavbar.AccessoryButtons>
+          <PageNavbar.AccessoryTextButton onPress={() => navigation.goBack()}>
+            뒤로
+          </PageNavbar.AccessoryTextButton>
+        </PageNavbar.AccessoryButtons>
+      </PageNavbar>
 
       <ScrollView contentContainerStyle={s.scroll}>
         {step === 'intro' && (
           <View style={s.center}>
-            <View style={s.iconCircle}><Text style={{ fontSize: 48 }}>🎇</Text></View>
-            <Text style={s.title}>2026년 신년운세</Text>
-            <Text style={s.desc}>당신의 2026년은 어떤 모습일까요?{'\n'}연애, 재물, 커리어... 가장 궁금한 테마를 선택해 집중적으로 알아보세요. 4장의 카드가 1년의 흐름을 명확히 보여드립니다.</Text>
-            <TouchableOpacity style={s.mainBtn} onPress={() => setStep('theme')}>
-              <Text style={s.mainBtnText}>2026년 운세보기</Text>
-            </TouchableOpacity>
+            <View style={s.iconCircle}><Txt style={{ fontSize: 48 }}>🎇</Txt></View>
+            <Txt style={s.title}>2026년 신년운세</Txt>
+            <Txt style={s.desc}>당신의 2026년은 어떤 모습일까요?{'\n'}연애, 재물, 커리어... 가장 궁금한 테마를 선택해 집중적으로 알아보세요. 4장의 카드가 1년의 흐름을 명확히 보여드립니다.</Txt>
           </View>
         )}
 
         {step === 'theme' && (
           <View style={s.section}>
-            <Text style={s.title}>보고 싶은 테마를 선택하세요</Text>
-            <Text style={s.subText}>한 해 운세를 알려줄게요 🎇</Text>
+            <Txt style={s.title}>보고 싶은 테마를 선택하세요</Txt>
+            <Txt style={s.subText}>한 해 운세를 알려줄게요 🎇</Txt>
             {THEMES.map((t) => (
-              <TouchableOpacity key={t.id} style={s.themeBtn} onPress={() => handleThemeSelect(t)}>
-                <Text style={{ fontSize: 24 }}>{t.emoji}</Text>
+              <PressableEffect key={t.id} style={s.themeBtn} onPress={() => handleThemeSelect(t)}>
+                <Txt style={{ fontSize: 24 }}>{t.emoji}</Txt>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.themeName}>{t.label}</Text>
-                  <Text style={s.themeDesc}>{t.label}을 중심으로 2026년을 미리봅니다.</Text>
+                  <Txt style={s.themeName}>{t.label}</Txt>
+                  <Txt style={s.themeDesc}>{t.label}을 중심으로 2026년을 미리봅니다.</Txt>
                 </View>
-                <Text style={{ color: 'rgba(218,165,32,0.5)', fontSize: 20 }}>→</Text>
-              </TouchableOpacity>
+                <Txt style={{ color: 'rgba(218,165,32,0.5)', fontSize: 20 }}>→</Txt>
+              </PressableEffect>
             ))}
           </View>
         )}
@@ -121,17 +125,17 @@ function NewYearTarot() {
         {step === 'spread' && (
           <View style={s.section}>
             <View style={s.themeTag}>
-              <Text style={s.themeTagText}>{theme.emoji} {theme.label}</Text>
+              <Badge type="yellow" badgeStyle="fill" size="large">{theme.emoji} {theme.label}</Badge>
             </View>
-            <Text style={s.title}>4장을 하나씩 선택해주세요</Text>
-            <Text style={s.subText}>선택됨: {selectedCards.length}/4</Text>
+            <Txt style={s.title}>4장을 하나씩 선택해주세요</Txt>
+            <Txt style={s.subText}>선택됨: {selectedCards.length}/4</Txt>
             <View style={s.cardGrid}>
               {[...Array(12)].map((_, idx) => (
-                <TouchableOpacity key={idx}
+                <PressableEffect key={idx}
                   style={[s.cardBack, selectedCards.includes(idx) && s.cardSelected]}
                   onPress={() => handleCardSelect(idx)}>
                   <Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" />
-                </TouchableOpacity>
+                </PressableEffect>
               ))}
             </View>
           </View>
@@ -139,18 +143,18 @@ function NewYearTarot() {
 
         {step === 'result' && (
           <View style={s.section}>
-            <Text style={[s.subText, { color: '#DAA520' }]}>{theme.emoji} 2026년 {theme.label} 리포트</Text>
+            <Txt style={[s.subText, { color: '#DAA520' }]}>{theme.emoji} 2026년 {theme.label} 리포트</Txt>
             <View style={s.resultCardGrid}>
               {drawnCards.map((c, i) => (
-                <TouchableOpacity key={i} style={{ alignItems: 'center', width: (width - 60) / 2 - 6 }} onPress={() => handleReveal(i)}>
-                  <Text style={s.posLabel}>{LABELS[i]}</Text>
+                <PressableEffect key={i} style={{ alignItems: 'center', width: (width - 60) / 2 - 6 }} onPress={() => handleReveal(i)}>
+                  <Txt style={s.posLabel}>{LABELS[i]}</Txt>
                   {revealedCards.includes(i) ? (
                     <Image source={c.card.image} style={[s.resultCard, c.isReversed && { transform: [{ rotate: '180deg' }] }]} />
                   ) : (
                     <View style={s.resultCardBack}><Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 10 }} resizeMode="cover" /></View>
                   )}
-                  {revealedCards.includes(i) && <Text style={s.cardName}>{c.card.koreanName}</Text>}
-                </TouchableOpacity>
+                  {revealedCards.includes(i) && <Txt style={s.cardName}>{c.card.koreanName}</Txt>}
+                </PressableEffect>
               ))}
             </View>
 
@@ -159,25 +163,48 @@ function NewYearTarot() {
                 {isAnalyzing ? (
                   <View style={s.loadingBox}>
                     <ActivityIndicator size="large" color="#818cf8" />
-                    <Text style={s.loadingText}>{theme.label} 흐름을 읽고 있습니다...</Text>
+                    <Txt style={s.loadingText}>{theme.label} 흐름을 읽고 있습니다...</Txt>
                   </View>
                 ) : (
                   <>
-                    <Text style={s.readingText}>{aiReading}</Text>
-                    <TouchableOpacity style={s.mainBtn} onPress={reset}>
-                      <Text style={s.mainBtnText}>한번 더 뽑기</Text>
-                    </TouchableOpacity>
+                    <Txt style={s.readingText}>{aiReading}</Txt>
+                    <PressableEffect style={s.mainBtn} onPress={reset}>
+                      <Txt style={s.mainBtnText}>한번 더 뽑기</Txt>
+                    </PressableEffect>
                   </>
                 )}
               </View>
             )}
             {revealedCards.length < 4 && (
-              <Text style={s.subText}>카드를 터치해서 하나씩 뒤집어보세요 ✨</Text>
+              <Txt style={s.subText}>카드를 터치해서 하나씩 뒤집어보세요 ✨</Txt>
             )}
           </View>
         )}
+        <BottomInfo style={{ backgroundColor: BG, paddingBottom: 40 }}>
+          <Txt style={[s.subText, { marginTop: 20 }]}>이 운세는 재미로만 봐주세요. 맹신하지 마세요.</Txt>
+        </BottomInfo>
       </ScrollView>
-    </View>
+
+      {
+        step === 'intro' && (
+          <View style={s.fixedBottom}>
+            <PressableEffect
+              style={{
+                backgroundColor: '#DAA520',
+                borderRadius: 16,
+                height: 56,
+                width: '100%',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              onPress={() => setStep('theme')}
+            >
+              <Txt style={{ color: '#000', fontSize: 17, fontWeight: '800' }}>2026년 운세보기</Txt>
+            </PressableEffect>
+          </View>
+        )
+      }
+    </View >
   );
 }
 
@@ -215,4 +242,5 @@ const s = StyleSheet.create({
   loadingBox: { alignItems: 'center', gap: 12, paddingVertical: 20 },
   loadingText: { color: 'rgba(218,165,32,0.7)', fontSize: 13 },
   readingText: { fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 24 },
+  fixedBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 40, paddingTop: 20, alignItems: 'center', backgroundColor: 'rgba(8,8,16,0.9)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
 });
