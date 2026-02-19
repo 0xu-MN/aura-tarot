@@ -128,6 +128,20 @@ function HomePage() {
                 <Txt style={styles.fortuneDesc}>이달의 흐름과 키워드를 알아보세요</Txt>
               </View>
             </PressableEffect>
+
+            <PressableEffect
+              style={styles.fortuneCard}
+              onPress={() => navigation.push('/chatbot')}
+            >
+              <View style={[styles.fortuneOverlay, { backgroundColor: 'rgba(139, 92, 246, 0.2)', opacity: 1 }]} />
+              <View style={styles.fortuneContent}>
+                <View style={[styles.fortuneBadges, { opacity: 0 }]}>
+                  <View style={styles.fortuneBadge}><Txt style={styles.fortuneBadgeText}>AI</Txt></View>
+                </View>
+                <Txt style={styles.fortuneTitle}>AI 타로 상담</Txt>
+                <Txt style={styles.fortuneDesc}>고민을 말해보세요</Txt>
+              </View>
+            </PressableEffect>
           </View>
 
           {/* Recommended Content */}

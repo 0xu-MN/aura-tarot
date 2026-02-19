@@ -158,7 +158,8 @@ const styles = StyleSheet.create({
   background: {
     position: 'absolute',
     width: width,
-    height: height,
+    height: height + 80,
+    top: -80,
   },
   gradientOverlay: {
     position: 'absolute',
@@ -171,7 +172,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingTop: 60,
+    // paddingTop: 60,
   },
   badge: {
     flexDirection: 'row',
@@ -199,9 +200,9 @@ const styles = StyleSheet.create({
     color: '#DAA520',
     marginBottom: 16,
     textAlign: 'center',
-    textShadowColor: 'rgba(218, 165, 32, 0.6)',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 16,
+    // textShadowColor: 'rgba(218, 165, 32, 0.6)',
+    // textShadowOffset: { width: 0, height: 4 },
+    // textShadowRadius: 16,
     letterSpacing: 2,
   },
   subtitleContainer: {

@@ -29,3 +29,38 @@ export async function callGemini(prompt: string): Promise<string> {
         throw error;
     }
 }
+
+export interface ChatMessage {
+    role: 'user' | 'model';
+    parts: { text: string }[];
+}
+
+export async function callGeminiChat(history: ChatMessage[], message: string): Promise<string> {
+    try {
+        const response = await fetch(GEMINI_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [
+                    ...history,
+                    { role: 'user', parts: [{ text: message }] }
+                ],
+                generationConfig: {
+                    temperature: 0.9,
+                    maxOutputTokens: 1024,
+                },
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    } catch (error) {
+        console.error('Gemini Chat API call failed:', error);
+        throw error;
+    }
+}
