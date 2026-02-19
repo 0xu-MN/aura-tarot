@@ -18,7 +18,7 @@ function Chatbot() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'model',
-      parts: [{ text: '안녕하세요! AI 타로 마스터입니다. \n오늘의 운세나 고민이 있다면 편하게 물어보세요. 🔮' }]
+      parts: [{ text: '안녕하세요! AI 타로 마스터 솜이 입니다. \n오늘의 운세나 고민이 있다면 편하게 물어보세요. 🔮' }]
     }
   ]);
   const [input, setInput] = useState('');
@@ -97,7 +97,7 @@ function Chatbot() {
                   fontSize: 15,
                   lineHeight: 22
                 }}>
-                  {msg.parts[0].text}
+                  {msg.parts[0]?.text || ''}
                 </Txt>
               </View>
             );
