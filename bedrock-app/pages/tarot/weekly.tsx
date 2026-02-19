@@ -5,7 +5,12 @@ import {
   StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
 import { getRandomCards, TarotCardData } from '../../lib/tarot-data';
+import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
+
+// ... (lines 10-118 skipped by tool, but I need to target the import block and the render block separately if they are far apart)
+// Since replace_file_content replaces a CONTIGUOUS block, I cannot do both in one go if they are far apart.
+// I will use multi_replace_file_content.
 
 export const Route = createRoute('/tarot/weekly', { component: WeeklyFortune });
 const { width } = Dimensions.get('window');
@@ -49,6 +54,10 @@ function WeeklyFortune() {
 
   const generateReading = async () => {
     setIsLoading(true);
+    if (drawnCards.length < 5) {
+      setIsLoading(false);
+      return;
+    }
     try {
       const prompt = `당신은 전문적인 타로 리더 '솜이'입니다.
 사용자의 [${weeklyDate}] 주간 운세를 5장의 카드로 해석해주세요.
@@ -120,7 +129,7 @@ function WeeklyFortune() {
                 <TouchableOpacity key={idx}
                   style={[s.cardBack, selectedCards.includes(idx) && s.cardSelected]}
                   onPress={() => handleCardSelect(idx)}>
-                  <Text style={{ fontSize: 22 }}>🃏</Text>
+                  <Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 6 }} resizeMode="cover" />
                 </TouchableOpacity>
               ))}
             </View>

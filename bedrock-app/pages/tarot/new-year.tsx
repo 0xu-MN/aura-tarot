@@ -5,6 +5,7 @@ import {
   StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
 import { getWeightedCards, TarotCardData } from '../../lib/tarot-data';
+import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
 
 export const Route = createRoute('/tarot/new-year', { component: NewYearTarot });
@@ -129,7 +130,7 @@ function NewYearTarot() {
                 <TouchableOpacity key={idx}
                   style={[s.cardBack, selectedCards.includes(idx) && s.cardSelected]}
                   onPress={() => handleCardSelect(idx)}>
-                  <Text style={{ fontSize: 24 }}>🃏</Text>
+                  <Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -146,7 +147,7 @@ function NewYearTarot() {
                   {revealedCards.includes(i) ? (
                     <Image source={c.card.image} style={[s.resultCard, c.isReversed && { transform: [{ rotate: '180deg' }] }]} />
                   ) : (
-                    <View style={s.resultCardBack}><Text style={{ fontSize: 32 }}>🃏</Text></View>
+                    <View style={s.resultCardBack}><Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 10 }} resizeMode="cover" /></View>
                   )}
                   {revealedCards.includes(i) && <Text style={s.cardName}>{c.card.koreanName}</Text>}
                 </TouchableOpacity>

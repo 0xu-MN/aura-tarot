@@ -5,6 +5,7 @@ import {
   StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
 import { getRandomCards, TarotCardData } from '../../lib/tarot-data';
+import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
 
 export const Route = createRoute('/tarot/yearly', { component: YearlyFortune });
@@ -111,7 +112,7 @@ ${name || '방문자'}님의 2026년 신년 운세를 사계절 4장의 카드�
                 <TouchableOpacity key={idx}
                   style={[s.cardBack, selectedCards.includes(idx) && s.cardSelected]}
                   onPress={() => handleCardSelect(idx)}>
-                  <Text style={{ fontSize: 28 }}>🃏</Text>
+                  <Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -129,7 +130,7 @@ ${name || '방문자'}님의 2026년 신년 운세를 사계절 4장의 카드�
                     <Image source={c.card.image}
                       style={[s.seasonCard, c.isReversed && { transform: [{ rotate: '180deg' }] }]} />
                   ) : (
-                    <View style={[s.seasonCard, s.cardBack]}><Text style={{ fontSize: 24 }}>🃏</Text></View>
+                    <View style={[s.seasonCard, s.cardBack]}><Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" /></View>
                   )}
                   {revealedCards.includes(i) && <Text style={s.cardName}>{c.card.koreanName}</Text>}
                 </View>

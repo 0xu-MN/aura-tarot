@@ -2,8 +2,9 @@ import { createRoute } from '@granite-js/react-native';
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Dimensions
+  StyleSheet, ActivityIndicator, Dimensions, Image
 } from 'react-native';
+import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
 
 export const Route = createRoute('/tarot/horoscope', { component: Horoscope });
@@ -11,18 +12,18 @@ const { width } = Dimensions.get('window');
 type Step = 'select-sign' | 'select-timeframe' | 'result';
 
 const ZODIAC_SIGNS = [
-  { name: '물병자리', date: '1.20~2.18', icon: '🏺' },
-  { name: '물고기자리', date: '2.19~3.20', icon: '♓' },
-  { name: '양자리', date: '3.21~4.19', icon: '♈' },
-  { name: '황소자리', date: '4.20~5.20', icon: '♉' },
-  { name: '쌍둥이자리', date: '5.21~6.21', icon: '♊' },
-  { name: '게자리', date: '6.22~7.22', icon: '♋' },
-  { name: '사자자리', date: '7.23~8.22', icon: '♌' },
-  { name: '처녀자리', date: '8.23~9.23', icon: '♍' },
-  { name: '천칭자리', date: '9.24~10.22', icon: '♎' },
-  { name: '전갈자리', date: '10.23~11.22', icon: '♏' },
-  { name: '사수자리', date: '11.23~12.24', icon: '♐' },
-  { name: '염소자리', date: '12.25~1.19', icon: '♑' },
+  { name: '물병자리', date: '1.20~2.18', image: ASSETS.zodiac.aquarius },
+  { name: '물고기자리', date: '2.19~3.20', image: ASSETS.zodiac.pisces },
+  { name: '양자리', date: '3.21~4.19', image: ASSETS.zodiac.aries },
+  { name: '황소자리', date: '4.20~5.20', image: ASSETS.zodiac.taurus },
+  { name: '쌍둥이자리', date: '5.21~6.21', image: ASSETS.zodiac.gemini },
+  { name: '게자리', date: '6.22~7.22', image: ASSETS.zodiac.cancer },
+  { name: '사자자리', date: '7.23~8.22', image: ASSETS.zodiac.leo },
+  { name: '처녀자리', date: '8.23~9.23', image: ASSETS.zodiac.virgo },
+  { name: '천칭자리', date: '9.24~10.22', image: ASSETS.zodiac.libra },
+  { name: '전갈자리', date: '10.23~11.22', image: ASSETS.zodiac.scorpio },
+  { name: '사수자리', date: '11.23~12.24', image: ASSETS.zodiac.sagittarius },
+  { name: '염소자리', date: '12.25~1.19', image: ASSETS.zodiac.capricorn },
 ];
 
 const TIMEFRAMES = [
@@ -89,7 +90,7 @@ ${selectedSign!.name}의 ${tf.label}를 상세하게 분석해주세요.
             <View style={s.signGrid}>
               {ZODIAC_SIGNS.map((sign) => (
                 <TouchableOpacity key={sign.name} style={s.signCard} onPress={() => handleSignSelect(sign)}>
-                  <Text style={{ fontSize: 30 }}>{sign.icon}</Text>
+                  <Image source={sign.image} style={s.signIcon} resizeMode="contain" />
                   <Text style={s.signName}>{sign.name}</Text>
                   <Text style={s.signDate}>{sign.date}</Text>
                 </TouchableOpacity>
@@ -101,7 +102,7 @@ ${selectedSign!.name}의 ${tf.label}를 상세하게 분석해주세요.
         {step === 'select-timeframe' && selectedSign && (
           <View style={s.section}>
             <View style={s.selectedSignCard}>
-              <Text style={{ fontSize: 40 }}>{selectedSign.icon}</Text>
+              <Image source={selectedSign.image} style={s.selSignIcon} resizeMode="contain" />
               <View>
                 <Text style={s.selSignName}>{selectedSign.name}</Text>
                 <Text style={s.signDate}>{selectedSign.date}</Text>
@@ -123,7 +124,7 @@ ${selectedSign!.name}의 ${tf.label}를 상세하게 분석해주세요.
         {step === 'result' && selectedSign && selectedTimeframe && (
           <View style={s.section}>
             <View style={s.resultHeader}>
-              <Text style={{ fontSize: 56 }}>{selectedSign.icon}</Text>
+              <Image source={selectedSign.image} style={s.resultSignIcon} resizeMode="contain" />
               <Text style={s.resultTitle}>{selectedSign.name} {selectedTimeframe.label}</Text>
               <Text style={s.dateText}>{new Date().toLocaleDateString()} 기준</Text>
             </View>
@@ -183,4 +184,7 @@ const s = StyleSheet.create({
   readingText: { fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 26 },
   resetBtn: { borderWidth: 1, borderColor: 'rgba(129,140,248,0.3)', borderRadius: 30, paddingVertical: 14, alignItems: 'center' },
   resetText: { fontSize: 15, color: '#818cf8', fontWeight: '700' },
+  signIcon: { width: 40, height: 40, marginBottom: 4 },
+  selSignIcon: { width: 60, height: 60 },
+  resultSignIcon: { width: 80, height: 80, marginBottom: 10 },
 });

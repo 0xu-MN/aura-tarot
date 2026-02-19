@@ -1,61 +1,57 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Safe AsyncStorage wrapper
-const safeAsyncStorage = {
-    async getItem(key: string): Promise<string | null> {
+// Safe Storage Wrapper for AppInToss Compliance
+// Switches between localStorage (Web) and In-Memory (Fallback)
+// completely removing native AsyncStorage dependency to prevent crashes.
+
+const memoryStorage = new Map<string, string>();
+
+const safeStorage = {
+    getItem: async (key: string): Promise<string | null> => {
         try {
-            if (!AsyncStorage || typeof AsyncStorage.getItem !== 'function') return null;
-            return await AsyncStorage.getItem(key);
-        } catch (error) {
-            console.warn(`AsyncStorage getItem failed for key ${key}:`, error);
-            return null;
-        }
-    },
-    async setItem(key: string, value: string): Promise<void> {
-        try {
-            if (!AsyncStorage || typeof AsyncStorage.setItem !== 'function') return;
-            await AsyncStorage.setItem(key, value);
-        } catch (error) {
-            console.warn(`AsyncStorage setItem failed for key ${key}:`, error);
-        }
-    },
-    async removeItem(key: string): Promise<void> {
-        try {
-            if (!AsyncStorage || typeof AsyncStorage.removeItem !== 'function') return;
-            await AsyncStorage.removeItem(key);
-        } catch (error) {
-            console.warn(`AsyncStorage removeItem failed for key ${key}:`, error);
-        }
-    },
-    async multiGet(keys: string[]): Promise<[string, string | null][]> {
-        try {
-            if (!AsyncStorage || typeof (AsyncStorage as any).multiGet !== 'function') {
-                const results: [string, string | null][] = [];
-                for (const key of keys) {
-                    results.push([key, await this.getItem(key)]);
-                }
-                return results;
+            if (typeof window !== 'undefined' && window.localStorage) {
+                return window.localStorage.getItem(key);
             }
-            return await (AsyncStorage as any).multiGet(keys);
-        } catch (error) {
-            console.error('AsyncStorage multiGet failed:', error);
-            return keys.map(k => [k, null]);
+            return memoryStorage.get(key) || null;
+        } catch {
+            return memoryStorage.get(key) || null;
         }
     },
-    async multiSet(keyValuePairs: [string, string][]): Promise<void> {
+    setItem: async (key: string, value: string): Promise<void> => {
         try {
-            if (!AsyncStorage || typeof (AsyncStorage as any).multiSet !== 'function') {
-                for (const [key, value] of keyValuePairs) {
-                    await this.setItem(key, value);
-                }
-                return;
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.setItem(key, value);
             }
-            await (AsyncStorage as any).multiSet(keyValuePairs);
-        } catch (error) {
-            console.error('AsyncStorage multiSet failed:', error);
+        } catch {
+            // Ignore error
+        }
+        memoryStorage.set(key, value);
+    },
+    removeItem: async (key: string): Promise<void> => {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.removeItem(key);
+            }
+        } catch {
+            // Ignore
+        }
+        memoryStorage.delete(key);
+    },
+    multiGet: async (keys: string[]): Promise<[string, string | null][]> => {
+        const results: [string, string | null][] = [];
+        for (const key of keys) {
+            const value = await safeStorage.getItem(key);
+            results.push([key, value]);
+        }
+        return results;
+    },
+    multiSet: async (keyValuePairs: [string, string][]): Promise<void> => {
+        for (const [key, value] of keyValuePairs) {
+            await safeStorage.setItem(key, value);
         }
     }
 };
+
+// --- Original Logic Preserved Below ---
 
 // Storage keys
 const KEYS = {
@@ -68,7 +64,7 @@ const KEYS = {
 export const getDailyDrawCount = async (): Promise<number> => {
     try {
         const today = new Date().toISOString().split('T')[0];
-        const stored = await safeAsyncStorage.getItem(KEYS.DAILY_DRAWS);
+        const stored = await safeStorage.getItem(KEYS.DAILY_DRAWS);
 
         if (!stored) return 0;
 
@@ -88,7 +84,7 @@ export const incrementDailyDrawCount = async (): Promise<number> => {
         const currentCount = await getDailyDrawCount();
         const newCount = currentCount + 1;
 
-        await safeAsyncStorage.setItem(
+        await safeStorage.setItem(
             KEYS.DAILY_DRAWS,
             JSON.stringify({ date: today, count: newCount })
         );
@@ -128,7 +124,7 @@ export const saveReading = async (reading: Omit<ReadingRecord, 'id' | 'date'>): 
         // Keep only last 50 readings
         const trimmedHistory = history.slice(0, 50);
 
-        await safeAsyncStorage.setItem(KEYS.READING_HISTORY, JSON.stringify(trimmedHistory));
+        await safeStorage.setItem(KEYS.READING_HISTORY, JSON.stringify(trimmedHistory));
     } catch (error) {
         console.error('Error saving reading:', error);
     }
@@ -136,7 +132,7 @@ export const saveReading = async (reading: Omit<ReadingRecord, 'id' | 'date'>): 
 
 export const getReadingHistory = async (): Promise<ReadingRecord[]> => {
     try {
-        const stored = await safeAsyncStorage.getItem(KEYS.READING_HISTORY);
+        const stored = await safeStorage.getItem(KEYS.READING_HISTORY);
         return stored ? JSON.parse(stored) : [];
     } catch (error) {
         console.error('Error getting reading history:', error);
@@ -146,7 +142,7 @@ export const getReadingHistory = async (): Promise<ReadingRecord[]> => {
 
 export const clearReadingHistory = async (): Promise<void> => {
     try {
-        await safeAsyncStorage.removeItem(KEYS.READING_HISTORY);
+        await safeStorage.removeItem(KEYS.READING_HISTORY);
     } catch (error) {
         console.error('Error clearing history:', error);
     }
@@ -161,7 +157,7 @@ export interface UserPreferences {
 
 export const getUserPreferences = async (): Promise<UserPreferences> => {
     try {
-        const stored = await safeAsyncStorage.getItem(KEYS.USER_PREFERENCES);
+        const stored = await safeStorage.getItem(KEYS.USER_PREFERENCES);
         return stored ? JSON.parse(stored) : {
             notifications: true,
             theme: 'dark',
@@ -181,7 +177,7 @@ export const setUserPreferences = async (prefs: Partial<UserPreferences>): Promi
     try {
         const current = await getUserPreferences();
         const updated = { ...current, ...prefs };
-        await safeAsyncStorage.setItem(KEYS.USER_PREFERENCES, JSON.stringify(updated));
+        await safeStorage.setItem(KEYS.USER_PREFERENCES, JSON.stringify(updated));
     } catch (error) {
         console.error('Error setting preferences:', error);
     }

@@ -5,6 +5,7 @@ import {
     StyleSheet, Image, ActivityIndicator, Alert, Dimensions
 } from 'react-native';
 import { getWeightedCards, TarotCardData } from '../../lib/tarot-data';
+import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
 
 export const Route = createRoute('/tarot/love', { component: LoveTarot });
@@ -43,6 +44,7 @@ function LoveTarot() {
     };
 
     const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
+        if (cards.length < 3) return;
         try {
             const prompt = `당신은 로맨틱하고 감성적인 타로 리더 '로즈'입니다.
 사용자의 연애 고민에 대해 [과거-현재-미래] 3장으로 해석해주세요.
@@ -153,7 +155,7 @@ function LoveTarot() {
                                     onPress={() => handleCardSelect(idx)}
                                     activeOpacity={selectedCards.includes(idx) ? 1 : 0.7}
                                 >
-                                    <Text style={{ fontSize: 24 }}>🃏</Text>
+                                    <Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 6 }} resizeMode="cover" />
                                 </TouchableOpacity>
                             ))}
                         </View>

@@ -22,4 +22,23 @@ export const ASSETS = {
     loveTarot: { uri: `${DEV_SERVER_URL}/assets/thumbnails/love-tarot.png` },
     reunionTarot: { uri: `${DEV_SERVER_URL}/assets/thumbnails/reunion-tarot.png` },
     compatibilityTarot: { uri: `${DEV_SERVER_URL}/assets/thumbnails/compatibility-tarot.png` },
+
+    // Zodiac Icons (Generated)
+    zodiac: {
+        aries: { uri: `${DEV_SERVER_URL}/assets/zodiac/aries.png` },
+        taurus: { uri: `${DEV_SERVER_URL}/assets/zodiac/taurus.png` },
+        gemini: { uri: `${DEV_SERVER_URL}/assets/zodiac/gemini.png` },
+        cancer: { uri: `${DEV_SERVER_URL}/assets/zodiac/cancer.png` },
+        leo: { uri: `${DEV_SERVER_URL}/assets/zodiac/leo.png` },
+        // Placeholders for remaining icons (will be generated)
+        virgo: { uri: `${DEV_SERVER_URL}/assets/zodiac/virgo.png` },
+        libra: { uri: `${DEV_SERVER_URL}/assets/zodiac/libra.png` },
+        scorpio: { uri: `${DEV_SERVER_URL}/assets/zodiac/scorpio.png` },
+        sagittarius: { uri: `${DEV_SERVER_URL}/assets/zodiac/sagittarius.png` },
+        capricorn: { uri: `${DEV_SERVER_URL}/assets/zodiac/capricorn.png` },
+        aquarius: { uri: `${DEV_SERVER_URL}/assets/zodiac/aquarius.png` },
+        pisces: { uri: `${DEV_SERVER_URL}/assets/zodiac/pisces.png` },
+    },
 };
+
+export const cardUri = ASSETS.getCardImage;

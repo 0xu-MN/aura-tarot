@@ -5,6 +5,7 @@ import {
   StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
 import { getRandomCards, TarotCardData } from '../../lib/tarot-data';
+import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
 
 export const Route = createRoute('/tarot/money', { component: MoneyTarot });
@@ -107,7 +108,7 @@ function MoneyTarot() {
                 <TouchableOpacity key={idx}
                   style={[s.cardBack, selectedCards.includes(idx) && s.cardSelected]}
                   onPress={() => handleCardSelect(idx)}>
-                  <Text style={{ fontSize: 28 }}>🃏</Text>
+                  <Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 10 }} resizeMode="cover" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -124,7 +125,7 @@ function MoneyTarot() {
                   {revealedCards.includes(i) ? (
                     <Image source={c.card.image} style={[s.resultCard, c.isReversed && { transform: [{ rotate: '180deg' }] }]} />
                   ) : (
-                    <View style={s.resultCardBack}><Text style={{ fontSize: 28 }}>🃏</Text></View>
+                    <View style={s.resultCardBack}><Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" /></View>
                   )}
                   {revealedCards.includes(i) && (
                     <>

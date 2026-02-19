@@ -5,6 +5,7 @@ import {
     StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
 import { getRandomCards, TarotCardData } from '../../lib/tarot-data';
+import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
 
 export const Route = createRoute('/tarot/student', { component: StudentSupportTarot });
@@ -109,7 +110,7 @@ function StudentSupportTarot() {
                         <View style={s.cardGrid}>
                             {[...Array(9)].map((_, idx) => (
                                 <TouchableOpacity key={idx} style={s.cardBack} onPress={handleCardPick}>
-                                    <Text style={{ fontSize: 30 }}>🃏</Text>
+                                    <Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 10 }} resizeMode="cover" />
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -122,7 +123,7 @@ function StudentSupportTarot() {
                             {isRevealed ? (
                                 <Image source={drawnCard.card.image} style={[s.bigCard, drawnCard.isReversed && { transform: [{ rotate: '180deg' }] }]} />
                             ) : (
-                                <View style={s.cardBackFront}><Text style={{ fontSize: 48 }}>🃏</Text></View>
+                                <View style={s.cardBackFront}><Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 12 }} resizeMode="cover" /></View>
                             )}
                         </TouchableOpacity>
 

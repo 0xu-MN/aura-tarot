@@ -5,6 +5,7 @@ import {
   StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
 import { getWeightedCards, TarotCardData } from '../../lib/tarot-data';
+import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
 
 export const Route = createRoute('/tarot/reunion', { component: ReunionTarot });
@@ -134,7 +135,7 @@ CHANCE: [숫자]`;
                 <TouchableOpacity key={idx}
                   style={[s.cardBack, selectedCards.includes(idx) && s.cardSelected]}
                   onPress={() => handleCardSelect(idx)}>
-                  <Text style={{ fontSize: 24 }}>🃏</Text>
+                  <Image source={ASSETS.tarotBack} style={{ width: '100%', height: '100%', borderRadius: 8 }} resizeMode="cover" />
                 </TouchableOpacity>
               ))}
             </View>
