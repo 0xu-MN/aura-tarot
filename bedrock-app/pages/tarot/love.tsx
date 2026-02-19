@@ -4,7 +4,7 @@ import {
     View, ScrollView, TextInput,
     StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
-import { PageNavbar, Button, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
+import { PageNavbar, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
 import { getWeightedCards, TarotCardData } from '../../lib/tarot-data';
 import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
@@ -134,17 +134,21 @@ function LoveTarot() {
                             placeholderTextColor="rgba(244,114,182,0.4)"
                             multiline
                         />
-                        <Button
-                            size="large"
-                            type="primary"
-                            style="fill"
+                        <PressableEffect
                             disabled={!question.trim()}
-                            containerStyle={{ backgroundColor: PINK, borderRadius: 30, height: 56, width: '100%', opacity: !question.trim() ? 0.5 : 1, alignItems: 'center', justifyContent: 'center' }}
-                            textStyle={{ color: '#fff', fontSize: 17, fontWeight: '800' }}
+                            style={{
+                                backgroundColor: PINK,
+                                borderRadius: 30,
+                                height: 56,
+                                width: '100%',
+                                opacity: !question.trim() ? 0.5 : 1,
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
                             onPress={() => { if (question.trim()) setStep('spread'); }}
                         >
-                            카드 뽑기
-                        </Button>
+                            <Txt style={{ color: '#fff', fontSize: 17, fontWeight: '800' }}>카드 뽑기</Txt>
+                        </PressableEffect>
                     </View>
                 )}
 
@@ -194,16 +198,20 @@ function LoveTarot() {
                         </View>
 
                         {!isLoading && (
-                            <Button
-                                size="medium"
-                                type="primary"
-                                style="weak"
-                                containerStyle={{ borderColor: 'rgba(244,114,182,0.3)', borderWidth: 1, borderRadius: 30, alignItems: 'center', justifyContent: 'center' }}
-                                textStyle={{ color: PINK }}
+                            <PressableEffect
+                                style={{
+                                    borderColor: 'rgba(244,114,182,0.3)',
+                                    borderWidth: 1,
+                                    borderRadius: 30,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    height: 48,
+                                    width: '100%'
+                                }}
                                 onPress={reset}
                             >
-                                다시 뽑기
-                            </Button>
+                                <Txt style={{ color: PINK, fontSize: 15, fontWeight: '600' }}>다시 뽑기</Txt>
+                            </PressableEffect>
                         )}
                     </View>
                 )}

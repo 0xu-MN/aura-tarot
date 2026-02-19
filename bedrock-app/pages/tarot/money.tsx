@@ -159,16 +159,20 @@ function MoneyTarot() {
                 ) : (
                   <>
                     <Txt style={s.readingText}>{aiReading}</Txt>
-                    <Button
-                      size="medium"
-                      type="primary"
-                      style="weak"
-                      containerStyle={{ borderColor: 'rgba(218,165,32,0.3)', borderWidth: 1, borderRadius: 30, alignItems: 'center', justifyContent: 'center' }}
-                      textStyle={{ color: '#DAA520' }}
+                    <PressableEffect
+                      style={{
+                        borderColor: 'rgba(218,165,32,0.3)',
+                        borderWidth: 1,
+                        borderRadius: 30,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: 48,
+                        width: '100%'
+                      }}
                       onPress={reset}
                     >
-                      한번 더 뽑기
-                    </Button>
+                      <Txt style={{ color: '#DAA520', fontSize: 15, fontWeight: '600' }}>한번 더 뽑기</Txt>
+                    </PressableEffect>
                   </>
                 )}
               </View>

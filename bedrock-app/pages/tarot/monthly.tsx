@@ -4,7 +4,7 @@ import {
   View, ScrollView,
   StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
-import { PageNavbar, Button, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
+import { PageNavbar, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
 import { getRandomCards, TarotCardData } from '../../lib/tarot-data';
 import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
@@ -165,16 +165,20 @@ function MonthlyFortune() {
             </View>
 
             {!isLoading && (
-              <Button
-                size="medium"
-                type="primary"
-                style="weak"
-                containerStyle={{ borderColor: 'rgba(124,58,237,0.5)', borderWidth: 1, borderRadius: 30, alignItems: 'center', justifyContent: 'center' }}
-                textStyle={{ color: '#a78bfa' }}
+              <PressableEffect
+                style={{
+                  borderColor: 'rgba(124,58,237,0.5)',
+                  borderWidth: 1,
+                  borderRadius: 30,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: 48,
+                  width: '100%'
+                }}
                 onPress={reset}
               >
-                한번 더 뽑기
-              </Button>
+                <Txt style={{ color: '#a78bfa', fontSize: 15, fontWeight: '600' }}>한번 더 뽑기</Txt>
+              </PressableEffect>
             )}
           </View>
         )}

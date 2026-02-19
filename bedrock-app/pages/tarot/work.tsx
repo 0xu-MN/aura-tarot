@@ -4,7 +4,7 @@ import {
     View, ScrollView, TextInput,
     StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
-import { PageNavbar, Button, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
+import { PageNavbar, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
 import { getRandomCards, TarotCardData } from '../../lib/tarot-data';
 import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
@@ -162,16 +162,20 @@ function WorkLuck() {
                                                 <Txt style={s.missionText}>{workMission}</Txt>
                                             </View>
                                         </View>
-                                        <Button
-                                            size="medium"
-                                            type="primary"
-                                            style="weak"
-                                            containerStyle={{ borderColor: 'rgba(218,165,32,0.5)', borderWidth: 1, borderRadius: 30, alignItems: 'center', justifyContent: 'center' }}
-                                            textStyle={{ color: '#DAA520' }}
+                                        <PressableEffect
+                                            style={{
+                                                borderColor: 'rgba(218,165,32,0.5)',
+                                                borderWidth: 1,
+                                                borderRadius: 30,
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                height: 48,
+                                                width: '100%'
+                                            }}
                                             onPress={reset}
                                         >
-                                            처음으로 돌아가기
-                                        </Button>
+                                            <Txt style={{ color: '#DAA520', fontSize: 15, fontWeight: '600' }}>처음으로 돌아가기</Txt>
+                                        </PressableEffect>
                                     </>
                                 )}
                             </View>

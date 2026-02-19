@@ -4,7 +4,7 @@ import {
     View, ScrollView,
     StyleSheet, ActivityIndicator
 } from 'react-native';
-import { PageNavbar, Button, BottomInfo, Txt } from '@toss/tds-react-native';
+import { PageNavbar, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
 import { callGemini } from '../../lib/gemini';
 
 export const Route = createRoute('/tarot/palm', { component: PalmReading });
@@ -92,16 +92,20 @@ AI 손금 분석 서비스를 제공합니다. 사용자의 왼손을 분석한�
                             <Txt style={s.readingText}>{aiReading}</Txt>
                         </View>
 
-                        <Button
-                            size="medium"
-                            type="primary"
-                            style="weak"
-                            containerStyle={{ borderColor: 'rgba(218,165,32,0.3)', borderWidth: 1, borderRadius: 30, alignItems: 'center', justifyContent: 'center' }}
-                            textStyle={{ color: GOLD }}
+                        <PressableEffect
+                            style={{
+                                borderColor: 'rgba(218,165,32,0.3)',
+                                borderWidth: 1,
+                                borderRadius: 30,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: 48,
+                                width: '100%'
+                            }}
                             onPress={reset}
                         >
-                            다시 분석하기
-                        </Button>
+                            <Txt style={{ color: GOLD, fontSize: 15, fontWeight: '600' }}>다시 분석하기</Txt>
+                        </PressableEffect>
                     </View>
                 )}
                 <BottomInfo style={{ backgroundColor: BG, paddingBottom: 40 }}>

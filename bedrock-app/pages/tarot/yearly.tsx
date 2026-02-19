@@ -4,7 +4,7 @@ import {
   View, ScrollView, TextInput,
   StyleSheet, Image, ActivityIndicator, Dimensions
 } from 'react-native';
-import { PageNavbar, Button, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
+import { PageNavbar, BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
 import { getRandomCards, TarotCardData } from '../../lib/tarot-data';
 import { ASSETS } from '../../lib/assets';
 import { callGemini } from '../../lib/gemini';
@@ -94,17 +94,21 @@ ${name || '방문자'}님의 2026년 신년 운세를 사계절 4장의 카드�
             <Txt style={s.title}>이름을 입력해주세요</Txt>
             <TextInput style={s.input} value={name} onChangeText={setName}
               placeholder="홍길동" placeholderTextColor="rgba(52,211,153,0.4)" />
-            <Button
-              size="large"
-              type="primary"
-              style="fill"
+            <PressableEffect
               disabled={name.trim().length < 2}
-              containerStyle={{ backgroundColor: '#34d399', borderRadius: 30, height: 56, width: '100%', opacity: name.trim().length < 2 ? 0.5 : 1, alignItems: 'center', justifyContent: 'center' }}
-              textStyle={{ color: '#000', fontSize: 17, fontWeight: '800' }}
+              style={{
+                backgroundColor: '#34d399',
+                borderRadius: 30,
+                height: 56,
+                width: '100%',
+                opacity: name.trim().length < 2 ? 0.5 : 1,
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
               onPress={() => { if (name.trim().length >= 2) setStep('spread'); }}
             >
-              운세 카드 뽑기
-            </Button>
+              <Txt style={{ color: '#000', fontSize: 17, fontWeight: '800' }}>운세 카드 뽑기</Txt>
+            </PressableEffect>
           </View>
         )}
 
@@ -153,16 +157,20 @@ ${name || '방문자'}님의 2026년 신년 운세를 사계절 4장의 카드�
                 ) : (
                   <>
                     <Txt style={s.readingText}>{aiReading}</Txt>
-                    <Button
-                      size="medium"
-                      type="primary"
-                      style="weak"
-                      containerStyle={{ borderColor: 'rgba(52,211,153,0.3)', borderWidth: 1, borderRadius: 30, alignItems: 'center', justifyContent: 'center' }}
-                      textStyle={{ color: '#34d399' }}
+                    <PressableEffect
+                      style={{
+                        borderColor: 'rgba(52,211,153,0.3)',
+                        borderWidth: 1,
+                        borderRadius: 30,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: 48,
+                        width: '100%'
+                      }}
                       onPress={reset}
                     >
-                      한번 더 뽑기
-                    </Button>
+                      <Txt style={{ color: '#6ee7b7', fontSize: 15, fontWeight: '600' }}>한번 더 분석</Txt>
+                    </PressableEffect>
                   </>
                 )}
               </View>
