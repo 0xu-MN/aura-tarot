@@ -8,6 +8,7 @@ import { Route as _ContentsWorkRoute } from '../pages/contents/work';
 import { Route as _ContentsRoute } from '../pages/contents';
 import { Route as _HomeRoute } from '../pages/home';
 import { Route as _IndexRoute } from '../pages/';
+import { Route as _PrivacyRoute } from '../pages/privacy';
 import { Route as _SettingsRoute } from '../pages/settings';
 import { Route as _TarotCompatibilityRoute } from '../pages/tarot/compatibility';
 import { Route as _TarotHoroscopeRoute } from '../pages/tarot/horoscope';
@@ -32,6 +33,7 @@ declare module '@granite-js/react-native' {
     '/contents': (typeof _ContentsRoute)['_inputType'];
     '/home': (typeof _HomeRoute)['_inputType'];
     '/': (typeof _IndexRoute)['_inputType'];
+    '/privacy': (typeof _PrivacyRoute)['_inputType'];
     '/settings': (typeof _SettingsRoute)['_inputType'];
     '/tarot/compatibility': (typeof _TarotCompatibilityRoute)['_inputType'];
     '/tarot/horoscope': (typeof _TarotHoroscopeRoute)['_inputType'];
@@ -56,6 +58,7 @@ declare module '@granite-js/react-native' {
     '/contents': (typeof _ContentsRoute)['_outputType'];
     '/home': (typeof _HomeRoute)['_outputType'];
     '/': (typeof _IndexRoute)['_outputType'];
+    '/privacy': (typeof _PrivacyRoute)['_outputType'];
     '/settings': (typeof _SettingsRoute)['_outputType'];
     '/tarot/compatibility': (typeof _TarotCompatibilityRoute)['_outputType'];
     '/tarot/horoscope': (typeof _TarotHoroscopeRoute)['_outputType'];

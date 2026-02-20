@@ -5,6 +5,7 @@ import {
   Text,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import { getDailyDrawCount } from '../lib/storage';
 
@@ -77,6 +78,21 @@ function SettingsPage() {
             <Text style={styles.settingLabel}>매일 운세 알림</Text>
             <View style={styles.switchPlaceholder} />
           </View>
+        </View>
+
+        {/* Legal Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionIcon}>📋</Text>
+            <Text style={styles.sectionTitle}>법적 정보</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => navigation.navigate('/privacy')}
+          >
+            <Text style={styles.settingLabel}>개인정보처리방침</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Version */}
@@ -300,5 +316,9 @@ const styles = StyleSheet.create({
     color: '#444',
     textAlign: 'center',
     marginBottom: 24,
+  },
+  chevron: {
+    fontSize: 22,
+    color: '#9ca3af',
   },
 });
