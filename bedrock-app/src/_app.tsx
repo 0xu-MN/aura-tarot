@@ -2,12 +2,11 @@ import React, { type PropsWithChildren } from 'react';
 import { Granite, type InitialProps } from '@granite-js/react-native';
 import { TDSProvider } from '@toss/tds-react-native';
 import { context } from '../require.context';
-import { AuthProvider } from '../contexts/AuthContext';
 
 function AppContainer({ children }: PropsWithChildren<InitialProps>) {
   return (
     <TDSProvider>
-      <AuthProvider>{children}</AuthProvider>
+      {children}
     </TDSProvider>
   );
 }

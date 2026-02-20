@@ -1,7 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { LoginModal } from '@/components/auth/LoginModal';
-import { RegisterModal } from '@/components/auth/RegisterModal';
 import { DailyCardModal } from '@/components/DailyCardModal';
 import { PaymentModal } from '@/components/premium/PaymentModal';
 import { Button } from '@/components/ui/button';
@@ -22,10 +19,9 @@ const AI_SUGGESTED_QUESTIONS = [
 ];
 
 export const CardDrawing = ({ onShowLogin }: { onShowLogin?: () => void }) => {
-    const { user, userProfile, refreshProfile } = useAuth();
+    // Auth removed - guest access for everyone now
+
     const [question, setQuestion] = useState('');
-    const [showLoginModal, setShowLoginModal] = useState(false);
-    const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [showCardModal, setShowCardModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [drawCount, setDrawCount] = useState(0); // Used to force modal reset
@@ -35,8 +31,6 @@ export const CardDrawing = ({ onShowLogin }: { onShowLogin?: () => void }) => {
         return shuffled.slice(0, 3);
     });
 
-
-
     const handleDrawCard = async () => {
         if (!question.trim()) {
             toast.error('질문을 입력해주세요', {
@@ -45,24 +39,14 @@ export const CardDrawing = ({ onShowLogin }: { onShowLogin?: () => void }) => {
             return;
         }
 
-        // Refresh profile to get the absolute latest count from DB
-        if (user) {
-            await refreshProfile();
-        }
-
-        // If user is logged in and has exhausted free draws
-        if (user && userProfile && userProfile.daily_draws_remaining <= 0) {
-
-            // STRICT BETA LIMIT CHECK
+        // Logic for checking draw limits (simplified for guest/beta)
+        if (drawCount >= 3) {
             if (IS_BETA_ACTIVE) {
                 toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다. 내일 다시 이용해주세요! ✨', {
                     duration: 3000,
                 });
                 return;
             }
-
-            // Check if this specific draw was already paid for? 
-            // For now, simple trigger: if remaining is 0, show payment.
             setShowPaymentModal(true);
             return;
         }
@@ -84,10 +68,6 @@ export const CardDrawing = ({ onShowLogin }: { onShowLogin?: () => void }) => {
     const handleCardModalClose = async () => {
         setShowCardModal(false);
         setQuestion('');
-        // Refresh profile to update remaining draws (only if user exists)
-        if (user) {
-            await refreshProfile();
-        }
     };
 
     const handleSuggestionClick = (suggestion: string) => {
@@ -163,49 +143,19 @@ export const CardDrawing = ({ onShowLogin }: { onShowLogin?: () => void }) => {
                 >
                     <Sparkles className="w-5 h-5" />
                     카드 뽑기
-                    {userProfile && (
-                        <span className="ml-2 text-xs opacity-80">
-                            ({userProfile.daily_draws_remaining}/3)
-                        </span>
-                    )}
-                </Button>
-
-                {userProfile && (
                     <p className="text-xs text-center text-muted-foreground mt-2">
-                        오늘의 무료 카드 뽑기: {userProfile.daily_draws_remaining}/3 남음
+                        오늘의 무료 카드 뽑기: {3 - drawCount}/3 남음
                     </p>
-                )}
-
-                {!user && (
-                    <p className="text-xs text-center text-muted-foreground mt-3">
-                        💡 개발자 모드: 질문 입력 후 바로 카드를 뽑을 수 있습니다
-                    </p>
-                )}
+                </Button>
             </div>
 
             {/* Modals */}
-            <LoginModal
-                isOpen={showLoginModal}
-                onClose={() => setShowLoginModal(false)}
-                onSwitchToRegister={() => {
-                    setShowLoginModal(false);
-                    setShowRegisterModal(true);
-                }}
-            />
-            <RegisterModal
-                isOpen={showRegisterModal}
-                onClose={() => setShowRegisterModal(false)}
-                onSwitchToLogin={() => {
-                    setShowRegisterModal(false);
-                    setShowRegisterModal(true);
-                }}
-            />
             <DailyCardModal
                 key={drawCount}
                 isOpen={showCardModal}
                 onClose={handleCardModalClose}
                 onDrawAgain={handleDrawCard}
-                onShowLogin={onShowLogin}
+                onShowLogin={() => { }} // No-op
                 question={question}
             />
             <PaymentModal

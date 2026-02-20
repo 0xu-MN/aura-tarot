@@ -13,11 +13,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tarotBack from "@/assets/tarot-back.png";
 import { PaymentModal } from "./premium/PaymentModal";
-import { useAuth } from "@/contexts/AuthContext";
+import { PaymentModal } from "./premium/PaymentModal";
 import { DrawAgainModal } from "./DrawAgainModal";
 import { TAROT_CARDS, TarotCardData } from "@/lib/tarot-data";
 import { IS_BETA_ACTIVE } from "@/lib/beta-config";
-import { LoginRequiredModal } from '@/components/LoginRequiredModal';
+
 import { TarotShareCard } from "./share/TarotShareCard";
 import { TarotSaveCard } from "./share/TarotSaveCard";
 import html2canvas from "html2canvas";
@@ -80,7 +80,7 @@ const setDailyPaid = () => {
 };
 
 export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, question }: DailyCardModalProps) => {
-  const { refreshProfile } = useAuth();
+  // const { refreshProfile } = useAuth(); // Removed
   const navigate = useNavigate();
   const [phase, setPhase] = useState<"shuffle" | "select" | "reading">("shuffle");
   const [selectedCard, setSelectedCard] = useState<TarotCardData | null>(null);
@@ -115,8 +115,10 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
 
   const recordReading = async (card: TarotCardData, reversed: boolean, interpretation: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Logic removed for now
+      // const { data: { user } } = await supabase.auth.getUser();
+      // if (!user) return;
+      return; // Skip recording to supabase for now
 
       // Record the reading
       const { error: readingError } = await supabase.from('daily_readings').insert({
@@ -135,7 +137,9 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
   };
 
   /* Inside Component */
-  const { user } = useAuth(); // Destructure user
+  // Removed useAuth
+  // const { user } = useAuth(); 
+  const user = { id: 'guest', user_metadata: { nickname: '방문자', full_name: '방문자' } }; // Mock user for now
   const [showLoginRequired, setShowLoginRequired] = useState(false);
 
   const fetchAiReading = async (card: TarotCardData, reversed: boolean) => {
@@ -179,37 +183,31 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
     setSelectedCard(randomCard);
     setIsReversed(reversed);
 
-    if (user) {
-      // Normal Flow for production
-      const currentDraws = getDailyDrawCount();
+    // Always allow reading
+    const currentDraws = getDailyDrawCount();
 
-      if (IS_BETA_ACTIVE) {
-        if (currentDraws >= MAX_FREE_DRAWS) {
-          toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다.');
-          isSelectionProcessing.current = false;
-          return;
-        }
-      } else {
-        if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
-          setShowPaymentModal(true);
-          isSelectionProcessing.current = false;
-          return;
-        }
+    if (IS_BETA_ACTIVE) {
+      if (currentDraws >= MAX_FREE_DRAWS) {
+        toast.error('베타 기간 동안은 하루 3회 무료 이용만 가능합니다.');
+        isSelectionProcessing.current = false;
+        return;
       }
-      incrementDailyDrawCount();
-      setDrawCount(currentDraws + 1);
-      fetchAiReading(randomCard, reversed);
+    } else {
+      if (currentDraws >= MAX_FREE_DRAWS && !isDailyPaid()) {
+        setShowPaymentModal(true);
+        isSelectionProcessing.current = false;
+        return;
+      }
     }
+    incrementDailyDrawCount();
+    setDrawCount(currentDraws + 1);
+    fetchAiReading(randomCard, reversed);
+
 
     // Transition to reading phase (Card Reveal)
     setPhase("reading");
     setTimeout(() => {
       setShowCard(true);
-      if (!user) {
-        setTimeout(() => {
-          setShowLoginRequired(true);
-        }, 1000);
-      }
     }, 100);
   };
 
@@ -545,7 +543,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
                             onClick={handleConsultSom}
                           >
                             <MessageCircleHeart className="w-5 h-5 mr-2" />
-                            솜이에게 더 물어보기
+                            상담하기
                           </GlareButton>
 
                           <div className="flex gap-3">
@@ -664,16 +662,7 @@ export const DailyCardModal = ({ isOpen, onClose, onDrawAgain, onShowLogin, ques
       />
 
       {/* Login Required Modal for Guest */}
-      <LoginRequiredModal
-        isOpen={showLoginRequired}
-        onClose={() => {
-          setShowLoginRequired(false);
-          onClose(); // Close the daily card modal too, or navigate to login?
-          // User likely wants to go to login. Modal has "Go to Login" button which navigates to '/'.
-        }}
-        onShowLogin={onShowLogin}
-        message="카드의 의미를 확인하려면 로그인이 필요합니다."
-      />
+
 
       {/* Hidden Share Card for Generation - Rendered BEHIND modal to ensure capture */}
       {selectedCard && (

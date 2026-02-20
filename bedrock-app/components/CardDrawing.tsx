@@ -112,10 +112,6 @@ export const CardDrawing: React.FC<CardDrawingProps> = ({ onDrawCard }) => {
                 </Text>
             </TouchableOpacity>
 
-            {/* Info Text */}
-            <Text style={styles.infoText}>
-                베타 기간 동안 하루 3회 무료 이용 가능
-            </Text>
         </View>
     );
 };

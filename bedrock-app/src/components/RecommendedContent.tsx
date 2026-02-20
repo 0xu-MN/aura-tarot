@@ -13,11 +13,13 @@ import {
     Sun,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+
 
 export const RecommendedContent = () => {
     const navigate = useNavigate();
-    const { userProfile } = useAuth();
+    // Simplified: No user profile, so no personalized recommendations based on interests
+    const userProfile = null;
+
 
     const handleFeatureClick = (title: string) => {
         if (title === "오늘의 운세") {

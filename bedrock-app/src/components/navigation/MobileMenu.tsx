@@ -2,8 +2,6 @@ import { User, Settings, BookOpen, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useAuth } from '@/contexts/AuthContext';
-import { clearAuthPreferences } from '@/lib/authStorage';
 import { useState, useEffect } from 'react';
 import { INTEREST_CATEGORIES } from '@/types/user';
 import {
@@ -20,7 +18,9 @@ interface MobileMenuProps {
 }
 
 export const MobileMenu = ({ isOpen, onClose, onLoginClick }: MobileMenuProps) => {
-    const { user, userProfile, signOut } = useAuth();
+    // const { user, userProfile, signOut } = useAuth(); // Removed
+    const user = { nickname: '방문자', email: 'guest@aura.tarot' }; // Mock user
+    const userProfile = { interests: [] }; // Mock profile
     const navigate = useNavigate();
     const [isDeveloperMode, setIsDeveloperMode] = useState(false);
 
@@ -32,23 +32,9 @@ export const MobileMenu = ({ isOpen, onClose, onLoginClick }: MobileMenuProps) =
         }
     }, [isOpen]);
 
-    const handleSignOut = async () => {
-        await signOut();
-        clearAuthPreferences();
-        onClose();
-        navigate('/');
-    };
-
     const handleNavigation = (path: string) => {
         navigate(path);
         onClose();
-    };
-
-    const handleLoginClick = () => {
-        onClose(); // Close the mobile menu first
-        if (onLoginClick) {
-            onLoginClick(); // Call parent's login handler
-        }
     };
 
     const menuItems = [
@@ -162,26 +148,11 @@ export const MobileMenu = ({ isOpen, onClose, onLoginClick }: MobileMenuProps) =
                         )}
                     </div>
 
-                    {/* Footer - 로그인 시 로그아웃, 비로그인 시 로그인 버튼 */}
+                    {/* Footer - 단순 안내 */}
                     <div className="p-4 border-t border-gold/10">
-                        {user ? (
-                            <Button
-                                variant="outline"
-                                className="w-full justify-start gap-2 border-red-500/50 text-red-500 hover:bg-red-500/10 hover:text-red-500"
-                                onClick={handleSignOut}
-                            >
-                                <LogOut className="w-4 h-4" />
-                                로그아웃
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="gold"
-                                className="w-full"
-                                onClick={handleLoginClick}
-                            >
-                                로그인
-                            </Button>
-                        )}
+                        <p className="text-xs text-center text-muted-foreground">
+                            로그인 없이 모든 기능을<br />이용할 수 있습니다
+                        </p>
                     </div>
                 </div>
             </SheetContent>

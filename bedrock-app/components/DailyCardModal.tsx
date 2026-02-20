@@ -18,6 +18,7 @@ interface DailyCardModalProps {
     card: TarotCardData;
     isReversed: boolean;
     question: string;
+    onConsult?: () => void;
 }
 
 export const DailyCardModal: React.FC<DailyCardModalProps> = ({
@@ -26,6 +27,7 @@ export const DailyCardModal: React.FC<DailyCardModalProps> = ({
     card,
     isReversed,
     question,
+    onConsult,
 }) => {
     const [isFlipped, setIsFlipped] = useState(true); // Start flipped to show card front
     const interpretation = getCardInterpretation(card, isReversed, question);
@@ -105,7 +107,10 @@ export const DailyCardModal: React.FC<DailyCardModalProps> = ({
                                 <Text style={styles.actionIcon}>📤</Text>
                                 <Text style={styles.actionText}>공유하기 (준비중)</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.actionButton}>
+                            <TouchableOpacity
+                                style={styles.actionButton}
+                                onPress={onConsult}
+                            >
                                 <Text style={styles.actionIcon}>💬</Text>
                                 <Text style={styles.actionText}>상담하기</Text>
                             </TouchableOpacity>

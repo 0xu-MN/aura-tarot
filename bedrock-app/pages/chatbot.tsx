@@ -15,12 +15,28 @@ const TEXT_Main = '#ffffff';
 const TEXT_Sub = '#8b95a1';
 
 function Chatbot() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'model',
-      parts: [{ text: '안녕하세요! AI 타로 마스터 솜이 입니다. \n오늘의 운세나 고민이 있다면 편하게 물어보세요. 🔮' }]
+  const params = Route.useParams() as any;
+  const consultationData = params?.consultation;
+
+  const getInitialMessage = () => {
+    if (consultationData?.card) {
+      const { card, isReversed } = consultationData;
+      return `방금 뽑으신 '${card.koreanName}${isReversed ? '(역방향)' : ''}' 카드에 대해 더 궁금한 점이 있으신가요? 솜이가 정성껏 상담해 드릴게요. 🔮`;
     }
-  ]);
+    return '안녕하세요! AI 타로 마스터 솜이 입니다. \n오늘의 운세나 고민이 있다면 편하게 물어보세요. 🔮';
+  };
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  // 초기 메시지 설정
+  useEffect(() => {
+    setMessages([
+      {
+        role: 'model',
+        parts: [{ text: getInitialMessage() }]
+      }
+    ]);
+  }, [consultationData]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);

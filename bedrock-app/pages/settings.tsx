@@ -4,14 +4,8 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
-  Alert,
 } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
-import { LoginModal } from '../components/auth/LoginModal';
-import { RegisterModal } from '../components/auth/RegisterModal';
-import { ProfileEditModal } from '../components/auth/ProfileEditModal';
 import { getDailyDrawCount } from '../lib/storage';
 
 export const Route = createRoute('/settings', {
@@ -20,10 +14,6 @@ export const Route = createRoute('/settings', {
 
 function SettingsPage() {
   const navigation = Route.useNavigation();
-  const { user, isGuest, signOut } = useAuth();
-  const [showLogin, setShowLogin] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
-  const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [dailyDraws, setDailyDraws] = useState(0);
 
   // Load daily draws
@@ -36,32 +26,6 @@ function SettingsPage() {
     setDailyDraws(count);
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      '로그아웃',
-      '정말 로그아웃하시겠습니까?',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '로그아웃',
-          style: 'destructive',
-          onPress: async () => {
-            await signOut();
-            Alert.alert('로그아웃', '게스트 모드로 전환되었습니다.');
-          },
-        },
-      ]
-    );
-  };
-
-  const handleProfilePress = () => {
-    if (isGuest) {
-      setShowLogin(true);
-    } else {
-      setShowProfileEdit(true);
-    }
-  };
-
   return (
     <>
       <ScrollView style={styles.container}>
@@ -70,44 +34,16 @@ function SettingsPage() {
           <Text style={styles.title}>설정</Text>
         </View>
 
-        {/* Profile Section */}
-        <TouchableOpacity style={styles.section} onPress={handleProfilePress}>
-          <View style={styles.profileHeader}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.nickname?.substring(0, 1) || '방'}
-              </Text>
+        {/* Guest Banner (Simplified for now) */}
+        <View style={styles.guestBanner}>
+          <View style={styles.guestContent}>
+            <Text style={styles.guestIcon}>✨</Text>
+            <View style={styles.guestText}>
+              <Text style={styles.guestTitle}>운세 기록은 기기에 저장됩니다</Text>
+              <Text style={styles.guestSubtitle}>앱을 삭제하면 기록이 사라질 수 있어요</Text>
             </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{user?.nickname}님</Text>
-              <Text style={styles.profileUsername}>
-                {isGuest ? '게스트 모드' : user?.email || '@user'}
-              </Text>
-            </View>
-            <Text style={styles.editHint}>
-              {isGuest ? '로그인 >' : '수정 >'}
-            </Text>
           </View>
-        </TouchableOpacity>
-
-        {/* Guest Login Prompt */}
-        {isGuest && (
-          <View style={styles.guestBanner}>
-            <View style={styles.guestContent}>
-              <Text style={styles.guestIcon}>✨</Text>
-              <View style={styles.guestText}>
-                <Text style={styles.guestTitle}>로그인하고 더 많은 기능을</Text>
-                <Text style={styles.guestSubtitle}>AI 해석, 기록 저장 등</Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => setShowLogin(true)}
-            >
-              <Text style={styles.loginButtonText}>로그인</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        </View>
 
         {/* Stats Section */}
         <View style={styles.section}>
@@ -121,9 +57,7 @@ function SettingsPage() {
               <Text style={styles.statLabel}>오늘 사용한 카드</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>
-                {isGuest ? '-' : '0'}
-              </Text>
+              <Text style={styles.statValue}>-</Text>
               <Text style={styles.statLabel}>총 카드 뽑기</Text>
             </View>
           </View>
@@ -145,56 +79,11 @@ function SettingsPage() {
           </View>
         </View>
 
-        {/* Logout/Login Buttons */}
-        {!isGuest ? (
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutIcon}>🚪</Text>
-            <Text style={styles.logoutText}>로그아웃</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.authButtons}>
-            <TouchableOpacity
-              style={styles.authButton}
-              onPress={() => setShowLogin(true)}
-            >
-              <Text style={styles.authButtonText}>로그인</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.authButton, styles.registerButton]}
-              onPress={() => setShowRegister(true)}
-            >
-              <Text style={styles.registerButtonText}>회원가입</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         {/* Version */}
         <Text style={styles.version}>Version 1.0.0</Text>
 
         <View style={{ height: 100 }} />
       </ScrollView>
-
-      {/* Modals */}
-      <LoginModal
-        isOpen={showLogin}
-        onClose={() => setShowLogin(false)}
-        onSwitchToRegister={() => {
-          setShowLogin(false);
-          setShowRegister(true);
-        }}
-      />
-      <RegisterModal
-        isOpen={showRegister}
-        onClose={() => setShowRegister(false)}
-        onSwitchToLogin={() => {
-          setShowRegister(false);
-          setShowLogin(true);
-        }}
-      />
-      <ProfileEditModal
-        isOpen={showProfileEdit}
-        onClose={() => setShowProfileEdit(false)}
-      />
     </>
   );
 }

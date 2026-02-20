@@ -64,82 +64,97 @@ function HomePage() {
           <CardDrawing onDrawCard={handleDrawCard} />
 
           {/* New Year Banner */}
-          <PressableEffect
-            style={styles.newYearBanner}
-            onPress={() => navigation.push('/tarot/new-year')}
-          >
-            <Image
-              source={ASSETS.yearlyFortune}
-              style={StyleSheet.absoluteFill as any}
-              resizeMode="cover"
-            />
-            <View style={styles.bannerOverlay} />
-            <View style={styles.bannerContent}>
-              <View style={styles.specialBadge}>
-                <Txt style={styles.badgeText}>2026 SPECIAL</Txt>
+          <PressableEffect onPress={() => navigation.push('/tarot/new-year')}>
+            <View style={styles.newYearBanner}>
+              <Image
+                source={ASSETS.yearlyFortune}
+                style={StyleSheet.absoluteFill as any}
+                resizeMode="cover"
+              />
+              <View style={styles.bannerOverlay} />
+              <View style={styles.bannerContent}>
+                <View style={styles.specialBadge}>
+                  <Txt style={styles.badgeText}>2026 SPECIAL</Txt>
+                </View>
+                <Txt style={styles.bannerTitle}>2026년 신년운세</Txt>
+                <Txt style={styles.bannerSubtitle}>
+                  새로운 한 해, 당신의 운명을 미리 확인해보세요 ✨
+                </Txt>
               </View>
-              <Txt style={styles.bannerTitle}>2026년 신년운세</Txt>
-              <Txt style={styles.bannerSubtitle}>
-                새로운 한 해, 당신의 운명을 미리 확인해보세요 ✨
-              </Txt>
             </View>
           </PressableEffect>
 
           {/* Weekly & Monthly Fortune Grid */}
           <View style={styles.fortuneGrid}>
+            {/* 이번 주 운세 */}
             <PressableEffect
-              style={styles.fortuneCard}
+              style={{ flex: 1 }}
               onPress={() => navigation.push('/tarot/weekly')}
             >
-              <Image
-                source={ASSETS.weeklyThumb}
-                style={StyleSheet.absoluteFill as any}
-                resizeMode="cover"
-              />
-              <View style={styles.fortuneOverlay} />
-              <View style={styles.fortuneContent}>
-                <View style={styles.fortuneBadges}>
+              <View style={styles.fortuneCard}>
+                <Image
+                  source={ASSETS.weeklyThumb}
+                  style={StyleSheet.absoluteFill as any}
+                  resizeMode="cover"
+                />
+                <View style={styles.fortuneOverlay} />
+                <View style={styles.fortuneContent}>
                   <View style={styles.fortuneBadge}>
                     <Txt style={styles.fortuneBadgeText}>WEEKLY</Txt>
                   </View>
+                  <View>
+                    <Txt style={styles.fortuneTitle}>이번 주{'\n'}운세</Txt>
+                    <Txt style={styles.fortuneDesc}>이번 주 흐름</Txt>
+                  </View>
                 </View>
-                <Txt style={styles.fortuneTitle}>이번 주 운세</Txt>
-                <Txt style={styles.fortuneDesc}>한 주의 에너지를 미리 확인하세요</Txt>
               </View>
             </PressableEffect>
 
+            {/* 이번 달 운세 */}
             <PressableEffect
-              style={styles.fortuneCard}
+              style={{ flex: 1 }}
               onPress={() => navigation.push('/tarot/monthly')}
             >
-              <Image
-                source={ASSETS.monthlyThumb}
-                style={StyleSheet.absoluteFill as any}
-                resizeMode="cover"
-              />
-              <View style={styles.fortuneOverlay} />
-              <View style={styles.fortuneContent}>
-                <View style={styles.fortuneBadges}>
+              <View style={styles.fortuneCard}>
+                <Image
+                  source={ASSETS.monthlyThumb}
+                  style={StyleSheet.absoluteFill as any}
+                  resizeMode="cover"
+                />
+                <View style={styles.fortuneOverlay} />
+                <View style={styles.fortuneContent}>
                   <View style={styles.fortuneBadge}>
                     <Txt style={styles.fortuneBadgeText}>MONTHLY</Txt>
                   </View>
+                  <View>
+                    <Txt style={styles.fortuneTitle}>이번 달{'\n'}운세</Txt>
+                    <Txt style={styles.fortuneDesc}>이달의 흐름</Txt>
+                  </View>
                 </View>
-                <Txt style={styles.fortuneTitle}>이번 달 운세</Txt>
-                <Txt style={styles.fortuneDesc}>이달의 흐름과 키워드를 알아보세요</Txt>
               </View>
             </PressableEffect>
 
+            {/* AI 타로 상담 */}
             <PressableEffect
-              style={styles.fortuneCard}
+              style={{ flex: 1 }}
               onPress={() => navigation.push('/chatbot')}
             >
-              <View style={[styles.fortuneOverlay, { backgroundColor: 'rgba(139, 92, 246, 0.2)', opacity: 1 }]} />
-              <View style={styles.fortuneContent}>
-                <View style={[styles.fortuneBadges, { opacity: 0 }]}>
-                  <View style={styles.fortuneBadge}><Txt style={styles.fortuneBadgeText}>AI</Txt></View>
+              <View style={styles.fortuneCard}>
+                <Image
+                  source={ASSETS.aiTarotThumb}
+                  style={StyleSheet.absoluteFill as any}
+                  resizeMode="cover"
+                />
+                <View style={[styles.fortuneOverlay, { backgroundColor: 'rgba(139, 92, 246, 0.25)' }]} />
+                <View style={styles.fortuneContent}>
+                  <View style={[styles.fortuneBadge, { borderColor: 'rgba(139,92,246,0.4)' }]}>
+                    <Txt style={[styles.fortuneBadgeText, { color: '#a78bfa' }]}>AI</Txt>
+                  </View>
+                  <View>
+                    <Txt style={styles.fortuneTitle}>AI 타로{'\n'}상담</Txt>
+                    <Txt style={styles.fortuneDesc}>고민 상담</Txt>
+                  </View>
                 </View>
-                <Txt style={styles.fortuneTitle}>AI 타로 상담</Txt>
-                <Txt style={styles.fortuneDesc}>고민을 말해보세요</Txt>
               </View>
             </PressableEffect>
           </View>
@@ -156,6 +171,16 @@ function HomePage() {
             card={drawnCard.card}
             isReversed={drawnCard.isReversed}
             question={currentQuestion}
+            onConsult={() => {
+              setShowCardModal(false);
+              navigation.navigate('/chatbot', {
+                consultation: {
+                  card: drawnCard.card,
+                  isReversed: drawnCard.isReversed,
+                  question: currentQuestion,
+                }
+              });
+            }}
           />
         )}
       </ScrollView>
@@ -231,7 +256,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   bannerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '900',
     color: '#DAA520',
     marginBottom: 8,
@@ -242,12 +267,12 @@ const styles = StyleSheet.create({
   },
   fortuneGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,               // 12 → 8로 줄여서 카드 너비 확보
     marginBottom: 24,
   },
   fortuneCard: {
     flex: 1,
-    height: 128,
+    height: 148,          // 128 → 148로 높여서 텍스트 공간 확보
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
@@ -259,37 +284,36 @@ const styles = StyleSheet.create({
   },
   fortuneContent: {
     flex: 1,
-    padding: 14,
+    padding: 10,          // 14 → 12로 줄여서 내부 공간 확보
     justifyContent: 'space-between',
-  },
-  fortuneBadges: {
-    flexDirection: 'row',
-    gap: 6,
   },
   fortuneBadge: {
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: 8,
-  },
-  betaBadge: {
-    backgroundColor: 'rgba(218, 165, 32, 0.2)',
-    borderColor: 'rgba(218, 165, 32, 0.3)',
+    alignSelf: 'flex-start',
   },
   fortuneBadgeText: {
-    fontSize: 10,
+    fontSize: 9,          // 10 → 9로 줄임
     fontWeight: '800',
     color: '#DAA520',
   },
   fortuneTitle: {
-    fontSize: 16,
+    fontSize: 12,         // 16 → 14로 줄여서 줄바꿈 여유 확보
     fontWeight: '800',
     color: '#fff',
+    lineHeight: 20,
   },
   fortuneDesc: {
-    fontSize: 11,
+    fontSize: 10,         // 11 → 10으로 줄임
     color: '#d1d5db',
+    marginTop: 2,
+  },
+  betaBadge: {
+    backgroundColor: 'rgba(218, 165, 32, 0.2)',
+    borderColor: 'rgba(218, 165, 32, 0.3)',
   },
 });

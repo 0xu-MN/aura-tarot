@@ -4,8 +4,12 @@
     "baseUrl": "src",
     "target": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ESNext"],
-    "types": ["react-native"],
+    "lib": [
+      "ESNext"
+    ],
+    "types": [
+      "react-native"
+    ],
     "jsx": "react-native",
     "resolveJsonModule": true,
     "esModuleInterop": true,
@@ -18,7 +22,15 @@
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "paths": {
+      "@/*": [
+        "*"
+      ]
+    }
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }
