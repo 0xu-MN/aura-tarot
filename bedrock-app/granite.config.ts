@@ -4,16 +4,25 @@ import { defineConfig } from '@granite-js/react-native/config';
 
 export default defineConfig({
   appName: 'ai-today-one-card',
-  scheme: 'ai-today-one-card',
+  scheme: 'intoss',
   plugins: [
     router(),
     ...appsInToss({
+      appType: 'general',
       brand: {
-        displayName: '오늘의 한장 타로',
+        displayName: '오늘의 한 장',
         primaryColor: '#DAA520',
-        icon: 'https://via.placeholder.com/150',
+        icon: 'https://i.imgur.com/IuK1vAi.jpg',
       },
-      permissions: [],
+      permissions: [
+        { name: 'camera', access: 'access' },
+        { name: 'photos', access: 'read' },
+        { name: 'geolocation', access: 'access' },
+      ],
+      navigationBar: {
+        withBackButton: true,
+      },
     }),
   ],
 });
+

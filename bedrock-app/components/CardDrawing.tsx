@@ -1,13 +1,15 @@
+import { GlobalAlert } from "../components/AlertProvider";
 import React, { useState } from 'react';
 import {
     View,
-    Text,
     TextInput,
-    TouchableOpacity,
     StyleSheet,
     ScrollView,
     Alert,
+    Text,
 } from 'react-native';
+import { Txt, PressableEffect } from '@toss/tds-react-native';
+import { loadFullScreenAd, showFullScreenAd } from '@apps-in-toss/framework';
 import { getRemainingDraws, incrementDailyDrawCount } from '../lib/storage';
 
 interface CardDrawingProps {
@@ -21,11 +23,51 @@ const AI_SUGGESTED_QUESTIONS = [
     '지금 집중해야 할 것은?',
 ];
 
+// ─── 광고 ID ─────────────────────────────────────────────────
+// 테스트 중에는 아래 테스트 ID를 사용해야 합니다 (정책 준수)
+const REWARDED_AD_ID = 'ait-ad-test-rewarded-id';
+const BANNER_AD_ID = 'ait-ad-test-banner-id';
+// 실제 ID (운영 시 교체): 
+// REWARDED: ait.v2.live.958d0988987d436a
+// BANNER: ait.v2.live.b0a7628b7d8f4f06
+// ─────────────────────────────────────────────────────────────
+
+// 리워드 광고 호출
+const showRewardedAd = (onRewardSuccess: () => void): void => {
+    // 1. 광고 먼저 로드 (실제 기기 테스트 권장)
+    loadFullScreenAd({
+        options: { adGroupId: REWARDED_AD_ID },
+        onEvent: (event) => {
+            if (event.type === 'loaded') {
+                // 2. 로드 완료 후 노출
+                showFullScreenAd({
+                    options: { adGroupId: REWARDED_AD_ID },
+                    onEvent: (showEvent) => {
+                        if (showEvent.type === 'userEarnedReward') {
+                            onRewardSuccess();
+                        } else if (showEvent.type === 'dismissed') {
+                            console.log('Ad Dismissed');
+                        }
+                    },
+                    onError: (err) => {
+                        console.error('Show Ad Error:', err);
+                        GlobalAlert.alert?.('알림', '광고를 표시하는 중 오류가 발생했습니다.');
+                    }
+                });
+            }
+        },
+        onError: (err) => {
+            console.error('Load Ad Error:', err);
+            GlobalAlert.alert?.('알림', '광고를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        }
+    });
+};
+
 export const CardDrawing: React.FC<CardDrawingProps> = ({ onDrawCard }) => {
     const [question, setQuestion] = useState('');
     const [remainingDraws, setRemainingDraws] = useState(3);
+    const [isAdLoading, setIsAdLoading] = useState(false);
 
-    // Load remaining draws on mount
     React.useEffect(() => {
         loadRemainingDraws();
     }, []);
@@ -37,14 +79,10 @@ export const CardDrawing: React.FC<CardDrawingProps> = ({ onDrawCard }) => {
 
     const handleDraw = async () => {
         if (!question.trim()) {
-            Alert.alert('질문 필요', '질문을 입력해주세요');
+            GlobalAlert.alert?.('질문 필요', '질문을 입력해주세요');
             return;
         }
-
-        if (remainingDraws <= 0) {
-            Alert.alert('사용 완료', '오늘의 무료 카드 뽑기를 모두 사용했습니다.\n내일 다시 이용해주세요! ✨');
-            return;
-        }
+        if (remainingDraws <= 0) return;
 
         await incrementDailyDrawCount();
         await loadRemainingDraws();
@@ -52,24 +90,35 @@ export const CardDrawing: React.FC<CardDrawingProps> = ({ onDrawCard }) => {
         setQuestion('');
     };
 
+    const handleWatchAd = async () => {
+        if (!question.trim()) {
+            GlobalAlert.alert?.('질문 필요', '광고 시청 전에 질문을 먼저 입력해주세요');
+            return;
+        }
+
+        setIsAdLoading(true);
+        try {
+            showRewardedAd(() => {
+                // 보상 획득 시 콜백
+                onDrawCard(question);
+                setQuestion('');
+            });
+        } finally {
+            setIsAdLoading(false);
+        }
+    };
+
     return (
         <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.icon}>✨</Text>
-                <Text style={styles.title}>오늘의 카드 뽑기</Text>
-            </View>
-
-            {/* Daily Limit Badge */}
-            <View style={styles.limitBadge}>
-                <Text style={styles.limitText}>
-                    오늘 남은 횟수: {remainingDraws}/3
-                </Text>
+                <Txt style={styles.icon}>✨</Txt>
+                <Txt style={styles.title}>오늘의 카드 뽑기</Txt>
             </View>
 
             {/* Question Input */}
             <View style={styles.inputSection}>
-                <Text style={styles.label}>카드에게 물어볼 질문</Text>
+                <Txt style={styles.label}>카드에게 물어볼 질문</Txt>
                 <TextInput
                     style={styles.textInput}
                     placeholder="예: 오늘 나에게 필요한 조언은 무엇인가요?"
@@ -84,33 +133,31 @@ export const CardDrawing: React.FC<CardDrawingProps> = ({ onDrawCard }) => {
             {/* AI Suggestions */}
             <View style={styles.suggestionsSection}>
                 <View style={styles.suggestionHeader}>
-                    <Text style={styles.lightbulb}>💡</Text>
-                    <Text style={styles.suggestionLabel}>AI 추천 질문</Text>
+                    <Txt style={styles.lightbulb}>💡</Txt>
+                    <Txt style={styles.suggestionLabel}>AI 추천 질문</Txt>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {AI_SUGGESTED_QUESTIONS.map((suggested, index) => (
-                        <TouchableOpacity
+                        <PressableEffect
                             key={index}
                             style={styles.suggestionButton}
                             onPress={() => setQuestion(suggested)}
                         >
-                            <Text style={styles.suggestionText}>{suggested}</Text>
-                        </TouchableOpacity>
+                            <Txt style={styles.suggestionText}>{suggested}</Txt>
+                        </PressableEffect>
                     ))}
                 </ScrollView>
             </View>
 
-            {/* Draw Button */}
-            <TouchableOpacity
-                style={[styles.drawButton, remainingDraws <= 0 && styles.drawButtonDisabled]}
-                onPress={handleDraw}
-                disabled={remainingDraws <= 0}
-            >
-                <Text style={styles.sparkleIcon}>✨</Text>
-                <Text style={styles.drawButtonText}>
-                    {remainingDraws > 0 ? '카드 뽑기' : '오늘 사용 완료'}
-                </Text>
-            </TouchableOpacity>
+            {/* 카드 뽑기 버튼 */}
+            <PressableEffect onPress={handleDraw}>
+                <View style={styles.drawButton}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                        <Text style={styles.sparkleIcon}>✨</Text>
+                        <Text style={styles.drawButtonText}>카드 뽑기</Text>
+                    </View>
+                </View>
+            </PressableEffect>
 
         </View>
     );
@@ -131,30 +178,13 @@ const styles = StyleSheet.create({
         gap: 8,
         marginBottom: 16,
     },
-    icon: {
-        fontSize: 24,
-    },
+    icon: { fontSize: 24 },
     title: {
         fontSize: 20,
         fontWeight: '800',
         color: '#DAA520',
     },
-    limitBadge: {
-        backgroundColor: 'rgba(218, 165, 32, 0.1)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 12,
-        alignSelf: 'flex-start',
-        marginBottom: 16,
-    },
-    limitText: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#DAA520',
-    },
-    inputSection: {
-        marginBottom: 16,
-    },
+    inputSection: { marginBottom: 16 },
     label: {
         fontSize: 14,
         fontWeight: '600',
@@ -172,18 +202,14 @@ const styles = StyleSheet.create({
         minHeight: 80,
         textAlignVertical: 'top',
     },
-    suggestionsSection: {
-        marginBottom: 20,
-    },
+    suggestionsSection: { marginBottom: 20 },
     suggestionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
         marginBottom: 8,
     },
-    lightbulb: {
-        fontSize: 16,
-    },
+    lightbulb: { fontSize: 16 },
     suggestionLabel: {
         fontSize: 13,
         color: '#9ca3af',
@@ -208,24 +234,63 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: 16,
         borderRadius: 16,
-        gap: 8,
         marginBottom: 12,
-    },
-    drawButtonDisabled: {
-        backgroundColor: '#666',
-        opacity: 0.5,
+        width: '100%',
     },
     sparkleIcon: {
         fontSize: 20,
+        marginRight: 8,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
     drawButtonText: {
         fontSize: 16,
         fontWeight: '800',
         color: '#000',
+        includeFontPadding: false,
+        textAlignVertical: 'center',
+    },
+    adSection: {
+        gap: 10,
+        marginBottom: 12,
+    },
+    usedUpBadge: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        alignItems: 'center',
+    },
+    usedUpText: {
+        fontSize: 12,
+        color: '#9ca3af',
+    },
+    adButton: {
+        backgroundColor: 'rgba(99, 102, 241, 0.9)',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        borderRadius: 16,
+        gap: 8,
+    },
+    buttonLoading: { opacity: 0.6 },
+    adButtonIcon: { fontSize: 20 },
+    adButtonText: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: '#fff',
+    },
+    adInfoText: {
+        fontSize: 11,
+        color: '#6b7280',
+        textAlign: 'center',
     },
     infoText: {
         fontSize: 11,
         color: '#666',
         textAlign: 'center',
+        marginTop: 4,
+        marginBottom: 12,
     },
 });

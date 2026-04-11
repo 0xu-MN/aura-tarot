@@ -7,7 +7,7 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native';
-import { PageNavbar, Txt, PressableEffect } from '@toss/tds-react-native';
+import { Txt, PressableEffect } from '@toss/tds-react-native';
 import { ASSETS } from '../lib/assets';
 
 export const Route = createRoute('/contents', {
@@ -38,13 +38,22 @@ const contentItems: ContentItem[] = [
     pinned: true,
   },
   {
+    title: "AI 타로 상담",
+    description: "솜이와 함께 고민을 나누고 타로로 해답을 찾아보세요",
+    categories: ["상담", "전체"],
+    displayCategory: "상담",
+    icon: "💬",
+    link: "/chatbot",
+    image: ASSETS.aiTarotThumb,
+  },
+  {
     title: "오늘의 운세",
     description: "하루를 시작하는 특별한 메시지를 받아보세요",
     categories: ["운세", "전체"],
     displayCategory: "운세",
     icon: "✨",
     link: "/home",
-    image: ASSETS.yearlyFortune,
+    image: ASSETS.dailyFortune, // 요청된 썸네일로 업데이트
     pinned: true,
   },
   {
@@ -66,15 +75,6 @@ const contentItems: ContentItem[] = [
     link: "/tarot/monthly",
     image: ASSETS.monthlyThumb,
     pinned: true,
-  },
-  {
-    title: "2026년 신년 총운",
-    description: "봄・여름・가을・겨울 사계절 4장 운세 리포트",
-    categories: ["신년운세", "전체"],
-    displayCategory: "신년 총운",
-    icon: "🗓️",
-    link: "/tarot/yearly",
-    image: ASSETS.yearlyFortune,
   },
   {
     title: "연애운 타로",
@@ -110,6 +110,7 @@ const contentItems: ContentItem[] = [
     displayCategory: "재물운",
     icon: "💰",
     link: "/tarot/money",
+    image: ASSETS.moneyLuck,
   },
   {
     title: "직장운 타로",
@@ -118,6 +119,7 @@ const contentItems: ContentItem[] = [
     displayCategory: "직장운",
     icon: "💼",
     link: "/tarot/work",
+    image: ASSETS.workTarot,
   },
   {
     title: "수험생 타로",
@@ -126,6 +128,7 @@ const contentItems: ContentItem[] = [
     displayCategory: "수험운",
     icon: "📚",
     link: "/tarot/student",
+    image: ASSETS.studentTarot,
   },
   {
     title: "별자리 운세",
@@ -134,14 +137,7 @@ const contentItems: ContentItem[] = [
     displayCategory: "별자리",
     icon: "♒",
     link: "/tarot/horoscope",
-  },
-  {
-    title: "AI 손금 분석",
-    description: "생명선・두뇌선・감정선을 AI로 정밀 분석",
-    categories: ["손금", "전체"],
-    displayCategory: "손금",
-    icon: "🤚",
-    link: "/tarot/palm",
+    image: ASSETS.horoscope,
   },
 ];
 
@@ -150,7 +146,7 @@ function ContentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('전체');
 
-  const categories = ['전체', '연애운', '궁합', '재회확률', '재물운', '직장운', '수험', '별자리', '손금', '신년운세', '주간', '월간'];
+  const categories = ['전체', '연애운', '궁합', '재회확률', '재물운', '직장운', '수험', '별자리', '신년운세', '주간', '월간'];
 
   const filteredItems = contentItems.filter(item => {
     const matchesCategory = activeCategory === '전체' || item.categories.includes(activeCategory);
@@ -162,10 +158,6 @@ function ContentsPage() {
 
   return (
     <View style={styles.container}>
-      <PageNavbar>
-        <PageNavbar.Title>콘텐츠</PageNavbar.Title>
-      </PageNavbar>
-
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>

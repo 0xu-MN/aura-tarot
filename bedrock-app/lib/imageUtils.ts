@@ -1,3 +1,4 @@
+import { GlobalAlert } from "../components/AlertProvider";
 import ViewShot from 'react-native-view-shot';
 import Share from 'react-native-share';
 import { Alert } from 'react-native';
@@ -19,7 +20,7 @@ export const captureViewAsImage = async (
 ): Promise<string | null> => {
     try {
         if (!viewRef.current) {
-            Alert.alert('오류', '캡처할 뷰를 찾을 수 없습니다.');
+            GlobalAlert.alert?.('오류', '캡처할 뷰를 찾을 수 없습니다.');
             return null;
         }
 
@@ -27,7 +28,7 @@ export const captureViewAsImage = async (
         return uri;
     } catch (error) {
         console.error('Image capture error:', error);
-        Alert.alert('오류', '이미지 캡처에 실패했습니다.');
+        GlobalAlert.alert?.('오류', '이미지 캡처에 실패했습니다.');
         return null;
     }
 };
@@ -51,7 +52,7 @@ export const shareImage = async (imageUri: string, message?: string): Promise<vo
         // User cancelled the share - not an error
         if (error?.message !== 'User did not share') {
             console.error('Share error:', error);
-            Alert.alert('오류', '공유에 실패했습니다.');
+            GlobalAlert.alert?.('오류', '공유에 실패했습니다.');
         }
     }
 };
@@ -72,7 +73,7 @@ export const saveImageToGallery = async (imageUri: string): Promise<boolean> => 
     } catch (error: any) {
         if (error?.message !== 'User did not share') {
             console.error('Save error:', error);
-            Alert.alert('오류', '이미지 저장에 실패했습니다.');
+            GlobalAlert.alert?.('오류', '이미지 저장에 실패했습니다.');
         }
         return false;
     }

@@ -27,8 +27,8 @@ export default {
 
     // Development and Build configurations
     web: {
-        host: '0.0.0.0',
-        port: 5173,
+        host: '172.30.1.72',
+        port: 8082,
         commands: {
             dev: 'npm run dev',
             build: 'npm run build',

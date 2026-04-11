@@ -1,31 +1,27 @@
-// Gemini AI API helper for bedrock-app
-const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY || '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+// Gemini AI API helper for bedrock-app (Proxying through Supabase Edge Function)
+import { supabase } from './supabase';
 
-export async function callGemini(prompt: string): Promise<string> {
+export async function callGemini(prompt: string, imageData?: string): Promise<string> {
     try {
-        const response = await fetch(GEMINI_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.9,
-                    maxOutputTokens: 1024,
-                },
-            }),
+        const body: any = {
+            type: imageData ? 'palm' : 'general',
+            context: {
+                prompt: prompt
+            }
+        };
+        if (imageData) {
+            body.image = imageData;
+        }
+        const { data, error } = await supabase.functions.invoke('tarot-chat', {
+            body
         });
 
-        if (!response.ok) {
-            throw new Error(`Gemini API error: ${response.status}`);
-        }
+        if (error) throw error;
 
-        const data = await response.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        // Remove <think> blocks if present
+        const text = data.message || '';
         return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     } catch (error) {
-        console.error('Gemini API call failed:', error);
+        console.error('Gemini API call via Edge Function failed:', error);
         throw error;
     }
 }
@@ -37,30 +33,21 @@ export interface ChatMessage {
 
 export async function callGeminiChat(history: ChatMessage[], message: string): Promise<string> {
     try {
-        const response = await fetch(GEMINI_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [
-                    ...history,
-                    { role: 'user', parts: [{ text: message }] }
-                ],
-                generationConfig: {
-                    temperature: 0.9,
-                    maxOutputTokens: 1024,
-                },
-            }),
+        const { data, error } = await supabase.functions.invoke('tarot-chat', {
+            body: {
+                messages: history.map(h => ({
+                    role: h.role === 'model' ? 'assistant' : 'user',
+                    content: h.parts?.[0]?.text || ''
+                })).concat([{ role: 'user', content: message }])
+            }
         });
 
-        if (!response.ok) {
-            throw new Error(`Gemini API error: ${response.status}`);
-        }
+        if (error) throw error;
 
-        const data = await response.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const text = data.message || '';
         return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     } catch (error) {
-        console.error('Gemini Chat API call failed:', error);
+        console.error('Gemini Chat API call via Edge Function failed:', error);
         throw error;
     }
 }

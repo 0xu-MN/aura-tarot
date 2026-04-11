@@ -91,14 +91,15 @@ function IndexPage() {
         {/* Title */}
         <Text style={styles.mainTitle}>오늘의 한 장</Text>
 
-        {/* Subtitle */}
+        {/* Subtitle / Service Description */}
         <View style={styles.subtitleContainer}>
-          <Text style={styles.subtitle}>당신의 운명을 비추는 타로 카드</Text>
-          <Text style={styles.subtitle}>AI 타로 마스터가 깊이 있는</Text>
-          <Text style={styles.subtitle}>해석을 전해드립니다</Text>
+          <Text style={styles.subtitle}>당신의 다양한 고민을 위로하고</Text>
+          <Text style={styles.subtitle}>조언을 건네는 AI 타로 운세 서비스</Text>
+          <Text style={styles.subtitle}>가볍게 확인하는 오늘의 한 장부터</Text>
+          <Text style={styles.subtitle}>10가지 이상의 상황별 리딩을 제공합니다</Text>
         </View>
 
-        {/* Animated Tarot Card Back */}
+        {/* Animated Tarot Card Back and CTA */}
         <Animated.View
           style={[
             styles.cardContainer,
@@ -111,25 +112,27 @@ function IndexPage() {
             }
           ]}
         >
-          <TouchableOpacity
-            onPress={handleCardPress}
-            activeOpacity={0.9}
-            disabled={isEntering}
-          >
-            {/* Card image via HTTP URI — AppInToss doesn't support local require() */}
-            <View style={styles.cardShadowWrapper}>
-              <Image
-                source={ASSETS.tarotBack}
-                style={styles.cardBack}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={styles.cardCta}>카드를 터치하세요</Text>
-          </TouchableOpacity>
+          {/* Card image via HTTP URI — AppInToss doesn't support local require() */}
+          <View style={styles.cardShadowWrapper}>
+            <Image
+              source={ASSETS.tarotBack}
+              style={styles.cardBack}
+              resizeMode="contain"
+            />
+          </View>
         </Animated.View>
 
+        <TouchableOpacity
+          style={styles.startButton}
+          onPress={handleCardPress}
+          activeOpacity={0.9}
+          disabled={isEntering}
+        >
+          <Text style={styles.startButtonText}>시작하기</Text>
+        </TouchableOpacity>
+
         {/* Footer Text */}
-        <Text style={styles.footerText}>무료로 시작하기 • 매일 새로운 운세</Text>
+        <Text style={styles.footerText}>무료로 즐기는 나만의 AI 타로 운세</Text>
       </Animated.View>
 
       {/* Entry Overlay */}
@@ -230,20 +233,27 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   cardBack: {
-    width: 180,
-    height: 300,
+    width: 140,
+    height: 240,
     borderRadius: 16,
   },
-  cardCta: {
-    marginTop: 24,
-    fontSize: 16,
-    color: '#DAA520',
-    fontWeight: '600',
-    textAlign: 'center',
-    letterSpacing: 0.5,
-    textShadowColor: 'rgba(218, 165, 32, 0.4)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+  startButton: {
+    marginTop: 10,
+    backgroundColor: '#DAA520',
+    paddingVertical: 14,
+    paddingHorizontal: 36,
+    borderRadius: 30,
+    shadowColor: '#DAA520',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  startButtonText: {
+    fontSize: 18,
+    color: '#0a0a0b',
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   footerText: {
     fontSize: 13,

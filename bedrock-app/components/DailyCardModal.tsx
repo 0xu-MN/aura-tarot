@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import {
     View,
-    Text,
-    Modal,
-    TouchableOpacity,
     ScrollView,
     StyleSheet,
-    Alert,
 } from 'react-native';
+import { Txt, PressableEffect, Badge } from '@toss/tds-react-native';
+import { share, getTossShareLink } from '@apps-in-toss/framework';
 import { TarotCard } from './TarotCard';
-import { TarotCardData, getCardInterpretation } from '../lib/tarot-data';
+import { TarotCardData } from '../lib/tarot-data';
 import { saveReading } from '../lib/storage';
+import { supabase } from '../lib/supabase';
+import { useDrawLimit } from '../lib/useDrawLimit';
+import { DrawAgainModal } from './DrawAgainModal';
 
 interface DailyCardModalProps {
     isOpen: boolean;
@@ -19,6 +20,7 @@ interface DailyCardModalProps {
     isReversed: boolean;
     question: string;
     onConsult?: () => void;
+    onDrawAgain?: () => void;
 }
 
 export const DailyCardModal: React.FC<DailyCardModalProps> = ({
@@ -28,223 +30,309 @@ export const DailyCardModal: React.FC<DailyCardModalProps> = ({
     isReversed,
     question,
     onConsult,
+    onDrawAgain,
 }) => {
-    const [isFlipped, setIsFlipped] = useState(true); // Start flipped to show card front
-    const interpretation = getCardInterpretation(card, isReversed, question);
+    const [isFlipped, setIsFlipped] = useState(true);
+    const [interpretation, setInterpretation] = useState<string>('');
+    const [isLoading, setIsLoading] = useState(false);
+    // 결제/광고 모달 표시 여부
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    // 결과를 실제로 보여줄 수 있는 상태인지
+    const [resultUnlocked, setResultUnlocked] = useState(false);
+    const { canDraw, isChecking, recordDraw, grantExtraDraw } = useDrawLimit('daily', 1);
+    const [hasChecked, setHasChecked] = useState(false);
 
-    // Auto-save reading when modal opens
+    // 모달이 닫힐 때 상태 초기화
     React.useEffect(() => {
-        if (isOpen) {
-            saveReading({
-                question,
-                cards: [{ card, isReversed }],
-                interpretation,
-            });
+        if (!isOpen) {
+            setHasChecked(false);
+            setResultUnlocked(false);
+            setShowPaymentModal(false);
         }
     }, [isOpen]);
 
-    const handleCardPress = () => {
-        // Card is already flipped, do nothing or allow re-flip
+    // 모달 열림 시 한도 체크
+    React.useEffect(() => {
+        if (isOpen && card && !isChecking && !hasChecked) {
+            setHasChecked(true);
+            setInterpretation('');
+
+            if (!canDraw) {
+                setShowPaymentModal(true);
+            } else {
+                recordDraw();
+                setResultUnlocked(true);
+                fetchAIInterpretation();
+            }
+        }
+    }, [isOpen, card, isChecking, hasChecked]);
+
+    const fetchAIInterpretation = async () => {
+        setIsLoading(true);
+        setInterpretation('솜이가 카드를 신중하게 분석하고 있습니다...');
+
+        try {
+            const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                body: {
+                    type: 'reading',
+                    context: {
+                        question,
+                        cards: [{ name: card.koreanName, isReversed }],
+                        username: '방문자'
+                    }
+                }
+            });
+
+            if (error) throw error;
+
+            const aiResult = data.message || '해석을 불러오는 중에 문제가 발생했습니다.';
+            setInterpretation(aiResult);
+
+            await saveReading({
+                question,
+                cards: [{ card, isReversed }],
+                interpretation: aiResult,
+            });
+        } catch (err) {
+            console.error('AI Interpretation Error:', err);
+            setInterpretation('죄송합니다. 솜이와의 연결이 잠시 원활하지 않습니다. 다시 시도해 주세요.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleClose = () => {
+    const handleUnlocked = async () => {
+        setShowPaymentModal(false);
+        await grantExtraDraw();
+        setResultUnlocked(true);
+        fetchAIInterpretation();
+    };
+
+    const handlePaymentCancelled = () => {
+        setShowPaymentModal(false);
         onClose();
     };
 
+    const handleShare = async () => {
+        try {
+            // 주의: OG 이미지는 반드시 https:// 형태의 웹 주소여야 합니다.
+            // 로컬 파일 경로는 사용할 수 없으므로, 향후 assets/tarot-save-bg.jpg 이미지를 
+            // AWS S3나 Supabase Storage 등 퍼블릭 클라우드에 업로드한 뒤 URL을 교체해야 정상 노출됩니다.
+            const ogImageUrl = 'https://i.imgur.com/IuK1vAi.jpg'; // TODO: 교체 필요
+            
+            const tossLink = await getTossShareLink('intoss://ai-today-one-card/home', ogImageUrl);
+            await share({
+                message: `[아우라 타로] 오늘의 무료 타로 운세!\n당신의 결과는 '${card.koreanName}' 카드입니다 🔮\n\n앱에서 바로 내 운세 결과 전체를 확인해 보세요.\n${tossLink}`
+            });
+        } catch (error) {
+            console.error('Share error:', error);
+        }
+    };
+
+    if (!isOpen) return null;
+
     return (
-        <Modal
-            visible={isOpen}
-            animationType="fade"
-            transparent
-            onRequestClose={handleClose}
-        >
-            <View style={styles.overlay}>
-                <View style={styles.container}>
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <Text style={styles.title}>오늘의 카드</Text>
-                        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                            <Text style={styles.closeIcon}>✕</Text>
-                        </TouchableOpacity>
+        <View style={styles.fullscreenOverlay}>
+            <View style={styles.container}>
+                {/* 상단 헤더 */}
+                <View style={styles.header}>
+                    <Txt style={styles.headerTitle}>오늘의 타로 결과</Txt>
+                    <PressableEffect onPress={onClose} style={styles.closeBtn}>
+                        <Txt style={styles.closeBtnText}>닫기</Txt>
+                    </PressableEffect>
+                </View>
+
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    {/* Question */}
+                    <View style={styles.section}>
+                        <Txt typography="t7" color="#9ca3af" style={styles.label}>질문</Txt>
+                        <Txt typography="t4" color="#fff">"{question}"</Txt>
                     </View>
 
-                    <ScrollView contentContainerStyle={styles.content}>
-                        {/* Question */}
-                        <View style={styles.questionSection}>
-                            <Text style={styles.questionLabel}>질문</Text>
-                            <Text style={styles.questionText}>"{question}"</Text>
-                        </View>
+                    {/* Card Exhibit */}
+                    <View style={styles.cardExhibit}>
+                        <TarotCard
+                            card={card}
+                            isFlipped={isFlipped}
+                            isReversed={isReversed}
+                            size="large"
+                        />
+                        <Txt typography="t5" color="#DAA520" style={styles.cardName}>
+                            {card.koreanName} {isReversed ? '(역방향)' : ''}
+                        </Txt>
+                    </View>
 
-                        {/* Card */}
-                        <View style={styles.cardSection}>
-                            <TarotCard
-                                card={card}
-                                isFlipped={isFlipped}
-                                isReversed={isReversed}
-                                onPress={handleCardPress}
-                                size="large"
-                            />
-                        </View>
+                    {/* AI Interpretation */}
+                    {resultUnlocked && (
+                        <View style={styles.interpretationBox}>
+                            <View style={styles.interpretationHeader}>
+                                <Txt typography="t5" color="#DAA520">솜이의 해석</Txt>
+                            </View>
 
-                        {/* Interpretation - Always show since card is flipped */}
-                        <View style={styles.interpretationSection}>
-                            <Text style={styles.interpretationTitle}>해석</Text>
-                            <Text style={styles.interpretationText}>{interpretation}</Text>
+                            <Txt typography="t6" color="#e5e7eb" style={[styles.bodyText, isLoading && styles.loadingText]}>
+                                {interpretation}
+                            </Txt>
                         </View>
+                    )}
 
-                        {/* Actions - Always show */}
-                        <View style={styles.actionsSection}>
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => {
-                                    Alert.alert(
-                                        '공유 기능',
-                                        '공유 기능은 Development Build에서만 사용 가능합니다.\n\nExpo Go는 네이티브 모듈을 지원하지 않습니다.',
-                                        [{ text: '확인' }]
-                                    );
-                                }}
-                            >
-                                <Text style={styles.actionIcon}>📤</Text>
-                                <Text style={styles.actionText}>공유하기 (준비중)</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={onConsult}
-                            >
-                                <Text style={styles.actionIcon}>💬</Text>
-                                <Text style={styles.actionText}>상담하기</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </ScrollView>
+                    {/* Actions */}
+                    {resultUnlocked && (
+                        <>
+                            <View style={[styles.buttonRow, { marginBottom: 10 }]}>
+                                <PressableEffect style={styles.consultBtn} onPress={onConsult}>
+                                    <Txt style={{ color: '#000', fontSize: 14, fontWeight: '700' }}>💬 상담하기</Txt>
+                                </PressableEffect>
 
-                    {/* Close Button */}
-                    <TouchableOpacity style={styles.doneButton} onPress={handleClose}>
-                        <Text style={styles.doneButtonText}>완료</Text>
-                    </TouchableOpacity>
-                </View>
+                                {onDrawAgain && (
+                                    <PressableEffect style={styles.drawAgainBtn} onPress={onDrawAgain}>
+                                        <Txt style={{ color: '#DAA520', fontSize: 14, fontWeight: '600' }}>🔄 한장 더 뽑기</Txt>
+                                    </PressableEffect>
+                                )}
+                            </View>
+
+                            <PressableEffect style={styles.shareResultBtn} onPress={handleShare}>
+                                <Txt style={{ color: '#000', fontSize: 14, fontWeight: '700' }}>💌 결과 공유하기</Txt>
+                            </PressableEffect>
+                        </>
+                    )}
+
+                    <View style={{ width: '100%', marginBottom: 30 }}>
+                        <PressableEffect style={styles.exitBtn} onPress={onClose}>
+                            <Txt style={{ color: '#6b7280', fontSize: 13, fontWeight: '600' }}>🚪 나가기</Txt>
+                        </PressableEffect>
+                    </View>
+                </ScrollView>
             </View>
-        </Modal>
+
+            {/* 결제/광고 모달 오버레이 */}
+            <DrawAgainModal
+                visible={showPaymentModal}
+                onClose={handlePaymentCancelled}
+                onDrawAgain={handleUnlocked}
+                onGoBack={handlePaymentCancelled}
+            />
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        justifyContent: 'center',
-        alignItems: 'center',
+    fullscreenOverlay: {
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: '#0a0a0b',
+        zIndex: 1000,
     },
     container: {
-        width: '90%',
-        maxWidth: 500,
-        maxHeight: '90%',
-        backgroundColor: '#1a1b1e',
-        borderRadius: 24,
-        borderWidth: 2,
-        borderColor: '#DAA520',
-        overflow: 'hidden',
+        flex: 1,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(218, 165, 32, 0.3)',
+        borderBottomColor: 'rgba(255,255,255,0.08)',
     },
-    title: {
-        fontSize: 20,
-        fontWeight: '800',
-        color: '#DAA520',
-    },
-    closeButton: {
-        padding: 4,
-    },
-    closeIcon: {
-        fontSize: 24,
-        color: '#9ca3af',
-    },
-    content: {
-        padding: 20,
-    },
-    questionSection: {
-        marginBottom: 24,
-    },
-    questionLabel: {
-        fontSize: 12,
-        color: '#9ca3af',
-        marginBottom: 6,
-    },
-    questionText: {
-        fontSize: 16,
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '700',
         color: '#fff',
-        fontStyle: 'italic',
     },
-    cardSection: {
-        alignItems: 'center',
-        marginBottom: 24,
+    closeBtn: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
     },
-    tapHint: {
+    closeBtnText: {
         fontSize: 14,
         color: '#DAA520',
-        marginBottom: 16,
-        textAlign: 'center',
+        fontWeight: '600',
     },
-    interpretationSection: {
-        backgroundColor: '#0f0f10',
-        padding: 16,
-        borderRadius: 16,
+    scrollContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 40,
+    },
+    section: {
+        marginTop: 12,
+        marginBottom: 24,
+        alignItems: 'center',
+    },
+    label: {
+        marginBottom: 8,
+    },
+    cardExhibit: {
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    cardName: {
+        marginTop: 16,
+    },
+    interpretationBox: {
+        backgroundColor: '#1a1b1e',
+        padding: 20,
+        borderRadius: 24,
         borderWidth: 1,
         borderColor: 'rgba(218, 165, 32, 0.2)',
-        marginBottom: 20,
+        marginBottom: 32,
     },
-    interpretationTitle: {
-        fontSize: 16,
-        fontWeight: '800',
+    interpretationHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 16,
+    },
+    aiBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+    },
+    bodyText: {
+        lineHeight: 26,
+    },
+    loadingText: {
         color: '#DAA520',
-        marginBottom: 12,
+        opacity: 0.7,
+        fontStyle: 'italic',
     },
-    interpretationText: {
-        fontSize: 14,
-        color: '#e5e7eb',
-        lineHeight: 22,
-    },
-    actionsSection: {
+    buttonRow: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 10,
+        width: '100%',
         marginBottom: 12,
     },
-    actionButton: {
+    consultBtn: {
         flex: 1,
-        flexDirection: 'row',
+        height: 50,
+        backgroundColor: '#DAA520',
+        borderRadius: 30,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
-        backgroundColor: 'rgba(218, 165, 32, 0.1)',
-        paddingVertical: 12,
-        borderRadius: 12,
+    },
+    drawAgainBtn: {
+        flex: 1,
+        height: 50,
         borderWidth: 1,
-        borderColor: 'rgba(218, 165, 32, 0.3)',
-    },
-    actionIcon: {
-        fontSize: 16,
-    },
-    actionText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#DAA520',
-    },
-    doneButton: {
-        backgroundColor: '#DAA520',
-        padding: 16,
+        borderColor: 'rgba(218, 165, 32, 0.4)',
+        borderRadius: 30,
         alignItems: 'center',
-        marginHorizontal: 20,
-        marginBottom: 20,
-        borderRadius: 16,
+        justifyContent: 'center',
     },
-    doneButtonText: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: '#000',
+    shareResultBtn: {
+        width: '100%',
+        height: 50,
+        backgroundColor: '#DAA520',
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 24,
+    },
+    exitBtn: {
+        flex: 1,
+        height: 44,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.05)',
     },
 });

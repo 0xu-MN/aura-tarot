@@ -7,7 +7,7 @@ export const BetaBanner: React.FC = () => {
             <View style={styles.content}>
                 <Text style={styles.badge}>BETA</Text>
                 <Text style={styles.text}>
-                    베타 서비스 기간입니다. 하루 3회 무료 이용 가능
+                    베타 서비스 기간입니다. 하루 1회 무료 이용 가능
                 </Text>
             </View>
         </View>

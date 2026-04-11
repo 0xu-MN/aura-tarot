@@ -1,7 +1,6 @@
 
-// Local development server URL
-// Must use exact IP address for Android/Physical devices
-const DEV_SERVER_URL = 'http://172.30.1.72:8082';
+// Supabase Storage URL for AppInToss compatibility
+const DEV_SERVER_URL = 'https://mhdshmkhiysgmlslfmlf.supabase.co/storage/v1/object/public/app-assets';
 
 // Remote assets (HTTP URI) for AppInToss compatibility
 export const ASSETS = {
@@ -17,13 +16,19 @@ export const ASSETS = {
     logo: { uri: `${DEV_SERVER_URL}/assets/logo.png` },
 
     // Thumbnails
-    yearlyFortune: { uri: `${DEV_SERVER_URL}/assets/thumbnails/yearly-fortune.png` },
+    yearlyFortune: { uri: `${DEV_SERVER_URL}/assets/yearly-fortune.png` },
     weeklyThumb: { uri: `${DEV_SERVER_URL}/assets/weekly-thumb.jpg` },
     monthlyThumb: { uri: `${DEV_SERVER_URL}/assets/monthly-thumb.jpg` },
-    loveTarot: { uri: `${DEV_SERVER_URL}/assets/thumbnails/love-tarot.png` },
-    reunionTarot: { uri: `${DEV_SERVER_URL}/assets/thumbnails/reunion-tarot.png` },
-    compatibilityTarot: { uri: `${DEV_SERVER_URL}/assets/thumbnails/compatibility-tarot.png` },
-    aiTarotThumb: { uri: `${DEV_SERVER_URL}/assets/thumbnails/tarot-save-bg.jpg` },
+    loveTarot: { uri: `${DEV_SERVER_URL}/assets/love-tarot.png` },
+    reunionTarot: { uri: `${DEV_SERVER_URL}/assets/reunion-tarot.png` },
+    compatibilityTarot: { uri: `${DEV_SERVER_URL}/assets/compatibility-tarot.png` },
+    aiTarotThumb: { uri: `${DEV_SERVER_URL}/assets/tarot-save-bg.jpg` },
+    dailyFortune: { uri: `${DEV_SERVER_URL}/assets/daily-fortune.png` },
+    moneyLuck: { uri: `${DEV_SERVER_URL}/assets/money-luck.jpg` },
+    horoscope: { uri: `${DEV_SERVER_URL}/assets/horoscope.png` },
+    palmReading: { uri: `${DEV_SERVER_URL}/assets/palm-reading.jpg` },
+    studentTarot: { uri: `${DEV_SERVER_URL}/assets/student-tarot.jpg` },
+    workTarot: { uri: `${DEV_SERVER_URL}/assets/work-tarot.jpg` },
 
     // Zodiac Icons
     zodiac: {
