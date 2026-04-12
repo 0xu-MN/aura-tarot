@@ -223,7 +223,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ consultation }) => {
       {/* 입력창 */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
       >
         <View style={s.inputRow}>
           <TextInput

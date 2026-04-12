@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
 import { Txt, PressableEffect } from '@toss/tds-react-native';
 import { getWeightedCards, TarotCardData } from '../../../lib/tarot-data';
 import { callGemini } from '../../../lib/gemini';
@@ -10,6 +10,7 @@ import { CardFanSpread } from '../../CardFanSpread';
 import { TarotResultCard } from '../../TarotResultCard';
 import { useAuthContext } from '../../../context/AuthContext';
 import { saveReading } from '../../../lib/storage';
+import { Haptic } from '../../../lib/haptic';
 
 // 골드/앰버 테마 - 금전/재물 컨셉
 const ACCENT = '#F59E0B';
@@ -31,9 +32,10 @@ type Step = 'input' | 'spread' | 'result';
 interface MoneyCardProps {
   onOpenChat?: (consultation: any) => void;
   onTokenChange?: () => void;
+  tokenBalance?: number;
 }
 
-export const MoneyCard: React.FC<MoneyCardProps> = ({ onOpenChat, onTokenChange }) => {
+export const MoneyCard: React.FC<MoneyCardProps> = ({ onOpenChat, onTokenChange, tokenBalance }) => {
   const { user } = useAuthContext();
   const [step, setStep] = useState<Step>('input');
   const [situation, setSituation] = useState('');
@@ -43,10 +45,15 @@ export const MoneyCard: React.FC<MoneyCardProps> = ({ onOpenChat, onTokenChange 
   const [reading, setReading] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDrawModal, setShowDrawModal] = useState(false);
-  const { canDraw, recordDraw, grantExtraDraw } = useDrawLimit('money', 2);
+  const { canDraw, recordDraw, isChecking, checkLimit, freeUsage, userTokens } = useDrawLimit('money', 2, 0);
+
+  React.useEffect(() => {
+    checkLimit();
+  }, [tokenBalance, checkLimit]);
 
   const handleCardSelectLazy = (idx: number) => {
     if (selectedCards.includes(idx)) return;
+    Haptic.impact();
     const next = [...selectedCards, idx];
     setSelectedCards(next);
     if (next.length === 3) {
@@ -62,7 +69,8 @@ export const MoneyCard: React.FC<MoneyCardProps> = ({ onOpenChat, onTokenChange 
   };
 
   const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
-    recordDraw();
+    const consumed = await recordDraw();
+    if (consumed > 0) onTokenChange?.();
     setIsLoading(true);
     try {
       const [c1, c2, c3] = cards;
@@ -113,7 +121,11 @@ export const MoneyCard: React.FC<MoneyCardProps> = ({ onOpenChat, onTokenChange 
 
       <ScrollView style={s.body} showsVerticalScrollIndicator={false}>
         {step === 'input' && (
-          <View style={s.section}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
+            style={s.section}
+          >
             <Txt style={s.label}>지금 금전 상황은?</Txt>
             <View style={s.chipRow}>
               {MONEY_SITUATIONS.map(v => (
@@ -133,7 +145,7 @@ export const MoneyCard: React.FC<MoneyCardProps> = ({ onOpenChat, onTokenChange 
               placeholder="또는 금전 고민을 직접 써주세요..." placeholderTextColor="rgba(255,255,255,0.25)" multiline
             />
             <Txt style={s.aiNotice}>✨ 생성형 AI 기반 분석이에요.</Txt>
-          </View>
+          </KeyboardAvoidingView>
         )}
 
         {step === 'spread' && (
@@ -195,13 +207,13 @@ export const MoneyCard: React.FC<MoneyCardProps> = ({ onOpenChat, onTokenChange 
 
 const s = StyleSheet.create({
   card: { flex: 1, backgroundColor: BG },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, backgroundColor: HEADER_BG, borderBottomWidth: 1, borderBottomColor: 'rgba(245,158,11,0.1)' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, backgroundColor: HEADER_BG, borderBottomWidth: 1, borderBottomColor: 'rgba(245,158,11,0.1)' },
   headerEmoji: { fontSize: 20 },
   headerTitle: { fontSize: 16, fontWeight: '800', color: ACCENT, flex: 1 },
   resetBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)' },
   resetText: { fontSize: 11, color: 'rgba(245,158,11,0.7)', fontWeight: '600' },
   body: { flex: 1 },
-  section: { padding: 16, paddingBottom: 120, gap: 12 },
+  section: { padding: 12, paddingBottom: 80, gap: 12 },
   label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.5)', marginTop: 4 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
   chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)', backgroundColor: 'rgba(245,158,11,0.05)' },
@@ -217,14 +229,14 @@ const s = StyleSheet.create({
   resultCardRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 12 },
   loadingBox: { alignItems: 'center', gap: 12, paddingVertical: 30 },
   loadingText: { fontSize: 14, color: 'rgba(245,158,11,0.7)', textAlign: 'center' },
-  readingBox: { backgroundColor: 'rgba(245,158,11,0.05)', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: 'rgba(245,158,11,0.12)' },
+  readingBox: { backgroundColor: 'rgba(245,158,11,0.05)', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(245,158,11,0.12)' },
   readingText: { fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 26 },
   actionBtns: { gap: 10, marginTop: 4 },
   shareBtn: { backgroundColor: ACCENT, borderRadius: 30, height: 48, alignItems: 'center', justifyContent: 'center' },
   shareBtnText: { color: '#1a0e00', fontSize: 14, fontWeight: '800' },
   reDrawBtn: { backgroundColor: 'rgba(245,158,11,0.08)', borderRadius: 30, height: 46, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)' },
   reDrawBtnText: { color: ACCENT, fontSize: 14, fontWeight: '700' },
-  footer: { padding: 16, paddingBottom: Platform.OS === 'ios' ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(245,158,11,0.08)' },
+  footer: { padding: 12, paddingBottom: Platform.OS === 'ios' ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(245,158,11,0.08)' },
   drawBtn: { backgroundColor: ACCENT2, borderRadius: 30, height: 50, alignItems: 'center', justifyContent: 'center' },
   btnDisabled: { opacity: 0.3 },
   drawBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },

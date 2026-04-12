@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
 import { Txt, PressableEffect } from '@toss/tds-react-native';
 import { callGemini } from '../../../lib/gemini';
 import { useDrawLimit } from '../../../lib/useDrawLimit';
@@ -7,6 +7,7 @@ import { shareTarotResult } from '../../../lib/useTossShare';
 import { PaymentInductionModal } from '../../PaymentInductionModal';
 import { useAuthContext } from '../../../context/AuthContext';
 import { saveReading } from '../../../lib/storage';
+import { Haptic } from '../../../lib/haptic';
 
 // 인디고/보라 별자리 테마
 const ACCENT = '#818cf8';
@@ -36,27 +37,35 @@ type Step = 'input' | 'result';
 interface HoroscopeCardProps {
   onOpenChat?: (consultation: any) => void;
   onTokenChange?: () => void;
+  tokenBalance?: number;
 }
 
-export const HoroscopeCard: React.FC<HoroscopeCardProps> = ({ onOpenChat, onTokenChange }) => {
+export const HoroscopeCard: React.FC<HoroscopeCardProps> = ({ onOpenChat, onTokenChange, tokenBalance }) => {
   const { user } = useAuthContext();
   const [step, setStep] = useState<Step>('input');
   const [zodiac, setZodiac] = useState('');
   const [focus, setFocus] = useState('');
+  const [focusDetail, setFocusDetail] = useState('');
   const [timeframe, setTimeframe] = useState('');
   const [reading, setReading] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDrawModal, setShowDrawModal] = useState(false);
-  const { canDraw, recordDraw, grantExtraDraw } = useDrawLimit('horoscope', 3);
+  const { canDraw, recordDraw, isChecking, checkLimit, freeUsage, userTokens } = useDrawLimit('horoscope', 2, 0);
+
+  React.useEffect(() => {
+    checkLimit();
+  }, [tokenBalance, checkLimit]);
 
   const handleDraw = async () => {
     if (!zodiac) return;
+    Haptic.selection();
     setStep('result');
     if (!canDraw) { 
       setTimeout(() => setShowDrawModal(true), 400);
       return;
     }
-    recordDraw();
+    const consumed = await recordDraw();
+    if (consumed > 0) onTokenChange?.();
     setIsLoading(true);
     try {
       const sign = zodiac;
@@ -126,6 +135,14 @@ ${sign} 의 ${timeframe || '오늘'} 에너지를 3~4문단으로 자연스러�
                 </PressableEffect>
               ))}
             </View>
+
+            <Txt style={s.label}>✨ 더 자세히 물어보기</Txt>
+            <TextInput
+              style={[s.textInput, { minHeight: 60, marginTop: 4 }]} value={focusDetail} onChangeText={setFocusDetail}
+              placeholder="별자리 에너지와 함께 풀고 싶은 고민을 적어주세요..." placeholderTextColor="rgba(255,255,255,0.25)"
+              multiline
+            />
+
             <Txt style={s.label}>⏱️ 기간</Txt>
             <View style={s.chipRow}>
               {TIME_FRAMES.map(v => (
@@ -196,13 +213,13 @@ ${sign} 의 ${timeframe || '오늘'} 에너지를 3~4문단으로 자연스러�
 
 const s = StyleSheet.create({
   card: { flex: 1, backgroundColor: BG },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, backgroundColor: HEADER_BG, borderBottomWidth: 1, borderBottomColor: 'rgba(129,140,248,0.12)' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, backgroundColor: HEADER_BG, borderBottomWidth: 1, borderBottomColor: 'rgba(129,140,248,0.12)' },
   headerEmoji: { fontSize: 20 },
   headerTitle: { fontSize: 16, fontWeight: '800', color: ACCENT, flex: 1 },
   resetBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(129,140,248,0.2)' },
   resetText: { fontSize: 12, color: 'rgba(129,140,248,0.8)', fontWeight: '600' },
   body: { flex: 1 },
-  section: { padding: 14, paddingBottom: 120, gap: 10 },
+  section: { padding: 10, paddingBottom: 80, gap: 10 },
   label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.55)', marginTop: 4 },
   zodiacGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   zodiacChip: { width: '22%', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(129,140,248,0.2)', backgroundColor: 'rgba(129,140,248,0.05)', padding: 6, alignItems: 'center', gap: 2 },
@@ -216,20 +233,21 @@ const s = StyleSheet.create({
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(129,140,248,0.2)', backgroundColor: 'rgba(129,140,248,0.05)' },
   chipText: { fontSize: 12, color: 'rgba(129,140,248,0.9)', fontWeight: '600' },
   aiNotice: { fontSize: 10, color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginTop: 4 },
-  zodiacDisplayBox: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, backgroundColor: 'rgba(129,140,248,0.06)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(129,140,248,0.15)' },
+  textInput: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(129,140,248,0.25)', borderRadius: 12, padding: 12, fontSize: 14, color: '#fff' },
+  zodiacDisplayBox: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 10, backgroundColor: 'rgba(129,140,248,0.06)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(129,140,248,0.15)' },
   zodiacDisplaySign: { fontSize: 44 },
   zodiacDisplayLabel: { fontSize: 18, fontWeight: '800', color: '#fff' },
   zodiacDisplayDates: { fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 },
   loadingBox: { alignItems: 'center', gap: 14, paddingVertical: 30 },
   loadingText: { fontSize: 14, textAlign: 'center', color: 'rgba(129,140,248,0.7)' },
-  readingBox: { backgroundColor: 'rgba(129,140,248,0.05)', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: 'rgba(129,140,248,0.12)' },
+  readingBox: { backgroundColor: 'rgba(129,140,248,0.05)', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(129,140,248,0.12)' },
   readingText: { fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 26 },
   actionBtns: { gap: 10, marginTop: 4 },
   shareBtn: { backgroundColor: ACCENT, borderRadius: 30, height: 44, alignItems: 'center', justifyContent: 'center' },
   shareBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   reDrawBtn: { backgroundColor: 'rgba(129,140,248,0.08)', borderRadius: 30, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(129,140,248,0.2)' },
   reDrawBtnText: { color: ACCENT, fontSize: 14, fontWeight: '700' },
-  footer: { padding: 16, paddingBottom: Platform.OS === 'ios' ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(129,140,248,0.1)' },
+  footer: { padding: 12, paddingBottom: Platform.OS === 'ios' ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(129,140,248,0.1)' },
   drawBtn: { backgroundColor: ACCENT2, borderRadius: 30, height: 52, alignItems: 'center', justifyContent: 'center' },
   btnDisabled: { opacity: 0.35 },
   drawBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },

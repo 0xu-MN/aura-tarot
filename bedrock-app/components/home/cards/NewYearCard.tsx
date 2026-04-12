@@ -8,6 +8,7 @@ import { shareTarotResult } from '../../../lib/useTossShare';
 import { PaymentInductionModal } from '../../PaymentInductionModal';
 import { CardFanSpread } from '../../CardFanSpread';
 import { TarotResultCard } from '../../TarotResultCard';
+import { Haptic } from '../../../lib/haptic';
 
 const ACCENT = '#DAA520';
 const BG = '#14141a';
@@ -19,9 +20,10 @@ type Step = 'input' | 'spread' | 'result';
 interface NewYearCardProps {
   onOpenChat?: (consultation: any) => void;
   onTokenChange?: () => void;
+  tokenBalance?: number;
 }
 
-export const NewYearCard: React.FC<NewYearCardProps> = ({ onOpenChat, onTokenChange }) => {
+export const NewYearCard: React.FC<NewYearCardProps> = ({ onOpenChat, onTokenChange, tokenBalance }) => {
   const [step, setStep] = useState<Step>('input');
   const [goal, setGoal] = useState('');
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
@@ -29,12 +31,17 @@ export const NewYearCard: React.FC<NewYearCardProps> = ({ onOpenChat, onTokenCha
   const [reading, setReading] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDrawModal, setShowDrawModal] = useState(false);
-  const { canDraw, recordDraw, grantExtraDraw } = useDrawLimit('newYear', 1);
+  const { canDraw, recordDraw, isChecking, checkLimit, freeUsage, userTokens } = useDrawLimit('newYear', 1, 0);
 
-  const nextYear = new Date().getFullYear() + 1;
+  React.useEffect(() => {
+    checkLimit();
+  }, [tokenBalance, checkLimit]);
+
+  const nextYear = new Date().getFullYear();
 
   const handleCardSelect = (idx: number) => {
     if (selectedCards.includes(idx)) return;
+    Haptic.impact();
     const next = [...selectedCards, idx];
     setSelectedCards(next);
     if (next.length === 5) {
@@ -49,7 +56,8 @@ export const NewYearCard: React.FC<NewYearCardProps> = ({ onOpenChat, onTokenCha
 
   const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
     if (!canDraw) { setShowDrawModal(true); return; }
-    recordDraw();
+    const consumed = await recordDraw();
+    if (consumed > 0) onTokenChange?.();
     setIsLoading(true);
     try {
       const [all, love, money, work, health] = cards;
@@ -173,13 +181,13 @@ ${nextYear}년의 목표: ${goal}
 
 const s = StyleSheet.create({
   card: { flex: 1, backgroundColor: BG },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(218,165,32,0.2)' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(218,165,32,0.2)' },
   headerEmoji: { fontSize: 20 },
   headerTitle: { fontSize: 16, fontWeight: '800', color: ACCENT, flex: 1 },
   resetBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(218,165,32,0.35)' },
   resetText: { fontSize: 12, color: ACCENT, fontWeight: '600' },
   body: { flex: 1 },
-  section: { padding: 16, paddingBottom: 120, gap: 10 },
+  section: { padding: 12, paddingBottom: 80, gap: 10 },
   label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.55)', marginTop: 4 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(218,165,32,0.3)', backgroundColor: 'rgba(218,165,32,0.06)' },
@@ -191,11 +199,11 @@ const s = StyleSheet.create({
   aiNotice: { fontSize: 11, color: 'rgba(218,165,32,0.45)', textAlign: 'center', marginTop: 4 },
   loadingBox: { alignItems: 'center', gap: 14, paddingVertical: 30 },
   loadingText: { fontSize: 14, textAlign: 'center' },
-  readingBox: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: 'rgba(218,165,32,0.12)' },
+  readingBox: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(218,165,32,0.12)' },
   readingText: { fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 24 },
   shareBtn: { borderRadius: 30, height: 44, alignItems: 'center', justifyContent: 'center' },
   shareBtnText: { color: '#000', fontSize: 14, fontWeight: '700' },
-  footer: { padding: 16, paddingBottom: Platform.OS === "ios" ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(218,165,32,0.15)' },
+  footer: { padding: 12, paddingBottom: Platform.OS === "ios" ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(218,165,32,0.15)' },
   drawBtn: { borderRadius: 30, height: 52, alignItems: 'center', justifyContent: 'center' },
   btnDisabled: { opacity: 0.35 },
   drawBtnText: { color: '#000', fontSize: 16, fontWeight: '800' },

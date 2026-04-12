@@ -14,7 +14,6 @@ const GOLD = '#DAA520';
 
 export const CONTENT_CARDS = [
   { id: 'daily',         emoji: '✨', label: '오늘의 운세' },
-  { id: 'chat',          emoji: '💬', label: 'AI 심층 상담' },
   { id: 'love',          emoji: '💕', label: '연애운 타로' },
   { id: 'money',         emoji: '💰', label: '금전·재물운' },
   { id: 'work',          emoji: '💼', label: '직장운' },
@@ -24,8 +23,8 @@ export const CONTENT_CARDS = [
   { id: 'horoscope',     emoji: '♒', label: '별자리 운세' },
   { id: 'compatibility', emoji: '💞', label: '커플 궁합' },
   { id: 'reunion',       emoji: '🌙', label: '재회 확률' },
-  { id: 'newYear',       emoji: '🎇', label: '신년운세' },
   { id: 'yearly',        emoji: '🗓️', label: '연간 운세' },
+  { id: 'chat',          emoji: '💬', label: 'AI 심층 상담' },
 ] as const;
 
 export type ContentId = typeof CONTENT_CARDS[number]['id'];

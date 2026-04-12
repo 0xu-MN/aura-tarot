@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
 import { Txt, PressableEffect } from '@toss/tds-react-native';
 import { getWeightedCards, TarotCardData } from '../../../lib/tarot-data';
 import { callGemini } from '../../../lib/gemini';
@@ -9,7 +9,8 @@ import { PaymentInductionModal } from '../../PaymentInductionModal';
 import { CardFanSpread } from '../../CardFanSpread';
 import { TarotResultCard } from '../../TarotResultCard';
 import { useAuthContext } from '../../../context/AuthContext';
-import { saveReading } from '../../../lib/storage';
+import { saveReading, getFreeDrawUsage, incrementFreeDrawUsage } from '../../../lib/storage';
+import { Haptic } from '../../../lib/haptic';
 
 // 분홍/로즈 테마 - 사랑/연애 컨셉
 const ACCENT = '#f472b6';
@@ -31,9 +32,10 @@ type Step = 'input' | 'spread' | 'result';
 interface LoveCardProps {
   onOpenChat?: (consultation: any) => void;
   onTokenChange?: () => void;
+  tokenBalance?: number;
 }
 
-export const LoveCard: React.FC<LoveCardProps> = ({ onOpenChat, onTokenChange }) => {
+export const LoveCard: React.FC<LoveCardProps> = ({ onOpenChat, onTokenChange, tokenBalance }) => {
   const { user } = useAuthContext();
   const [step, setStep] = useState<Step>('input');
   const [situation, setSituation] = useState('');
@@ -43,10 +45,15 @@ export const LoveCard: React.FC<LoveCardProps> = ({ onOpenChat, onTokenChange })
   const [reading, setReading] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDrawModal, setShowDrawModal] = useState(false);
-  const { canDraw, recordDraw, grantExtraDraw } = useDrawLimit('love', 2);
+  const { canDraw, recordDraw, isChecking, checkLimit, freeUsage, userTokens } = useDrawLimit('love', 2, 0);
+
+  React.useEffect(() => {
+    checkLimit();
+  }, [tokenBalance, checkLimit]);
 
   const handleCardSelectLazy = (idx: number) => {
     if (selectedCards.includes(idx)) return;
+    Haptic.impact();
     const next = [...selectedCards, idx];
     setSelectedCards(next);
     if (next.length === 3) {
@@ -62,7 +69,8 @@ export const LoveCard: React.FC<LoveCardProps> = ({ onOpenChat, onTokenChange })
   };
 
   const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
-    recordDraw();
+    const consumed = await recordDraw();
+    if (consumed > 0) onTokenChange?.();
     setIsLoading(true);
     try {
       const [c1, c2, c3] = cards;
@@ -113,7 +121,21 @@ export const LoveCard: React.FC<LoveCardProps> = ({ onOpenChat, onTokenChange })
 
       <ScrollView style={s.body} showsVerticalScrollIndicator={false}>
         {step === 'input' && (
-          <View style={s.section}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}
+            style={s.section}
+          >
+            <Txt style={s.label}>솜이에게 물어볼 것</Txt>
+            <TextInput
+              style={s.textInput} value={question} onChangeText={setQuestion}
+              placeholder="또는 지금 마음속 고민을 직접 써주세요..." placeholderTextColor="rgba(255,255,255,0.25)" multiline
+            />
+            {AI_QUESTIONS.map((q, i) => (
+              <PressableEffect key={i} style={[s.qChip, question === q && s.qChipActive]} onPress={() => setQuestion(q)}>
+                <Txt style={[s.qChipText, question === q && s.qChipTextActive]}>{q}</Txt>
+              </PressableEffect>
+            ))}
             <Txt style={s.label}>지금 나의 상황은?</Txt>
             <View style={s.chipRow}>
               {LOVE_SITUATIONS.map(v => (
@@ -122,18 +144,8 @@ export const LoveCard: React.FC<LoveCardProps> = ({ onOpenChat, onTokenChange })
                 </PressableEffect>
               ))}
             </View>
-            <Txt style={s.label}>솜이에게 물어볼 것</Txt>
-            {AI_QUESTIONS.map((q, i) => (
-              <PressableEffect key={i} style={[s.qChip, question === q && s.qChipActive]} onPress={() => setQuestion(q)}>
-                <Txt style={[s.qChipText, question === q && s.qChipTextActive]}>{q}</Txt>
-              </PressableEffect>
-            ))}
-            <TextInput
-              style={s.textInput} value={question} onChangeText={setQuestion}
-              placeholder="또는 지금 마음속 고민을 직접 써주세요..." placeholderTextColor="rgba(255,255,255,0.25)" multiline
-            />
             <Txt style={s.aiNotice}>✨ 생성형 AI 기반 분석이에요.</Txt>
-          </View>
+          </KeyboardAvoidingView>
         )}
 
         {step === 'spread' && (
@@ -195,13 +207,13 @@ export const LoveCard: React.FC<LoveCardProps> = ({ onOpenChat, onTokenChange })
 
 const s = StyleSheet.create({
   card: { flex: 1, backgroundColor: BG },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, backgroundColor: HEADER_BG, borderBottomWidth: 1, borderBottomColor: 'rgba(244,114,182,0.1)' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, backgroundColor: HEADER_BG, borderBottomWidth: 1, borderBottomColor: 'rgba(244,114,182,0.1)' },
   headerEmoji: { fontSize: 20 },
   headerTitle: { fontSize: 16, fontWeight: '800', color: ACCENT, flex: 1 },
   resetBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(244,114,182,0.2)' },
   resetText: { fontSize: 11, color: 'rgba(244,114,182,0.7)', fontWeight: '600' },
   body: { flex: 1 },
-  section: { padding: 16, paddingBottom: 120, gap: 12 },
+  section: { padding: 12, paddingBottom: 80, gap: 12 },
   label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.5)', marginTop: 4 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
   chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(244,114,182,0.25)', backgroundColor: 'rgba(244,114,182,0.05)' },
@@ -217,14 +229,14 @@ const s = StyleSheet.create({
   resultCardRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 12 },
   loadingBox: { alignItems: 'center', gap: 12, paddingVertical: 30 },
   loadingText: { fontSize: 14, color: 'rgba(244,114,182,0.7)', textAlign: 'center' },
-  readingBox: { backgroundColor: 'rgba(244,114,182,0.05)', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: 'rgba(244,114,182,0.12)' },
+  readingBox: { backgroundColor: 'rgba(244,114,182,0.05)', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(244,114,182,0.12)' },
   readingText: { fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 26 },
   actionBtns: { gap: 10, marginTop: 4 },
   shareBtn: { backgroundColor: ACCENT, borderRadius: 30, height: 48, alignItems: 'center', justifyContent: 'center' },
   shareBtnText: { color: '#1a0014', fontSize: 14, fontWeight: '800' },
   reDrawBtn: { backgroundColor: 'rgba(244,114,182,0.1)', borderRadius: 30, height: 46, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(244,114,182,0.2)' },
   reDrawBtnText: { color: ACCENT, fontSize: 14, fontWeight: '700' },
-  footer: { padding: 16, paddingBottom: Platform.OS === 'ios' ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(244,114,182,0.08)' },
+  footer: { padding: 12, paddingBottom: Platform.OS === 'ios' ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(244,114,182,0.08)' },
   drawBtn: { backgroundColor: ACCENT2, borderRadius: 30, height: 50, alignItems: 'center', justifyContent: 'center' },
   btnDisabled: { opacity: 0.3 },
   drawBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },

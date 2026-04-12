@@ -19,7 +19,12 @@ export async function callGemini(prompt: string, imageData?: string): Promise<st
         if (error) throw error;
 
         const text = data.message || '';
-        return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+        return text.replace(/<think>[\s\S]*?<\/think>/g, '')
+                   .replace(/\*\*/g, '')
+                   .replace(/###/g, '')
+                   .replace(/##/g, '')
+                   .replace(/# /g, '')
+                   .trim();
     } catch (error) {
         console.error('Gemini API call via Edge Function failed:', error);
         throw error;
@@ -45,7 +50,12 @@ export async function callGeminiChat(history: ChatMessage[], message: string): P
         if (error) throw error;
 
         const text = data.message || '';
-        return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+        return text.replace(/<think>[\s\S]*?<\/think>/g, '')
+                   .replace(/\*\*/g, '')
+                   .replace(/###/g, '')
+                   .replace(/##/g, '')
+                   .replace(/# /g, '')
+                   .trim();
     } catch (error) {
         console.error('Gemini Chat API call via Edge Function failed:', error);
         throw error;

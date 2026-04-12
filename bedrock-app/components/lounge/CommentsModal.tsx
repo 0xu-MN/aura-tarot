@@ -11,6 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { Txt } from '@toss/tds-react-native';
+import { Haptic } from '../../lib/haptic';
 import { getLoungeComments, saveLoungeComment, deleteLoungeComment, LoungeComment } from '../../lib/storage';
 
 const GOLD = '#DAA520';
@@ -55,13 +56,14 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
       id: `comm_${Date.now()}`,
       postId,
       content: inputText.trim(),
-      author: ANON_NAMES[Math.floor(Math.random() * ANON_NAMES.length)],
+      author: ANON_NAMES[Math.floor(Math.random() * ANON_NAMES.length)] || '익명',
       authorId: 'my_unique_id',
       date: '방금',
-      gender: myProfile.gender || 'F',
+      gender: (myProfile.gender as 'M' | 'F') || 'F',
     };
 
     await saveLoungeComment(postId, newComment);
+    Haptic.success();
     setInputText('');
     await loadComments();
     setIsSubmitting(false);

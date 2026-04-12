@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
 import { Txt, PressableEffect } from '@toss/tds-react-native';
 import { getWeightedCards, TarotCardData } from '../../../lib/tarot-data';
 import { callGemini } from '../../../lib/gemini';
@@ -8,6 +8,7 @@ import { shareTarotResult } from '../../../lib/useTossShare';
 import { PaymentInductionModal } from '../../PaymentInductionModal';
 import { CardFanSpread } from '../../CardFanSpread';
 import { TarotResultCard } from '../../TarotResultCard';
+import { Haptic } from '../../../lib/haptic';
 
 const ACCENT = '#34d399';
 const BG = '#14141a';
@@ -19,9 +20,10 @@ type Step = 'input' | 'spread' | 'result';
 interface YearlyCardProps {
   onOpenChat?: (consultation: any) => void;
   onTokenChange?: () => void;
+  tokenBalance?: number;
 }
 
-export const YearlyCard: React.FC<YearlyCardProps> = ({ onOpenChat, onTokenChange }) => {
+export const YearlyCard: React.FC<YearlyCardProps> = ({ onOpenChat, onTokenChange, tokenBalance }) => {
   const [step, setStep] = useState<Step>('input');
   const [focus, setFocus] = useState('');
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
@@ -29,12 +31,17 @@ export const YearlyCard: React.FC<YearlyCardProps> = ({ onOpenChat, onTokenChang
   const [reading, setReading] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDrawModal, setShowDrawModal] = useState(false);
-  const { canDraw, recordDraw, grantExtraDraw } = useDrawLimit('yearly', 1);
+  const { canDraw, recordDraw, isChecking, checkLimit, freeUsage, userTokens } = useDrawLimit('yearly', 1, 0);
+
+  React.useEffect(() => {
+    checkLimit();
+  }, [tokenBalance, checkLimit]);
 
   const currentYear = new Date().getFullYear();
 
   const handleCardSelect = (idx: number) => {
     if (selectedCards.includes(idx)) return;
+    Haptic.impact();
     const next = [...selectedCards, idx];
     setSelectedCards(next);
     if (next.length === 12) {
@@ -49,25 +56,28 @@ export const YearlyCard: React.FC<YearlyCardProps> = ({ onOpenChat, onTokenChang
 
   const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
     if (!canDraw) { setShowDrawModal(true); return; }
-    recordDraw();
+    const consumed = await recordDraw();
+    if (consumed > 0) onTokenChange?.();
     setIsLoading(true);
     try {
       const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
       const cardDesc = cards.map((c, i) => `${monthNames[i]}: ${c.card.koreanName} (${c.isReversed ? '역방향' : '정방향'})`).join('\n');
 
-      const prompt = `당신은 1년의 방대한 운명을 조율하는 타로 리더 '솜이'입니다.
-[금지] "##", AI 어투, 마크다운 헤더 금지. 이모지+볼드로 서사적이고 아름다운 편지 형식으로 작성하세요.
+      const prompt = `당신은 1년의 방대한 운명을 조율하는 마스터 타로 리더 '솜이'입니다.
+[지침] "##", AI 어투, 마크다운 헤더 사용 금지. 이모지와 볼드체를 적절히 섞어 문학적이고 깊이 있는 편지 형식으로 작성하세요.
 
-${currentYear}년의 메인 포커스: ${focus}
+${currentYear}년의 메인 테마: ${focus}
 
 12개월의 타로 배치:
 ${cardDesc}
 
-📅 **${currentYear}년, 당신의 12달 여정**
-📆 **상반기(1~6월)의 핵심 흐름**
-📆 **하반기(7~12월)의 핵심 흐름**
-🌟 **당신의 키워드에 따른 최고의 기회의 달**
-✨ **1년을 통과할 당신을 위한 단 하나의 문장** "[감성 문장]"`;
+📅 **${currentYear}년, 당신의 장대한 12달 여정**
+📆 **상반기(1~6월)의 에너지 전환점**: 상반기 전체의 큰 흐름과 주의사항을 요약해주세요.
+🌸 **월별 상세 가이드 (1~6월)**: 각 달의 카드 의미와 연결하여 구체적인 조언을 주세요.
+📆 **하반기(7~12월)의 에너지 전환점**: 하반기 전체의 판도 변화를 분석해주세요.
+🍂 **월별 상세 가이드 (7~12월)**: 각 달의 카드 의미와 연결하여 구체적인 조언을 주세요.
+🌟 **${focus}를 위한 특별한 기회의 달**: 포커스에 맞춘 가장 강력한 운의 달을 짚어주세요.
+🌿 **1년을 관통하는 지혜의 한 문장**: "[감성적이고 철학적인 문장]"`;
       const result = await callGemini(prompt);
       setReading(result);
     } catch {
@@ -97,8 +107,16 @@ ${cardDesc}
 
       <ScrollView style={s.body} showsVerticalScrollIndicator={false}>
         {step === 'input' && (
-          <View style={s.section}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}
+            style={s.section}
+          >
             <Txt style={s.label}>🎯 올해 가장 집중하고 싶은 에너지</Txt>
+            <TextInput
+              style={s.textInput} value={focus} onChangeText={setFocus}
+              placeholder="여기에 직접 입력하거나 아래에서 선택하세요..." placeholderTextColor="rgba(255,255,255,0.3)"
+            />
             <View style={s.chipRow}>
               {YEAR_FOCUS.map(v => (
                 <PressableEffect key={v} style={[s.chip, focus === v && s.chipActive]} onPress={() => setFocus(v)}>
@@ -106,12 +124,8 @@ ${cardDesc}
                 </PressableEffect>
               ))}
             </View>
-            <TextInput
-              style={s.textInput} value={focus} onChangeText={setFocus}
-              placeholder="직접 입력..." placeholderTextColor="rgba(255,255,255,0.3)"
-            />
-            <Txt style={s.aiNotice}>✨ 12장의 카드로 1년의 흐름을 한눈에 살펴보세요.</Txt>
-          </View>
+            <Txt style={s.aiNotice}>✨ 12장의 카드로 1년의 흐름을 정교하게 분석합니다.</Txt>
+          </KeyboardAvoidingView>
         )}
 
         {step === 'spread' && (
@@ -174,13 +188,13 @@ ${cardDesc}
 
 const s = StyleSheet.create({
   card: { flex: 1, backgroundColor: BG },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(52,211,153,0.2)' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(52,211,153,0.2)' },
   headerEmoji: { fontSize: 20 },
   headerTitle: { fontSize: 16, fontWeight: '800', color: ACCENT, flex: 1 },
   resetBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(52,211,153,0.35)' },
   resetText: { fontSize: 12, color: ACCENT, fontWeight: '600' },
   body: { flex: 1 },
-  section: { padding: 16, paddingBottom: 120, gap: 10 },
+  section: { padding: 12, paddingBottom: 80, gap: 10 },
   label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.55)', marginTop: 4 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(52,211,153,0.3)', backgroundColor: 'rgba(52,211,153,0.06)' },
@@ -192,11 +206,11 @@ const s = StyleSheet.create({
   aiNotice: { fontSize: 11, color: 'rgba(52,211,153,0.45)', textAlign: 'center', marginTop: 4 },
   loadingBox: { alignItems: 'center', gap: 14, paddingVertical: 30 },
   loadingText: { fontSize: 14, textAlign: 'center' },
-  readingBox: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: 'rgba(52,211,153,0.12)' },
+  readingBox: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(52,211,153,0.12)' },
   readingText: { fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 24 },
   shareBtn: { borderRadius: 30, height: 44, alignItems: 'center', justifyContent: 'center' },
   shareBtnText: { fontSize: 14, fontWeight: '700' },
-  footer: { padding: 16, paddingBottom: Platform.OS === "ios" ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(52,211,153,0.15)' },
+  footer: { padding: 12, paddingBottom: Platform.OS === "ios" ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(52,211,153,0.15)' },
   drawBtn: { borderRadius: 30, height: 52, alignItems: 'center', justifyContent: 'center' },
   btnDisabled: { opacity: 0.35 },
   drawBtnText: { fontSize: 16, fontWeight: '800' },

@@ -37,11 +37,16 @@ const FAN_RADIUS = SCREEN_WIDTH * 0.9;
 // ─── 선택 슬롯 사이즈 (maxSelect에 따라 동적 계산) ─────────────
 const getSlotSize = (maxSelect: number, compact?: boolean) => {
     const scale = compact ? 0.65 : 1;
+    if (maxSelect === 12) {
+        // 12장의 경우 4열 그리드로 배치
+        const gridW = (SCREEN_WIDTH - 64) / 4;
+        return { w: Math.round(gridW), h: Math.round(gridW * 1.48) };
+    }
     if (maxSelect === 1) return { w: Math.round(72 * scale), h: Math.round(112 * scale) };
     if (maxSelect === 2) return { w: Math.round(68 * scale), h: Math.round(106 * scale) };
     if (maxSelect === 3) return { w: Math.round(62 * scale), h: Math.round(98 * scale) };
     if (maxSelect === 4) return { w: Math.round(58 * scale), h: Math.round(92 * scale) };
-    return { w: Math.round(50 * scale), h: Math.round(80 * scale) }; // 5장
+    return { w: Math.round(50 * scale), h: Math.round(80 * scale) }; // 5장 이상
 };
 
 export const CardFanSpread: React.FC<CardFanSpreadProps> = ({
@@ -174,7 +179,7 @@ export const CardFanSpread: React.FC<CardFanSpreadProps> = ({
             </View>
 
             {/* ③ 선택된 카드 슬롯 (팬 아래 고정) */}
-            <View style={styles.selectedRow}>
+            <View style={[styles.selectedRow, maxSelect > 5 && styles.selectedGrid]}>
                 {Array.from({ length: maxSelect }).map((_, slotIdx) => {
                     const filled = slotIdx < selectedCards.length;
                     const scaleAnim = selectedScaleAnims.current[slotIdx];
@@ -188,6 +193,7 @@ export const CardFanSpread: React.FC<CardFanSpreadProps> = ({
                                     height: slotSize.h,
                                     borderColor: filled ? accentColor : 'rgba(255,255,255,0.12)',
                                     borderStyle: filled ? 'solid' : 'dashed',
+                                    marginBottom: maxSelect > 5 ? 8 : 0,
                                 },
                                 filled && scaleAnim
                                     ? { transform: [{ scale: scaleAnim }] }
@@ -206,7 +212,7 @@ export const CardFanSpread: React.FC<CardFanSpreadProps> = ({
                                     </View>
                                 </>
                             ) : (
-                                <Txt style={styles.slotEmpty}>{slotIdx + 1}</Txt>
+                                <Txt style={[styles.slotEmpty, maxSelect > 5 && { fontSize: 13 }]}>{slotIdx + 1}</Txt>
                             )}
                         </Animated.View>
                     );
@@ -274,10 +280,15 @@ const styles = StyleSheet.create({
     // ── 선택 슬롯 (팬 아래 고정) ───────────────────────────────
     selectedRow: {
         flexDirection: 'row',
-        gap: 10,
+        gap: 8,
         justifyContent: 'center',
         marginTop: 12,
         marginBottom: 6,
+    },
+    selectedGrid: {
+        flexWrap: 'wrap',
+        paddingHorizontal: 16,
+        gap: 8,
     },
     selectedSlot: {
         borderRadius: 10,

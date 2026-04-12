@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
 import { Txt, PressableEffect } from '@toss/tds-react-native';
 import { getWeightedCards, TarotCardData } from '../../../lib/tarot-data';
 import { callGemini } from '../../../lib/gemini';
@@ -11,6 +11,7 @@ import { TarotResultCard } from '../../TarotResultCard';
 
 import { useAuthContext } from '../../../context/AuthContext';
 import { saveReading } from '../../../lib/storage';
+import { Haptic } from '../../../lib/haptic';
 
 const ACCENT = '#a78bfa';
 const ACCENT2 = '#7c3aed';
@@ -23,9 +24,10 @@ type Step = 'input' | 'spread' | 'result';
 interface DailyCardProps {
   onOpenChat?: (consultation: any) => void;
   onTokenChange?: () => void;
+  tokenBalance?: number;
 }
 
-export const DailyCard: React.FC<DailyCardProps> = ({ onOpenChat, onTokenChange }) => {
+export const DailyCard: React.FC<DailyCardProps> = ({ onOpenChat, onTokenChange, tokenBalance }) => {
   const { user } = useAuthContext();
   const [step, setStep] = useState<Step>('input');
   const [question, setQuestion] = useState('');
@@ -35,7 +37,11 @@ export const DailyCard: React.FC<DailyCardProps> = ({ onOpenChat, onTokenChange 
   const [isLoading, setIsLoading] = useState(false);
   const [showDrawModal, setShowDrawModal] = useState(false);
 
-  const { canDraw, recordDraw, grantExtraDraw } = useDrawLimit('daily', 1);
+  const { canDraw, recordDraw, isChecking, checkLimit, freeUsage, userTokens } = useDrawLimit('daily', 1, 0);
+
+  React.useEffect(() => {
+    checkLimit();
+  }, [tokenBalance, checkLimit]);
 
   const handleCardSelect = (idx: number) => {
     if (selectedCards.includes(idx)) return;
@@ -58,7 +64,8 @@ export const DailyCard: React.FC<DailyCardProps> = ({ onOpenChat, onTokenChange 
       return;
     }
 
-    recordDraw();
+    const consumed = await recordDraw();
+    if (consumed > 0) onTokenChange?.();
     setIsLoading(true);
     try {
       const card = cards[0];
@@ -92,6 +99,7 @@ export const DailyCard: React.FC<DailyCardProps> = ({ onOpenChat, onTokenChange 
   // 토큰 부족 여부와 상관없이 먼저 뽑게 하고, 결과창에서 모달 표시
   const handleCardSelectLazy = (idx: number) => {
     if (selectedCards.includes(idx)) return;
+    Haptic.impact();
     const next = [...selectedCards, idx];
     setSelectedCards(next);
 
@@ -132,15 +140,12 @@ export const DailyCard: React.FC<DailyCardProps> = ({ onOpenChat, onTokenChange 
 
       <ScrollView style={s.body} showsVerticalScrollIndicator={false}>
         {step === 'input' && (
-          <View style={s.section}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}
+            style={s.section}
+          >
             <Txt style={s.label}>오늘 무엇이 궁금하신가요?</Txt>
-            <View style={s.chipRow}>
-              {['오늘 전체 운세', '오늘의 행운 키워드', '오늘 조심할 점', '오늘 연애 기운', '오늘 직장/학업 에너지'].map(q => (
-                <PressableEffect key={q} style={[s.chip, question === q && s.chipActive]} onPress={() => setQuestion(q)}>
-                  <Txt style={[s.chipText, question === q && s.chipTextActive]}>{q}</Txt>
-                </PressableEffect>
-              ))}
-            </View>
             <TextInput
               style={s.textInput}
               value={question}
@@ -149,8 +154,15 @@ export const DailyCard: React.FC<DailyCardProps> = ({ onOpenChat, onTokenChange 
               placeholderTextColor="rgba(255,255,255,0.25)"
               multiline
             />
+            <View style={s.chipRow}>
+              {['오늘 전체 운세', '오늘의 행운 키워드', '오늘 조심할 점', '오늘 연애 기운', '오늘 직장/학업 에너지'].map(q => (
+                <PressableEffect key={q} style={[s.chip, question === q && s.chipActive]} onPress={() => setQuestion(q)}>
+                  <Txt style={[s.chipText, question === q && s.chipTextActive]}>{q}</Txt>
+                </PressableEffect>
+              ))}
+            </View>
             <Txt style={s.aiNotice}>✨ 생성형 AI 기반 분석이에요.</Txt>
-          </View>
+          </KeyboardAvoidingView>
         )}
 
         {step === 'spread' && (
@@ -231,13 +243,13 @@ export const DailyCard: React.FC<DailyCardProps> = ({ onOpenChat, onTokenChange 
 
 const s = StyleSheet.create({
   card: { flex: 1, backgroundColor: BG },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, backgroundColor: HEADER_BG, borderBottomWidth: 1, borderBottomColor: 'rgba(167,139,250,0.1)' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, backgroundColor: HEADER_BG, borderBottomWidth: 1, borderBottomColor: 'rgba(167,139,250,0.1)' },
   headerEmoji: { fontSize: 20 },
   headerTitle: { fontSize: 16, fontWeight: '800', color: ACCENT, flex: 1 },
   resetBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)' },
   resetText: { fontSize: 11, color: 'rgba(167,139,250,0.7)', fontWeight: '600' },
   body: { flex: 1 },
-  section: { padding: 16, paddingBottom: 120, gap: 12 },
+  section: { padding: 12, paddingBottom: 80, gap: 12 },
   label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.5)', marginTop: 4 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
   chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(167,139,250,0.25)', backgroundColor: 'rgba(167,139,250,0.05)' },
@@ -249,14 +261,14 @@ const s = StyleSheet.create({
   resultCardRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 12 },
   loadingBox: { alignItems: 'center', gap: 12, paddingVertical: 30 },
   loadingText: { fontSize: 14, color: 'rgba(167,139,250,0.7)', textAlign: 'center' },
-  readingBox: { backgroundColor: 'rgba(167,139,250,0.06)', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: 'rgba(167,139,250,0.12)' },
+  readingBox: { backgroundColor: 'rgba(167,139,250,0.06)', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(167,139,250,0.12)' },
   readingText: { fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 26 },
   actionBtns: { gap: 10, marginTop: 4 },
   shareBtn: { backgroundColor: ACCENT, borderRadius: 30, height: 48, alignItems: 'center', justifyContent: 'center' },
   shareBtnText: { color: '#180f2e', fontSize: 14, fontWeight: '800' },
   reDrawBtn: { backgroundColor: 'rgba(167,139,250,0.12)', borderRadius: 30, height: 46, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(167,139,250,0.2)' },
   reDrawBtnText: { color: ACCENT, fontSize: 14, fontWeight: '700' },
-  footer: { padding: 16, paddingBottom: Platform.OS === 'ios' ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(167,139,250,0.08)' },
+  footer: { padding: 12, paddingBottom: Platform.OS === 'ios' ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(167,139,250,0.08)' },
   drawBtn: { backgroundColor: ACCENT2, borderRadius: 30, height: 50, alignItems: 'center', justifyContent: 'center' },
   drawBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

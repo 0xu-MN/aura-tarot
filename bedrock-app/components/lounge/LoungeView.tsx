@@ -12,6 +12,7 @@ import {
   Animated,
 } from 'react-native';
 import { Txt } from '@toss/tds-react-native';
+import { Haptic } from '../../lib/haptic';
 import { useGeolocation, startUpdateLocation, Accuracy } from '@apps-in-toss/framework';
 import { ThreadItem } from './ThreadItem';
 import { ProfilePopup } from './ProfilePopup';
@@ -176,7 +177,7 @@ export const LoungeView: React.FC<LoungeViewProps> = ({
     const newPost = {
       id: `my_${Date.now()}`,
       authorId: 'my_unique_id',
-      author: ANON_NAMES[Math.floor(Math.random() * ANON_NAMES.length)],
+      author: ANON_NAMES[Math.floor(Math.random() * ANON_NAMES.length)] || '익명',
       lat: userLocation?.coords.latitude,
       lng: userLocation?.coords.longitude,
       content: draftText.trim(),
@@ -184,7 +185,7 @@ export const LoungeView: React.FC<LoungeViewProps> = ({
       cardName: '',
       cardImage: '',
       isMine: true,
-      gender: myProfile.gender,
+      gender: (myProfile.gender as 'M' | 'F') || 'F',
       likes: 0,
       comments: 0,
       profileImage: myProfile.profileImage,
@@ -200,6 +201,7 @@ export const LoungeView: React.FC<LoungeViewProps> = ({
       profileImage: newPost.profileImage,
     });
 
+    Haptic.success();
     setThreads([newPost, ...threads]);
     setDraftText('');
     onCloseCompose();
@@ -279,6 +281,7 @@ export const LoungeView: React.FC<LoungeViewProps> = ({
           }
           await consumeMultipleTokens(1);
           await unlockPost(selectedUser.id);
+          Haptic.success();
           setUnlockedPosts(prev => [...prev, selectedUser.id]);
           return true;
         }}
@@ -295,6 +298,7 @@ export const LoungeView: React.FC<LoungeViewProps> = ({
             }
             await consumeMultipleTokens(cost);
             await unlockChat(selectedUser.authorId);
+            Haptic.success();
             setUnlockedChats(prev => [...prev, selectedUser.authorId]);
           }
           

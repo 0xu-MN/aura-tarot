@@ -128,10 +128,12 @@ export const PaymentInductionModal: React.FC<PaymentInductionModalProps> = ({
                 <View style={s.box}>
                     {viewMode === 'main' ? (
                         <View style={s.mainContent}>
-                            <View style={s.iconBox}><Txt style={{ fontSize: 40 }}>💎</Txt></View>
+                            <View style={s.iconBox}>
+                                <Txt style={{ fontSize: 44, textAlign: 'center', lineHeight: Platform.OS === 'ios' ? 52 : undefined }}>💎</Txt>
+                            </View>
                             <Txt style={s.title}>다이아가 부족해요</Txt>
                             <Txt style={s.sub}>
-                                {contentName}을(를) 확인하거나 비밀 대화를{'\n'}나누려면 다이아가 필요합니다.
+                                {contentName}을(를) 확인하거나 비밀 대화를{"\n"}나누려면 다이아가 필요합니다.
                             </Txt>
                             <Txt style={s.balanceText}>보유 중인 다이아: {tokens}개</Txt>
 
@@ -211,7 +213,16 @@ const s = StyleSheet.create({
     
     // Main View
     mainContent: { padding: 28, alignItems: 'center' },
-    iconBox: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(218,165,32,0.12)', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    iconBox: { 
+        width: 84, 
+        height: 84, 
+        borderRadius: 42, 
+        backgroundColor: 'rgba(218,165,32,0.12)', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        marginBottom: 20,
+        overflow: 'visible' 
+    },
     title: { fontSize: 22, color: '#fff', fontWeight: '800', marginBottom: 10 },
     sub: { fontSize: 16, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 24, marginBottom: 16 },
     balanceText: { fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 28 },

@@ -41,6 +41,7 @@ const KEYS = {
     UNLOCKED_POSTS: 'my_unlocked_posts',
     UNLOCKED_CHATS: 'my_unlocked_chats',
     LOUNGE_COMMENTS: 'my_lounge_comments',
+    FREE_USAGE_COUNT: 'daily_free_usage_count', // 콘텐츠별 일일 무료 이용 횟수
 };
 
 export const DAILY_FREE_TOKENS = 2; // 매일 무료 지급 토큰 수
@@ -77,6 +78,52 @@ export const incrementDailyDrawCount = async (): Promise<number> => {
         return newCount;
     } catch (error) {
         console.error('Error incrementing draw count:', error);
+        return 0;
+    }
+};
+
+/** 콘텐츠별 일일 무료 이용 횟수 조회 */
+export const getFreeDrawUsage = async (contentId: string): Promise<number> => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const stored = await safeStorage.getItem(KEYS.FREE_USAGE_COUNT);
+
+        if (!stored) return 0;
+
+        const data = JSON.parse(stored);
+        if (data.date !== today) return 0;
+
+        return data[contentId] || 0;
+    } catch (error) {
+        console.error('Error getting free draw usage:', error);
+        return 0;
+    }
+};
+
+/** 콘텐츠별 일일 무료 이용 횟수 1 증가 */
+export const incrementFreeDrawUsage = async (contentId: string): Promise<number> => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const stored = await safeStorage.getItem(KEYS.FREE_USAGE_COUNT);
+        
+        let data: any = { date: today };
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed.date === today) {
+                data = parsed;
+            }
+        }
+        
+        const currentCount = data[contentId] || 0;
+        const newCount = currentCount + 1;
+        
+        data[contentId] = newCount;
+        data.date = today;
+
+        await safeStorage.setItem(KEYS.FREE_USAGE_COUNT, JSON.stringify(data));
+        return newCount;
+    } catch (error) {
+        console.error('Error incrementing free draw usage:', error);
         return 0;
     }
 };
@@ -306,8 +353,9 @@ export const grantDailyTokensIfNeeded = async (): Promise<{ granted: boolean; ne
         await safeStorage.setItem(KEYS.LAST_TOKEN_GRANT_DATE, today);
 
         return { granted: true, newTotal: next };
-    } catch {
-        return { granted: false, newTotal: total };
+    } catch (error) {
+        console.error('Error granting daily tokens:', error);
+        return { granted: false, newTotal: 0 };
     }
 };
 

@@ -1,25 +1,32 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { Txt, PressableEffect } from '@toss/tds-react-native';
 import { useDrawLimit } from '../../../lib/useDrawLimit';
 import { PaymentInductionModal } from '../../PaymentInductionModal';
+import { Haptic } from '../../../lib/haptic';
 
 const GOLD = '#DAA520';
 
 interface ChatCardProps {
   onOpenChat: (consultation: any) => void;
   onTokenChange: () => void;
+  tokenBalance?: number;
 }
 
-export const ChatCard: React.FC<ChatCardProps> = ({ onOpenChat, onTokenChange }) => {
+export const ChatCard: React.FC<ChatCardProps> = ({ onOpenChat, onTokenChange, tokenBalance }) => {
   const [query, setQuery] = useState('');
   const [showDrawAgain, setShowDrawAgain] = useState(false);
   const cost = 2; // 다이아 2개 소모
-  const { canDraw, recordDraw, isChecking } = useDrawLimit('chat_direct', cost);
+  const { canDraw, recordDraw, isChecking, checkLimit, remainingFree, userTokens } = useDrawLimit('chat_direct', cost, 3);
+
+  // 다이아 잔액이 외부에서 변경되면(예: 일일 지급) 다시 체크
+  React.useEffect(() => {
+    checkLimit();
+  }, [tokenBalance, checkLimit]);
 
   const startChat = async () => {
     if (!query.trim()) {
-      alert('고민을 조금 더 자세히 적어주세요.');
+      Alert.alert('고민을 조금 더 자세히 적어주세요.');
       return;
     }
     if (!canDraw) {
@@ -27,18 +34,31 @@ export const ChatCard: React.FC<ChatCardProps> = ({ onOpenChat, onTokenChange })
       return;
     }
     
-    // 다이아 소모 기록
+    // 무료 소진(-1) 또는 다이아 소모(cost) 기록
     const consumed = await recordDraw();
-    if (consumed > 0) {
+    if (consumed !== 0) {
+      Haptic.success();
       onOpenChat({
         contentTitle: 'AI 심층 상담',
         question: query,
         reading: '회원님의 고민을 진지하게 들여다보고 있습니다.',
       });
+      // 토큰 잔액 변화 알림 (무료 소진 시에도 UI 갱신을 위해 필요할 수 있음)
+      if (consumed > 0) onTokenChange?.();
     } else {
       setShowDrawAgain(true);
     }
   };
+
+  // 버튼 문구 결정
+  let buttonLabel = '상담 시작하기';
+  if (remainingFree > 0) {
+    buttonLabel = `상담 시작하기 (오늘 무료 ${remainingFree}회)`;
+  } else if (userTokens >= cost) {
+    buttonLabel = `대화 시작하기 (💎 ${cost}개 소모)`;
+  } else {
+    buttonLabel = `💎 다이아 충전 후 상담하기`;
+  }
 
   return (
     <View style={s.container}>
@@ -49,7 +69,11 @@ export const ChatCard: React.FC<ChatCardProps> = ({ onOpenChat, onTokenChange })
         </Txt>
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={s.inputContainer}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
+        style={s.inputContainer}
+      >
         <ScrollView contentContainerStyle={s.scrollArea} keyboardShouldPersistTaps="handled">
           <View style={s.textAreaWrapper}>
             <TextInput
@@ -71,7 +95,7 @@ export const ChatCard: React.FC<ChatCardProps> = ({ onOpenChat, onTokenChange })
           onPress={startChat}
           disabled={!query.trim() || isChecking}
         >
-          <Txt style={s.buttonText}>💎 {cost}개로 깊은 상담 시작하기</Txt>
+          <Txt style={s.buttonText}>{buttonLabel}</Txt>
         </PressableEffect>
       </View>
 

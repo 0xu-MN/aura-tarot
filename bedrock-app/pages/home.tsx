@@ -37,20 +37,19 @@ import { YearlyCard }        from '../components/home/cards/YearlyCard';
 export const Route = createRoute('/home', { component: HomePage });
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH * 0.82; // 피킹 효과를 위해 화면 82% 
+const CARD_WIDTH = SCREEN_WIDTH * 0.85; 
 const CARD_MARGIN = 10;
 const SNAP_INTERVAL = CARD_WIDTH + CARD_MARGIN * 2;
 
 const BG = '#0a0a0b';
 const GOLD = '#DAA520';
-const HEADER_HEIGHT = Platform.OS === 'ios' ? 80 : 76;
-const DOTS_HEIGHT = 36;
-const BANNER_HEIGHT = 70;
+const HEADER_HEIGHT = Platform.OS === 'ios' ? 104 : 98; // 2열 구조 복구
+const DOTS_HEIGHT = 44; // 인디케이터 여백 확보
+const BANNER_HEIGHT = 0; 
 
 /** 각 인덱스에 해당하는 카드 컴포넌트를 렌더링 */
 const CARD_COMPONENTS: React.FC<any>[] = [
   DailyCard,
-  ChatCard,
   LoveCard,
   MoneyCard,
   WorkCard,
@@ -60,8 +59,8 @@ const CARD_COMPONENTS: React.FC<any>[] = [
   HoroscopeCard,
   CompatibilityCard,
   ReunionCard,
-  NewYearCard,
   YearlyCard,
+  ChatCard,
 ];
 
 import { LoungeView } from '../components/lounge/LoungeView';
@@ -86,7 +85,7 @@ export function HomePage() {
 
   const flatListRef = useRef<FlatList>(null);
   const [cardHeight, setCardHeight] = useState(
-    SCREEN_HEIGHT - HEADER_HEIGHT - DOTS_HEIGHT - BANNER_HEIGHT - (Platform.OS === 'ios' ? 34 : 0)
+    SCREEN_HEIGHT - HEADER_HEIGHT - DOTS_HEIGHT - 60 // 하단 하단바 및 여백 60px 추가 확보
   );
   const onCarouselAreaLayout = useCallback((e: any) => {
     const h = e.nativeEvent.layout.height - DOTS_HEIGHT - BANNER_HEIGHT;
@@ -168,6 +167,7 @@ export function HomePage() {
             setMode('chat');
           }}
           onTokenChange={() => getUserTokens().then(setTokenBalance)}
+          tokenBalance={tokenBalance}
         />
       </View>
     );
@@ -179,14 +179,12 @@ export function HomePage() {
           HEADER
       ═══════════════════════════════════════════ */}
       <View style={s.header}>
-        {/* 상단 1열: 날짜 & 다이아몬드 & 드롭다운 */}
+        {/* 상단 1열: 날짜 & 다이아몬드 (가로 1열 슬림 구성) */}
         <View style={s.headerTopRow}>
-          <View>
+          <View style={s.dateContainerSlim}>
+            <Txt style={s.dateMain}>{month}.{String(day).padStart(2, '0')}</Txt>
+            <Txt style={s.dateDay}>{dayStr}</Txt>
             <Txt style={s.yearText}>{year}</Txt>
-            <View style={s.dateContainer}>
-              <Txt style={s.dateMain}>{month}.{String(day).padStart(2, '0')}</Txt>
-              <Txt style={s.dateDay}>{dayStr}</Txt>
-            </View>
           </View>
           <View style={{ flex: 1 }} />
           
@@ -198,11 +196,9 @@ export function HomePage() {
               <>
                 <TouchableOpacity style={s.manageBtn} onPress={() => setShowProfileManage(true)} activeOpacity={0.7}>
                   <Txt style={s.manageEmoji}>👤</Txt>
-                  <Txt style={s.manageText}>내 프로필 관리</Txt>
                 </TouchableOpacity>
                 <TouchableOpacity style={[s.manageBtn, { backgroundColor: 'rgba(218,165,32,0.12)', borderColor: 'rgba(218,165,32,0.25)' }]} onPress={() => setShowCompose(true)} activeOpacity={0.7}>
                   <Txt style={s.manageEmoji}>✨</Txt>
-                  <Txt style={[s.manageText, { color: GOLD }]}>글쓰기</Txt>
                 </TouchableOpacity>
               </>
             )}
@@ -215,7 +211,7 @@ export function HomePage() {
           </View>
         </View>
 
-        {/* 상단 2열: 네비게이션 탭 (Segmented Control - Slim & English) */}
+        {/* 상단 2열: 네비게이션 탭 (원위치 복구) */}
         <View style={s.navTabsContainer}>
           <PressableEffect 
             onPress={() => setMode('tarot')} 
@@ -228,7 +224,7 @@ export function HomePage() {
             onPress={() => setMode('lounge')} 
             style={[s.navTab, mode === 'lounge' && s.navTabActive]}
           >
-            <Txt style={[s.navTabText, mode === 'lounge' && s.navTabTextActive]}>LOUNGE</Txt>
+            <Txt style={[s.navTabText, mode === 'lounge' && s.navTabActive]}>LOUNGE</Txt>
           </PressableEffect>
           
           <PressableEffect 
@@ -285,7 +281,8 @@ export function HomePage() {
           />
           <CarouselDots total={CONTENT_CARDS.length} current={currentIndex} />
           <View style={s.bannerBox}>
-            <BannerAd />
+            {/* 타로 홈에서는 배너 숨김 (공간 확보) */}
+            {mode === 'lounge' && <BannerAd />}
           </View>
         </View>
       )}
@@ -329,41 +326,41 @@ const s = StyleSheet.create({
 
   // ── 헤더 (다중 행 컨테이너로 변경)
   header: {
-    paddingTop: Platform.OS === 'ios' ? 10 : 10,
+    paddingTop: Platform.OS === 'ios' ? 10 : 8,
     paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingBottom: 8,
     backgroundColor: '#0a0a0b',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.06)',
     zIndex: 1000,
   },
-  yearText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.3)',
-    letterSpacing: 2,
-    marginBottom: 2,
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 5,
-  },
-  dateMain: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#ffffff',
-  },
-  dateDay: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: GOLD,
-  },
   headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 10,
+  },
+  dateContainerSlim: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  dateMain: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  dateDay: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: GOLD,
+    marginLeft: 2,
+  },
+  yearText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.2)',
+    marginLeft: 4,
   },
   diamondBadge: {
     backgroundColor: 'rgba(218,165,32,0.1)',
@@ -373,15 +370,13 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  diamondText: { fontSize: 12, fontWeight: '800', color: GOLD },
-  // 네비게이션 탭 (Segmented Control)
+  diamondText: { fontSize: 13, fontWeight: '800', color: GOLD },
   navTabsContainer: {
     flexDirection: 'row',
     backgroundColor: '#16161a',
     borderRadius: 12,
-    padding: 4,
+    padding: 3,
     width: '100%',
-    marginBottom: 12,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -389,8 +384,8 @@ const s = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 9,
+    borderRadius: 9,
   },
   navTabActive: {
     backgroundColor: '#26262d',
@@ -398,34 +393,19 @@ const s = StyleSheet.create({
   navTabText: {
     fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 1,
     color: 'rgba(255,255,255,0.4)',
   },
-  navTabTextActive: {
-    color: GOLD,
-    fontWeight: '800',
-  },
-  dropdownWrapper: {
-    alignItems: 'flex-end',
-    width: '100%',
-  },
   manageBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  manageEmoji: { fontSize: 13 },
-  manageText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.6)',
-  },
+  manageEmoji: { fontSize: 14 },
 
   // ── 메인 영역
   carouselArea: {

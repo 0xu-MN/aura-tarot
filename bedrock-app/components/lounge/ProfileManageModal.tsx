@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Modal, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView } from 'react-native';
 import { Txt } from '@toss/tds-react-native';
-import { fetchAlbumPhotos, openCamera } from '@apps-in-toss/framework';
+import { fetchAlbumPhotos, openCamera, FetchAlbumPhotosPermissionError, OpenCameraPermissionError } from '@apps-in-toss/framework';
 import { getMyProfile, setMyProfile, MyProfile } from '../../lib/storage';
+import { Haptic } from '../../lib/haptic';
 
 interface ProfileManageModalProps {
   visible: boolean;
@@ -14,6 +15,9 @@ const GOLD = '#DAA520';
 export const ProfileManageModal: React.FC<ProfileManageModalProps> = ({ visible, onClose }) => {
   const [profile, setProfile] = useState<MyProfile>({ nickname: '', gender: 'F', intro: '', profileImage: '' });
   const [showGallery, setShowGallery] = useState(false);
+  // iOS: Modal이 열린 상태에서 시스템 피커(갤러리/카메라)를 호출하면 hanging 발생
+  // → 피커 호출 전 Modal을 닫고, 완료 후 재오픈
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -22,24 +26,38 @@ export const ProfileManageModal: React.FC<ProfileManageModalProps> = ({ visible,
   }, [visible]);
 
   const handlePickAlbum = async () => {
+    setShowGallery(false);
+    setIsPickerOpen(true);
+    // Modal 닫힘 애니메이션(300ms) 완료 대기 후 피커 호출
+    await new Promise(resolve => setTimeout(resolve, 350));
     try {
       const photos = await fetchAlbumPhotos({
         maxCount: 1,
         maxWidth: 720,
         base64: true,
       });
-      if (photos.length > 0) {
-        setProfile(prev => ({ ...prev, profileImage: `data:image/jpeg;base64,${photos[0].dataUri}` }));
-        setShowGallery(false);
+      if (photos && photos.length > 0) {
+        const picked = photos[0];
+        if (!picked) return;
+        const imageSource = `data:image/jpeg;base64,${picked.dataUri}`;
+        setProfile(prev => ({ ...prev, profileImage: imageSource }));
+        Haptic.success();
       }
-    } catch (e) {
-      console.error('Album Error:', e);
-      // 권한 미승인 시 다이얼로그
-      await fetchAlbumPhotos.openPermissionDialog();
+    } catch (e: any) {
+      if (e instanceof FetchAlbumPhotosPermissionError) {
+        await fetchAlbumPhotos.openPermissionDialog();
+      } else {
+        console.warn('[ProfileModal] Album access failed:', e);
+      }
+    } finally {
+      setIsPickerOpen(false);
     }
   };
 
   const handleCamera = async () => {
+    setShowGallery(false);
+    setIsPickerOpen(true);
+    await new Promise(resolve => setTimeout(resolve, 350));
     try {
       const photo = await openCamera({
         maxWidth: 720,
@@ -47,11 +65,16 @@ export const ProfileManageModal: React.FC<ProfileManageModalProps> = ({ visible,
       });
       if (photo) {
         setProfile(prev => ({ ...prev, profileImage: `data:image/jpeg;base64,${photo.dataUri}` }));
-        setShowGallery(false);
+        Haptic.success();
       }
-    } catch (e) {
-      console.error('Camera Error:', e);
-      await openCamera.openPermissionDialog();
+    } catch (e: any) {
+      if (e instanceof OpenCameraPermissionError) {
+        await openCamera.openPermissionDialog();
+      } else {
+        console.warn('[ProfileModal] Camera access failed:', e);
+      }
+    } finally {
+      setIsPickerOpen(false);
     }
   };
 
@@ -63,8 +86,12 @@ export const ProfileManageModal: React.FC<ProfileManageModalProps> = ({ visible,
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={s.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <Modal visible={visible && !isPickerOpen} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView 
+        style={s.overlay} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+      >
         <TouchableOpacity style={s.backdrop} activeOpacity={1} onPress={onClose} />
         <View style={s.sheet}>
           <View style={s.header}>
@@ -74,7 +101,7 @@ export const ProfileManageModal: React.FC<ProfileManageModalProps> = ({ visible,
             </TouchableOpacity>
           </View>
           
-          <View style={s.body}>
+          <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <View style={s.photoRow}>
               <TouchableOpacity style={s.photoBtn} onPress={() => setShowGallery(!showGallery)}>
                 {profile.profileImage ? (
@@ -92,11 +119,19 @@ export const ProfileManageModal: React.FC<ProfileManageModalProps> = ({ visible,
 
             {showGallery && (
               <View style={s.mediaActions}>
-                <TouchableOpacity style={s.mediaBtn} onPress={handlePickAlbum}>
+                <TouchableOpacity 
+                  style={s.mediaBtn} 
+                  onPress={handlePickAlbum}
+                  activeOpacity={0.6}
+                >
                   <Txt style={s.mediaIcon}>🖼️</Txt>
                   <Txt style={s.mediaLabel}>앨범에서 선택</Txt>
                 </TouchableOpacity>
-                <TouchableOpacity style={s.mediaBtn} onPress={handleCamera}>
+                <TouchableOpacity 
+                  style={s.mediaBtn} 
+                  onPress={handleCamera}
+                  activeOpacity={0.6}
+                >
                   <Txt style={s.mediaIcon}>📸</Txt>
                   <Txt style={s.mediaLabel}>카메라 촬영</Txt>
                 </TouchableOpacity>
@@ -143,7 +178,7 @@ export const ProfileManageModal: React.FC<ProfileManageModalProps> = ({ visible,
             <TouchableOpacity style={s.saveBtn} onPress={handleSave}>
               <Txt style={s.saveBtnText}>저장하기</Txt>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>

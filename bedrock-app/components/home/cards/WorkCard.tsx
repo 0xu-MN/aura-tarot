@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
 import { Txt, PressableEffect } from '@toss/tds-react-native';
 import { getWeightedCards, TarotCardData } from '../../../lib/tarot-data';
 import { callGemini } from '../../../lib/gemini';
@@ -8,6 +8,7 @@ import { shareTarotResult } from '../../../lib/useTossShare';
 import { PaymentInductionModal } from '../../PaymentInductionModal';
 import { CardFanSpread } from '../../CardFanSpread';
 import { TarotResultCard } from '../../TarotResultCard';
+import { Haptic } from '../../../lib/haptic';
 
 const ACCENT = '#DAA520';
 const BG = '#14141a';
@@ -21,9 +22,10 @@ type Step = 'input' | 'spread' | 'result';
 interface WorkCardProps {
   onOpenChat?: (consultation: any) => void;
   onTokenChange?: () => void;
+  tokenBalance?: number;
 }
 
-export const WorkCard: React.FC<WorkCardProps> = ({ onOpenChat, onTokenChange }) => {
+export const WorkCard: React.FC<WorkCardProps> = ({ onOpenChat, onTokenChange, tokenBalance }) => {
   const [step, setStep] = useState<Step>('input');
   const [workType, setWorkType] = useState('');
   const [situation, setSituation] = useState('');
@@ -33,10 +35,15 @@ export const WorkCard: React.FC<WorkCardProps> = ({ onOpenChat, onTokenChange })
   const [reading, setReading] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDrawModal, setShowDrawModal] = useState(false);
-  const { canDraw, recordDraw, grantExtraDraw } = useDrawLimit('work', 2);
+  const { canDraw, recordDraw, isChecking, checkLimit, freeUsage, userTokens } = useDrawLimit('work', 2, 0);
+
+  React.useEffect(() => {
+    checkLimit();
+  }, [tokenBalance, checkLimit]);
 
   const handleCardSelect = (idx: number) => {
     if (selectedCards.includes(idx)) return;
+    Haptic.impact();
     const next = [...selectedCards, idx];
     setSelectedCards(next);
     if (next.length === 3) {
@@ -51,7 +58,8 @@ export const WorkCard: React.FC<WorkCardProps> = ({ onOpenChat, onTokenChange })
 
   const generateReading = async (cards: { card: TarotCardData; isReversed: boolean }[]) => {
     if (!canDraw) { setShowDrawModal(true); return; }
-    recordDraw();
+    const consumed = await recordDraw();
+    if (consumed > 0) onTokenChange?.();
     setIsLoading(true);
     try {
       const [c1, c2, c3] = cards;
@@ -99,7 +107,11 @@ export const WorkCard: React.FC<WorkCardProps> = ({ onOpenChat, onTokenChange })
 
       <ScrollView style={s.body} showsVerticalScrollIndicator={false}>
         {step === 'input' && (
-          <View style={s.section}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 110 : 0}
+            style={s.section}
+          >
             <Txt style={s.label}>🏢 직업 유형</Txt>
             <View style={s.chipRow}>
               {WORK_TYPES.map(v => (
@@ -127,7 +139,7 @@ export const WorkCard: React.FC<WorkCardProps> = ({ onOpenChat, onTokenChange })
               placeholder="직접 입력..." placeholderTextColor="rgba(255,255,255,0.3)" multiline
             />
             <Txt style={s.aiNotice}>✨ 생성형 AI 기술을 기반으로 한 분석입니다.</Txt>
-          </View>
+          </KeyboardAvoidingView>
         )}
 
         {step === 'spread' && (
@@ -184,13 +196,13 @@ export const WorkCard: React.FC<WorkCardProps> = ({ onOpenChat, onTokenChange })
 
 const s = StyleSheet.create({
   card: { flex: 1, backgroundColor: BG },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
   headerEmoji: { fontSize: 20 },
   headerTitle: { fontSize: 16, fontWeight: '800', color: ACCENT, flex: 1 },
   resetBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(218,165,32,0.3)' },
   resetText: { fontSize: 11, color: ACCENT, fontWeight: '600' },
   body: { flex: 1 },
-  section: { padding: 16, paddingBottom: 120, gap: 10 },
+  section: { padding: 12, paddingBottom: 80, gap: 10 },
   label: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.5)', marginTop: 4 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(218,165,32,0.25)', backgroundColor: 'rgba(218,165,32,0.05)' },
@@ -206,11 +218,11 @@ const s = StyleSheet.create({
   resultCardRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 12 },
   loadingBox: { alignItems: 'center', gap: 14, paddingVertical: 30 },
   loadingText: { fontSize: 14, color: 'rgba(218,165,32,0.7)', textAlign: 'center' },
-  readingBox: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  readingBox: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
   readingText: { fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 24 },
   shareBtn: { backgroundColor: ACCENT, borderRadius: 30, height: 48, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   shareBtnText: { color: '#000', fontSize: 14, fontWeight: '700' },
-  footer: { padding: 16, paddingBottom: Platform.OS === "ios" ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' },
+  footer: { padding: 12, paddingBottom: Platform.OS === "ios" ? 24 : 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' },
   drawBtn: { backgroundColor: ACCENT, borderRadius: 30, height: 50, alignItems: 'center', justifyContent: 'center' },
   btnDisabled: { opacity: 0.3 },
   drawBtnText: { color: '#000', fontSize: 16, fontWeight: '800' },
