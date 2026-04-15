@@ -19,65 +19,34 @@ export function useAuth() {
     const [user, setUser] = useState<TossUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isBanned, setIsBanned] = useState(false);
 
-    // 캐시된 로그인 정보 복원 → 없으면 자동 로그인 시도
-    useEffect(() => {
-        (async () => {
-            try {
-                const cached = await Storage.getItem(AUTH_STORAGE_KEY);
-                if (cached) {
-                    const parsed = JSON.parse(cached) as TossUser;
-                    setUser(parsed);
-                    setIsLoggedIn(true);
-                    setIsLoading(false);
-                    return;
-                }
-            } catch (e) {
-                console.warn('Auth cache read failed:', e);
-            }
-
-            // 캐시 없음 → 게스트 모드로 시작 (자동 로그인 시도 안 함)
-            try {
-                // 토스 심사 반려 사유(즉시 로그인 유도) 해결을 위해
-                // 자동 로그인을 제거하고 명시적 로그인 액션이 있을 때만 동작하도록 함
-                console.log('No auth cache - Starting as guest mode');
-            } catch (e) {
-                console.warn('Init auth failed:', e);
-            } finally {
-                setIsLoading(false);
-            }
-        })();
-    }, []);
-
-    // 토스 로그인 실행
-    const login = useCallback(async (): Promise<TossUser | null> => {
+    // ── 토스 로그인 실행 (동기화 포함) ──
+    const login = useCallback(async (isAuto = false): Promise<TossUser | null> => {
         try {
-            setIsLoading(true);
+            // 수동 로그인일 때만 UI 로딩 표시
+            if (!isAuto) setIsLoading(true);
 
             // 1단계: SDK로 토스 로그인 → 인가 코드 획득
-            // SDK 미지원 환경(샌드박스 등)에서는 에러 발생 가능
             let authResult: { authorizationCode: string; referrer: 'DEFAULT' | 'SANDBOX' };
 
             if (typeof appLogin === 'function') {
                 authResult = await appLogin();
             } else {
                 console.warn('appLogin not available in this environment');
-                setIsLoading(false);
+                if (!isAuto) setIsLoading(false);
                 return null;
             }
 
             const { authorizationCode, referrer } = authResult;
 
-            // 2단계: Edge Function에 인가 코드 전달 → accessToken + 유저 정보
+            // 2단계: Edge Function에 인가 코드 전달
             const { data, error } = await supabase.functions.invoke('toss-auth', {
                 body: { authorizationCode, referrer },
             });
 
             if (error) throw error;
-
-            if (!data?.success) {
-                throw new Error(data?.error || '로그인 실패');
-            }
+            if (!data?.success) throw new Error(data?.error || '로그인 실패');
 
             const tossUser: TossUser = {
                 accessToken: data.accessToken,
@@ -88,38 +57,76 @@ export function useAuth() {
                 raw: data.user,
             };
 
-            // DB에 사용자 정보 누적 저장 (유저 식별자 기준)
+            // DB에 사용자 정보 누적 저장 및 차단 여부 확인
             if (tossUser.userId) {
                 try {
-                    const { error: upsertErr } = await supabase.from('users').upsert({
+                    // 차단 여부 확인 (에러 발생 시 무시하고 다음 진행 - DB 설정 미비 대비)
+                    const { data: profile } = await supabase
+                        .from('users')
+                        .select('is_banned')
+                        .eq('id', tossUser.userId)
+                        .maybeSingle();
+
+                    if (profile?.is_banned) {
+                        setIsBanned(true);
+                        if (!isAuto) setIsLoading(false);
+                        throw new Error('이 계정은 이용이 영구 제한되었습니다.');
+                    }
+
+                    // 정보 업데이트
+                    await supabase.from('users').upsert({
                         id: tossUser.userId,
                         name: tossUser.name || '방문자',
                         last_login: new Date().toISOString(),
                         raw_data: tossUser.raw
                     }, { onConflict: 'id' });
 
-                    if (upsertErr) {
-                        console.warn('User DB upsert failed:', upsertErr);
+                } catch (dbErr: any) {
+                    console.warn('User DB Sync error (Safe ignore):', dbErr.message);
+                    if (dbErr.message === '이 계정은 이용이 영구 제한되었습니다.') {
+                        throw dbErr;
                     }
-                } catch (dbErr) {
-                    console.warn('User DB upsert catch error:', dbErr);
                 }
             }
 
-            // 캐싱
+            // 캐싱 및 상태 반영
             await Storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(tossUser));
-
             setUser(tossUser);
             setIsLoggedIn(true);
-            setIsLoading(false);
+            if (!isAuto) setIsLoading(false);
 
             return tossUser;
         } catch (e) {
             console.error('Toss login failed:', e);
-            setIsLoading(false);
+            if (!isAuto) setIsLoading(false);
             return null;
         }
     }, []);
+
+    // 캐시된 로그인 정보 복원 → 앱 시작 시 실행
+    useEffect(() => {
+        (async () => {
+            try {
+                const cached = await Storage.getItem(AUTH_STORAGE_KEY);
+                if (cached) {
+                    const parsed = JSON.parse(cached) as TossUser;
+                    setUser(parsed);
+                    setIsLoggedIn(true);
+                    
+                    // 캐시가 있더라도 백그라운드에서 정보 최신화(차단 체크 등) 시도
+                    login(true); 
+                } else {
+                    // 캐시 없음 → 백그라운드에서 자동 로그인/동기화 시도 (화면 차단 안 함)
+                    login(true);
+                }
+            } catch (e) {
+                console.warn('Auth init failed:', e);
+            } finally {
+                // 어떤 경우든 초기 부팅 로딩은 해제하여 화면을 먼저 띄움
+                setIsLoading(false);
+            }
+        })();
+    }, [login]);
 
     // 로그아웃
     const logout = useCallback(async () => {
@@ -136,6 +143,7 @@ export function useAuth() {
         user,
         isLoading,
         isLoggedIn,
+        isBanned,
         login,
         logout,
     };

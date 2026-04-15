@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, Image, Dimensions, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Txt, PressableEffect, BottomInfo } from '@toss/tds-react-native';
 import { getReadingHistory, ReadingRecord, getChatRecords, ChatRecord, getLoungePosts, LoungePostRecord, deleteLoungePost, deleteChatRecord } from '../../lib/storage';
 import { ASSETS } from '../../lib/assets';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+type TabType = 'tarot' | 'chat' | 'lounge';
 const BG = '#0a0a0b';
 const CARD_BG = '#14141a';
 const GOLD = '#D4AF37';
 
-type TabType = 'tarot' | 'chat' | 'lounge';
+interface HistoryViewProps {
+    onOpenChat?: (consultation: any) => void;
+}
 
-export const HistoryView: React.FC = () => {
+export const HistoryView: React.FC<HistoryViewProps> = ({ onOpenChat }) => {
     const [activeTab, setActiveTab] = useState<TabType>('tarot');
     
     // Data States
@@ -121,7 +123,14 @@ export const HistoryView: React.FC = () => {
             );
         }
         return chatHistory.map((item) => (
-            <View key={item.id} style={s.historyItem}>
+            <PressableEffect 
+                key={item.id} 
+                style={s.historyItem}
+                onPress={() => onOpenChat?.({
+                    id: item.id,
+                    contentTitle: item.partnerName,
+                })}
+            >
                 <View style={s.itemInfo}>
                     <Txt style={s.itemDate}>{new Date(item.date).toLocaleDateString('ko-KR')}</Txt>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -132,7 +141,8 @@ export const HistoryView: React.FC = () => {
                     </View>
                     <Txt style={s.itemPreview} numberOfLines={2}>{item.summary}</Txt>
                 </View>
-            </View>
+                <Txt style={s.itemArrow}>›</Txt>
+            </PressableEffect>
         ));
     };
 

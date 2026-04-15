@@ -22,57 +22,8 @@ import { getLoungeComments, deleteLoungePost } from '../../lib/storage';
 
 const GOLD = '#DAA520';
 
-// 초기 더미 데이터
-const INITIAL_THREADS = [
-  {
-    id: '1',
-    author: '반포동 은둔자',
-    lat: 37.502, 
-    lng: 127.004,
-    content: '오늘 연애운을 봤는데 정체기라고 하네요... 비슷한 상황이신 분들 있나요? 위로가 필요해요 🥲',
-    timestamp: '12분 전',
-    cardName: 'THE HERMIT (은둔자)',
-    cardImage: 'the-hermit.png',
-    isMine: false,
-    gender: 'M',
-    likes: 12,
-    comments: 3,
-    profileImage: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150',
-    authorId: 'user_A',
-  },
-  {
-    id: '2',
-    author: '신비로운 전차',
-    lat: 37.498,
-    lng: 127.012,
-    content: '드디어 이직 성공! 타로에서 말한 대로 추진력 있게 밀어붙였더니 좋은 결과가 있었어요. 다들 기운 받아가세요! ✨',
-    timestamp: '34분 전',
-    cardName: 'THE CHARIOT (전차)',
-    cardImage: 'the-chariot.png',
-    isMine: false,
-    gender: 'F',
-    likes: 45,
-    comments: 8,
-    profileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-    authorId: 'user_B',
-  },
-  {
-    id: '3',
-    author: '행복한 태양',
-    lat: 37.512,
-    lng: 127.025,
-    content: '주말 데이트 장소 추천해주세요! 타로에서는 밝고 활기찬 곳이 좋다고 하네요. ☀️',
-    timestamp: '1시간 전',
-    cardName: 'THE SUN (태양)',
-    cardImage: 'the-sun.png',
-    isMine: false,
-    gender: 'F',
-    likes: 89,
-    comments: 12,
-    profileImage: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150',
-    authorId: 'user_C',
-  },
-];
+// 초기 더미 데이터 삭제
+const INITIAL_THREADS: any[] = [];
 
 // 익명 닉네임 pool
 const ANON_NAMES = ['별빛 방랑자', '새벽 달빛', '고요한 강', '흘러가는 구름', '바람의 속삭임', '밤하늘 나그네'];

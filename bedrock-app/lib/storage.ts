@@ -13,8 +13,8 @@ const safeStorage = {
     setItem: async (key: string, value: string): Promise<void> => {
         try {
             await Storage.setItem(key, value);
-        } catch {
-            // 저장 실패 시 무시
+        } catch (e) {
+            console.error(`[Storage] setItem 실패 (key: "${key}"):`, e);
         }
     },
     removeItem: async (key: string): Promise<void> => {
@@ -41,8 +41,12 @@ const KEYS = {
     UNLOCKED_POSTS: 'my_unlocked_posts',
     UNLOCKED_CHATS: 'my_unlocked_chats',
     LOUNGE_COMMENTS: 'my_lounge_comments',
-    FREE_USAGE_COUNT: 'daily_free_usage_count', // 콘텐츠별 일일 무료 이용 횟수
+    FREE_USAGE_COUNT: 'daily_free_usage_count', 
+    CHAT_MESSAGES: 'my_chat_full_history', // 세션별 대화 원본 저장용
+    DIAMOND_LOG: 'my_diamond_transaction_log', // 소모 내역 로그용
 };
+
+export const CHATBOT_FREE_LIMIT = 3; // 챗봇 일일 무료 메시지 수
 
 export const DAILY_FREE_TOKENS = 2; // 매일 무료 지급 토큰 수
 
@@ -270,28 +274,60 @@ export const addUserTokens = async (amount: number): Promise<number> => {
     }
 };
 
-export const consumeUserToken = async (): Promise<boolean> => {
+export const saveUserTokens = async (amount: number): Promise<void> => {
+    await safeStorage.setItem(KEYS.USER_TOKENS, String(amount));
+};
+
+export const getDiamondLogs = async (): Promise<any[]> => {
+    try {
+        const stored = await safeStorage.getItem(KEYS.DIAMOND_LOG);
+        return stored ? JSON.parse(stored) : [];
+    } catch {
+        return [];
+    }
+};
+
+export const addDiamondLog = async (reason: string, amount: number) => {
+    try {
+        const logs = await getDiamondLogs();
+        logs.unshift({
+            id: `log_${Date.now()}`,
+            date: new Date().toISOString(),
+            reason,
+            amount,
+        });
+        await safeStorage.setItem(KEYS.DIAMOND_LOG, JSON.stringify(logs.slice(0, 100))); // 최근 100개 보관
+    } catch (e) {
+        console.error('Failed to add diamond log:', e);
+    }
+};
+
+export const consumeUserToken = async (reason: string = '상담 이용'): Promise<boolean> => {
     try {
         const current = await getUserTokens();
         if (current > 0) {
-            await safeStorage.setItem(KEYS.USER_TOKENS, String(current - 1));
+            await saveUserTokens(current - 1);
+            await addDiamondLog(reason, 1);
             return true;
         }
         return false;
-    } catch {
+    } catch (e) {
+        console.error(e);
         return false;
     }
 };
 
-export const consumeMultipleTokens = async (amount: number): Promise<boolean> => {
+export const consumeMultipleTokens = async (amount: number, reason: string = '심층 상담 이용'): Promise<boolean> => {
     try {
         const current = await getUserTokens();
         if (current >= amount) {
-            await safeStorage.setItem(KEYS.USER_TOKENS, String(current - amount));
+            await saveUserTokens(current - amount);
+            await addDiamondLog(reason, amount);
             return true;
         }
         return false;
-    } catch {
+    } catch (e) {
+        console.error(e);
         return false;
     }
 };
@@ -440,6 +476,44 @@ export const getChatRecords = async (): Promise<ChatRecord[]> => {
     try {
         const stored = await safeStorage.getItem(KEYS.CHAT_RECORDS);
         return stored ? JSON.parse(stored) : [];
+    } catch {
+        return [];
+    }
+};
+
+/**
+ * 세션별 상세 대화 내역을 저장합니다. (개별 키 사용으로 데이터 안정성 확보)
+ */
+export const saveChatMessageHistory = async (sessionId: string, messages: any[]): Promise<void> => {
+    try {
+        const key = `${KEYS.CHAT_MESSAGES}_${sessionId}`;
+        await safeStorage.setItem(key, JSON.stringify(messages));
+    } catch (e) {
+        console.error('Failed to save message history:', e);
+    }
+};
+
+/**
+ * 세션별 상세 대화 내역을 불러옵니다. (하이브리드 모드: 신규 저장소 + 과거 기록 복구)
+ */
+export const getChatMessageHistory = async (sessionId: string): Promise<any[]> => {
+    try {
+        // 1. 우선순위: 신규 개별 저장소 확인
+        const key = `${KEYS.CHAT_MESSAGES}_${sessionId}`;
+        const stored = await safeStorage.getItem(key);
+        if (stored) return JSON.parse(stored);
+
+        // 2. 차선책: 과거 ChatRecord 리스트 내부에 저장된 데이터가 있는지 확인 (마이그레이션 지원)
+        const records = await getChatRecords();
+        const found = records.find(r => r.id === sessionId);
+        if (found && (found as any).messages) {
+            const oldMsgs = (found as any).messages;
+            // 찾은 김에 신규 저장소로 마이그레이션 (선택적)
+            await saveChatMessageHistory(sessionId, oldMsgs);
+            return oldMsgs;
+        }
+
+        return [];
     } catch {
         return [];
     }

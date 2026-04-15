@@ -240,7 +240,12 @@ export function HomePage() {
           MAIN CONTENT (타로 | 챗봇 | 기록)
       ═══════════════════════════════════════════ */}
       {mode === 'history' ? (
-        <HistoryView />
+        <HistoryView 
+          onOpenChat={(consultation: any) => {
+            setChatConsultation(consultation);
+            setMode('chat');
+          }}
+        />
       ) : mode === 'chat' ? (
         <ChatView consultation={chatConsultation} />
       ) : mode === 'lounge' ? (

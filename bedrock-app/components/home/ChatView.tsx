@@ -10,7 +10,11 @@ import {
 import { BottomInfo, Txt, PressableEffect } from '@toss/tds-react-native';
 import { callGeminiChat, ChatMessage } from '../../lib/gemini';
 
-import { getUserTokens, consumeUserToken, saveChatRecord, deleteChatRecord } from '../../lib/storage';
+import {
+  getUserTokens, consumeUserToken, saveChatRecord, deleteChatRecord,
+  getFreeDrawUsage, incrementFreeDrawUsage, CHATBOT_FREE_LIMIT,
+  saveChatMessageHistory, getChatMessageHistory,
+} from '../../lib/storage';
 import { PaymentInductionModal } from '../PaymentInductionModal';
 
 const BG = '#17171b';
@@ -19,17 +23,17 @@ const GOLD = '#D4AF37';
 const TEXT_MAIN = '#ffffff';
 const TEXT_SUB = '#8b95a1';
 
-const FREE_LIMIT = 3;
-
 interface ChatViewProps {
   /** 타로 결과 기반 상담 컨텍스트 (선택) */
   consultation?: {
+    id?: string;            // 히스토리에서 이어하기 시 세션 ID
     contentTitle?: string;
     question?: string;
     cards?: any[];
     reading?: string;
     card?: { koreanName: string };
     isReversed?: boolean;
+    initialMessages?: ChatMessage[];
   };
 }
 
@@ -62,14 +66,130 @@ export const ChatView: React.FC<ChatViewProps> = ({ consultation }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [messageCount, setMessageCount] = useState(0); 
+  const [dailyUsage, setDailyUsage] = useState(0);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [showPayModal, setShowPayModal] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
-  const sessionIdRef = useRef(`chat_${Date.now()}`);
+
+  const triggerAIResponse = async (history: ChatMessage[], userMessage: string, currentSessionId: string, isPaid: boolean = false) => {
+    setIsLoading(true);
+
+    const tarotCtx = buildTarotContext();
+    const messageToSend = tarotCtx && history.length <= 2 
+      ? `${tarotCtx}\n\n사용자 질문: ${userMessage}`
+      : userMessage;
+
+    try {
+      if (isPaid) {
+        // 다이아 소모 사유 명시
+        const success = await consumeUserToken('챗봇 대화 메시지 전송');
+        if (!success) {
+          setMessages([
+            ...history,
+            { role: 'model', parts: [{ text: '다이아 소모 중 문제가 발생했습니다. 충전 상태를 확인해 주세요.' }] },
+          ]);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      const reply = await callGeminiChat(history, messageToSend);
+      const nextMessages: ChatMessage[] = [...history, { role: 'model', parts: [{ text: reply }] }];
+      setMessages(nextMessages);
+      
+      let partnerName = '타로 리더 솜이';
+      if (consultation?.contentTitle && consultation.contentTitle.includes('님의')) {
+        partnerName = consultation.contentTitle.split('님')[0] || consultation.contentTitle;
+      } else if (consultation?.contentTitle) {
+        partnerName = consultation.contentTitle;
+      }
+      
+      // 메타데이터 및 전문 독립 저장
+      await saveChatRecord({
+        id: currentSessionId,
+        partnerName,
+        topic: consultation?.question || userMessage,
+        date: new Date().toISOString(),
+        summary: reply.substring(0, 40).replace(/\n/g, ' ') + '...',
+      });
+      await saveChatMessageHistory(currentSessionId, nextMessages);
+    } catch (apiErr) {
+      console.error('AI Response Trigger Failed:', apiErr);
+      const errorMessages: ChatMessage[] = [
+        ...history,
+        { role: 'model', parts: [{ text: '죄송해요, 잠시 연결이 원활하지 않아 답변을 드리지 못했어요. 다이아는 소모되지 않았으니 잠시 후 다시 시도해 주세요. 💦' }] },
+      ];
+      setMessages(errorMessages);
+      // API 실패 시에도 지금까지의 대화는 저장 (히스토리 소실 방지)
+      await saveChatMessageHistory(currentSessionId, errorMessages);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setMessages([{ role: 'model', parts: [{ text: getInitialMessage() }] }]);
-    setMessageCount(0);
+    let isMounted = true;
+
+    const initializeChat = async () => {
+      try {
+        setIsLoading(true);
+        const usage = await getFreeDrawUsage('chatbot_msg');
+        if (!isMounted) return;
+        setDailyUsage(usage);
+
+        // 1. 히스토리에서 이어하기 로드
+        if (consultation?.id && !consultation.question) {
+          const sid = consultation.id;
+          setSessionId(sid);
+          const historyData = await getChatMessageHistory(sid);
+          if (!isMounted) return;
+
+          if (historyData && historyData.length > 0) {
+            setMessages(historyData);
+            setIsLoading(false);
+            return;
+          }
+          // 히스토리가 없는 경우 (저장 실패 등) → 안내 메시지와 함께 재시작
+          const fallbackMessages: ChatMessage[] = [
+            { role: 'model', parts: [{ text: '이전 대화 기록을 불러오지 못했어요. 새로운 대화를 시작해 주세요. 🔮' }] },
+          ];
+          setMessages(fallbackMessages);
+          setIsLoading(false);
+          return;
+        }
+
+        // 2. 새로운 상담 시작
+        const newSid = consultation?.id || `chat_${Date.now()}`;
+        setSessionId(newSid);
+        
+        const greeting = getInitialMessage();
+        const initialHistory: ChatMessage[] = [{ role: 'model', parts: [{ text: greeting }] }];
+        
+        if (consultation?.question) {
+          const initialUserMsg = consultation.question.trim();
+          const augmentedHistory: ChatMessage[] = [
+            ...initialHistory,
+            { role: 'user', parts: [{ text: initialUserMsg }] }
+          ];
+          setMessages(augmentedHistory);
+          // 초기 메시지(인사 + 사용자 질문)를 즉시 저장 → AI 응답 전에 앱 종료해도 히스토리 보존
+          await saveChatMessageHistory(newSid, augmentedHistory);
+          setIsLoading(false);
+          // 초기 AI 응답은 항상 무료 (다이아 소모 없음) — 사용자가 직접 보낸 메시지부터 과금
+          triggerAIResponse(augmentedHistory, initialUserMsg, newSid, false);
+        } else {
+          setMessages(initialHistory);
+          await saveChatMessageHistory(newSid, initialHistory);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('Init fail:', err);
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    initializeChat();
+    return () => { isMounted = false; };
   }, [consultation]);
 
   useEffect(() => {
@@ -77,21 +197,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ consultation }) => {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    // isLoading이 true라도 사용자가 입력하는 도중이면 전송 가능하도록 (내부적으로 triggerAIResponse가 isLoading 관리)
+    if (!input.trim() || !sessionId) return;
+    if (isLoading) return; // 이미 AI 응답 대기 중이면 중복 전송 방지
 
-    // 대화 횟수 제한 체크 (무료 3회)
-    if (messageCount >= FREE_LIMIT) {
+    let isPaid = false;
+    if (dailyUsage >= CHATBOT_FREE_LIMIT) {
       const tokens = await getUserTokens();
       if (tokens < 1) {
         setShowPayModal(true);
         return;
       }
-      // 토큰 있으면 바로 차감하거나 확인 팝업? 일단 바로 차감 로직
-      const success = await consumeUserToken();
-      if (!success) {
-        setShowPayModal(true);
-        return;
-      }
+      isPaid = true;
     }
 
     const userMessage = input.trim();
@@ -102,38 +219,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ consultation }) => {
       { role: 'user', parts: [{ text: userMessage }] },
     ];
     setMessages(newHistory);
-    setIsLoading(true);
-    setMessageCount(prev => prev + 1);
-
-    const tarotCtx = buildTarotContext();
-    const messageToSend = tarotCtx && messages.length <= 1
-      ? `${tarotCtx}\n\n사용자 질문: ${userMessage}`
-      : userMessage;
-
+    
     try {
-      const reply = await callGeminiChat(messages, messageToSend);
-      setMessages([...newHistory, { role: 'model', parts: [{ text: reply }] }]);
-      let partnerName = '타로 리더 솜이';
-      if (consultation?.contentTitle && consultation.contentTitle.includes('님의')) {
-        partnerName = consultation.contentTitle.replace('와의 대화', '').replace('이웃 ', '');
-      } else if (consultation?.contentTitle) {
-        partnerName = consultation.contentTitle;
-      }
+      await saveChatMessageHistory(sessionId, newHistory);
+      await triggerAIResponse(newHistory, userMessage, sessionId, isPaid);
       
-      await saveChatRecord({
-        id: sessionIdRef.current,
-        partnerName,
-        topic: consultation?.question || userMessage,
-        date: new Date().toISOString(),
-        summary: reply.substring(0, 40).replace(/\n/g, ' ') + '...',
-      });
-    } catch {
-      setMessages([
-        ...newHistory,
-        { role: 'model', parts: [{ text: '죄송해요, 잠시 연결이 원활하지 않아요. 잠시 후 다시 말씀해 주세요. 💦' }] },
-      ]);
-    } finally {
-      setIsLoading(false);
+      await incrementFreeDrawUsage('chatbot_msg');
+      const newUsage = await getFreeDrawUsage('chatbot_msg');
+      setDailyUsage(newUsage);
+    } catch (e) {
+      console.error('Send fail:', e);
+      // 이미 triggerAIResponse에서 개별 에러 처리를 하므로 여기는 최소한의 방어
     }
   };
 
@@ -142,15 +238,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ consultation }) => {
   };
 
   const handleExit = () => {
+    if (!sessionId) return;
     Alert.alert('채팅방 나가기', '이 채팅방을 나가 시겠습니까? 대화 기록이 모두 삭제됩니다.', [
       { text: '취소', style: 'cancel' },
       { 
         text: '나가기', 
         style: 'destructive',
         onPress: async () => {
-          await deleteChatRecord(sessionIdRef.current);
-          // 실제로는 navigation.goBack() 등이 필요하지만, 현재는 컴포넌트 구조상 알림 처리
-          Alert.alert('처리 완료', '채팅방을 나갔습니다.');
+          await deleteChatRecord(sessionId);
+          Alert.alert('처리 완료', '채팅 기록이 삭제되었습니다.');
         }
       }
     ]);
@@ -169,9 +265,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ consultation }) => {
           <Txt style={s.energyLabel}>상담 에너지</Txt>
           <View style={s.dotsRow}>
             {[1, 2, 3].map(i => (
-              <View key={i} style={[s.dot, i <= (FREE_LIMIT - messageCount) ? s.dotActive : s.dotInactive]} />
+              <View key={i} style={[s.dot, i <= (CHATBOT_FREE_LIMIT - dailyUsage) ? s.dotActive : s.dotInactive]} />
             ))}
-            {messageCount >= FREE_LIMIT && (
+            {dailyUsage >= CHATBOT_FREE_LIMIT && (
               <Txt style={s.plusText}>+💎</Txt>
             )}
           </View>
@@ -220,10 +316,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ consultation }) => {
         )}
       </ScrollView>
 
-      {/* 입력창 */}
+      {/* 입력창 + 하단 정보 통합 KeyboardAvoidingView */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? (Platform.isPad ? 100 : 154) : 0}
+        style={{ backgroundColor: BG }}
       >
         <View style={s.inputRow}>
           <TextInput
@@ -233,21 +330,23 @@ export const ChatView: React.FC<ChatViewProps> = ({ consultation }) => {
             placeholderTextColor={TEXT_SUB}
             style={s.textInput}
             onSubmitEditing={handleSend}
+            blurOnSubmit={false}
           />
           <PressableEffect
             onPress={handleSend}
             style={[s.sendBtn, input.trim() ? s.sendBtnActive : s.sendBtnInactive]}
           >
-            <Txt style={{ fontSize: 18 }}>✈️</Txt>
+            <Txt style={{ color: '#fff', fontSize: 24, fontWeight: '700' }}>↑</Txt>
           </PressableEffect>
         </View>
+        <BottomInfo style={{ backgroundColor: BG }} />
       </KeyboardAvoidingView>
-      <PaymentInductionModal 
+
+      <PaymentInductionModal
         visible={showPayModal}
         onClose={() => setShowPayModal(false)}
-        contentName="솜이와 상담"
+        contentName="AI 타로 상담"
       />
-      <BottomInfo style={{ backgroundColor: BG }} />
     </View>
   );
 };

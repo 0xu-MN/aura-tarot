@@ -39,6 +39,7 @@ export const PaymentInductionModal: React.FC<PaymentInductionModalProps> = ({
     const [tokens, setTokens] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [viewMode, setViewMode] = useState<'main' | 'charge'>('main');
+    const [isAdDisplaying, setIsAdDisplaying] = useState(false);
     const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -96,19 +97,28 @@ export const PaymentInductionModal: React.FC<PaymentInductionModalProps> = ({
             options: { adGroupId: REWARD_AD_ID },
             onEvent: (e) => {
                 if (e.type === 'loaded') {
-                    showFullScreenAd({
-                        options: { adGroupId: REWARD_AD_ID },
-                        onEvent: async (se) => {
-                            if (se.type === 'userEarnedReward') {
-                                const next = await addUserTokens(REWARD_TOKEN_AMOUNT);
-                                setTokens(next);
-                                setIsLoading(false);
-                                Alert.alert('보상 지급', `광고 시청 완료! 다이아 ${REWARD_TOKEN_AMOUNT}개가 지급되었습니다.`);
-                            } else if (se.type === 'dismissed') {
-                                setIsLoading(false);
-                            }
-                        }
-                    });
+                    setIsLoading(false);
+                    // iOS: Modal이 열린 채로 전면광고를 띄우면 충돌 → Modal 먼저 닫고 100ms 후 광고 표시
+                    setIsAdDisplaying(true);
+                    setTimeout(() => {
+                        showFullScreenAd({
+                            options: { adGroupId: REWARD_AD_ID },
+                            onEvent: async (se) => {
+                                if (se.type === 'userEarnedReward') {
+                                    setIsAdDisplaying(false);
+                                    const next = await addUserTokens(REWARD_TOKEN_AMOUNT);
+                                    setTokens(next);
+                                    Alert.alert('보상 지급', `광고 시청 완료! 다이아 ${REWARD_TOKEN_AMOUNT}개가 지급되었습니다.`);
+                                } else if (se.type === 'dismissed' || se.type === 'failedToShow') {
+                                    setIsAdDisplaying(false);
+                                }
+                            },
+                            onError: () => {
+                                setIsAdDisplaying(false);
+                                Alert.alert('알림', '광고 표시 중 오류가 발생했습니다.');
+                            },
+                        });
+                    }, 100);
                 }
             },
             onError: () => {
@@ -118,7 +128,7 @@ export const PaymentInductionModal: React.FC<PaymentInductionModalProps> = ({
         });
     };
 
-    if (!visible) return null;
+    if (!visible || isAdDisplaying) return null;
 
     return (
         <Modal visible={visible} transparent animationType="none" statusBarTranslucent>

@@ -17,7 +17,7 @@ export const ChatCard: React.FC<ChatCardProps> = ({ onOpenChat, onTokenChange, t
   const [query, setQuery] = useState('');
   const [showDrawAgain, setShowDrawAgain] = useState(false);
   const cost = 2; // 다이아 2개 소모
-  const { canDraw, recordDraw, isChecking, checkLimit, remainingFree, userTokens } = useDrawLimit('chat_direct', cost, 3);
+  const { canDraw, recordDraw, isChecking, checkLimit, remainingFree, userTokens } = useDrawLimit('chatbot_msg', cost, 3);
 
   // 다이아 잔액이 외부에서 변경되면(예: 일일 지급) 다시 체크
   React.useEffect(() => {
@@ -33,7 +33,7 @@ export const ChatCard: React.FC<ChatCardProps> = ({ onOpenChat, onTokenChange, t
       setShowDrawAgain(true);
       return;
     }
-    
+
     // 무료 소진(-1) 또는 다이아 소모(cost) 기록
     const consumed = await recordDraw();
     if (consumed !== 0) {
@@ -69,8 +69,8 @@ export const ChatCard: React.FC<ChatCardProps> = ({ onOpenChat, onTokenChange, t
         </Txt>
       </View>
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
         style={s.inputContainer}
       >
@@ -90,8 +90,8 @@ export const ChatCard: React.FC<ChatCardProps> = ({ onOpenChat, onTokenChange, t
       </KeyboardAvoidingView>
 
       <View style={s.footer}>
-        <PressableEffect 
-          style={[s.button, (!query.trim() || isChecking) && s.buttonDisabled]} 
+        <PressableEffect
+          style={[s.button, (!query.trim() || isChecking) && s.buttonDisabled]}
           onPress={startChat}
           disabled={!query.trim() || isChecking}
         >

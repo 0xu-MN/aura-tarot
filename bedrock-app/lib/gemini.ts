@@ -36,28 +36,34 @@ export interface ChatMessage {
     parts: { text: string }[];
 }
 
-export async function callGeminiChat(history: ChatMessage[], message: string): Promise<string> {
-    try {
-        const { data, error } = await supabase.functions.invoke('tarot-chat', {
-            body: {
-                messages: history.map(h => ({
-                    role: h.role === 'model' ? 'assistant' : 'user',
-                    content: h.parts?.[0]?.text || ''
-                })).concat([{ role: 'user', content: message }])
-            }
-        });
+export async function callGeminiChat(history: ChatMessage[], message: string, retryCount = 1): Promise<string> {
+    for (let i = 0; i <= retryCount; i++) {
+        try {
+            const { data, error } = await supabase.functions.invoke('tarot-chat', {
+                body: {
+                    messages: history.map(h => ({
+                        role: h.role === 'model' ? 'assistant' : 'user',
+                        content: h.parts?.[0]?.text || ''
+                    })).concat([{ role: 'user', content: message }])
+                }
+            });
 
-        if (error) throw error;
+            if (error) throw error;
+            if (!data || !data.message) throw new Error('Empty response from AI');
 
-        const text = data.message || '';
-        return text.replace(/<think>[\s\S]*?<\/think>/g, '')
-                   .replace(/\*\*/g, '')
-                   .replace(/###/g, '')
-                   .replace(/##/g, '')
-                   .replace(/# /g, '')
-                   .trim();
-    } catch (error) {
-        console.error('Gemini Chat API call via Edge Function failed:', error);
-        throw error;
+            const text = data.message || '';
+            return text.replace(/<think>[\s\S]*?<\/think>/g, '')
+                       .replace(/\*\*/g, '')
+                       .replace(/###/g, '')
+                       .replace(/##/g, '')
+                       .replace(/# /g, '')
+                       .trim();
+        } catch (error: any) {
+            console.error(`Gemini Chat API Attempt ${i+1} failed:`, error.message || error);
+            if (i === retryCount) throw error;
+            // 지수 백오프 대신 가벼운 대기 후 재시도
+            await new Promise(res => setTimeout(res, 1000));
+        }
     }
+    return ''; // unreachable
 }
